@@ -1,0 +1,199 @@
+/* ─── ISYA Mission Control — Global Animations & Utilities ─── */
+
+/* Telemetry monospace font */
+.font-mono {
+  font-family: 'JetBrains Mono', 'Space Mono', 'Courier New', monospace;
+}
+
+/* ── Keyframes ── */
+
+@keyframes pulse-glow {
+  0%, 100% { transform: scale(1.0); opacity: 0.4; }
+  50%       { transform: scale(1.1); opacity: 0.65; }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(-15px); }
+}
+
+@keyframes gradient-shift {
+  0%   { background-position: 0% center; }
+  100% { background-position: 200% center; }
+}
+
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(30px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes twinkle {
+  0%, 100% { opacity: 0.15; }
+  50%       { opacity: 0.9; }
+}
+
+/* Radar sweep on video cards */
+@keyframes radar-sweep {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+/* EQ bar bounce */
+@keyframes eq-bar {
+  0%, 100% { transform: scaleY(0.2); }
+  50%       { transform: scaleY(1); }
+}
+
+/* Pulsing red live beacon */
+@keyframes live-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(239,68,68,0.6); }
+  50%       { box-shadow: 0 0 0 8px rgba(239,68,68,0); }
+}
+
+/* Counter lock-in flicker */
+@keyframes counter-flicker {
+  0%  { opacity: 0.6; }
+  50% { opacity: 1; }
+  100%{ opacity: 0.8; }
+}
+
+/* HUD scan line */
+@keyframes scan {
+  0%   { top: 0%; opacity: 0.08; }
+  100% { top: 100%; opacity: 0; }
+}
+
+/* ── Utility classes ── */
+
+.animate-float        { animation: float 4s ease-in-out infinite; }
+.animate-pulse-glow   { animation: pulse-glow 8s ease-in-out infinite; }
+.animate-gradient-shift {
+  background-size: 200% auto;
+  animation: gradient-shift 3s linear infinite;
+}
+.animate-twinkle      { animation: twinkle 2.5s ease-in-out infinite; }
+.animate-radar        { animation: radar-sweep 4s linear infinite; }
+.animate-live-pulse   { animation: live-pulse 1.4s ease-in-out infinite; }
+
+/* ── Scroll reveal ── */
+.reveal {
+  opacity: 0;
+  transform: translateY(40px);
+  transition: opacity 700ms cubic-bezier(0.16, 1, 0.3, 1),
+              transform 700ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.reveal.is-visible { opacity: 1; transform: translateY(0); }
+
+.reveal-delay-1 { transition-delay: 100ms; }
+.reveal-delay-2 { transition-delay: 200ms; }
+.reveal-delay-3 { transition-delay: 300ms; }
+.reveal-delay-4 { transition-delay: 400ms; }
+.reveal-delay-5 { transition-delay: 500ms; }
+.reveal-delay-6 { transition-delay: 600ms; }
+
+/* ── Tactile press ── */
+.btn-press:active { transform: scale(0.96); }
+
+/* ── Card hover elevation lift ── */
+.card-hover {
+  transition: transform 300ms ease-in-out, box-shadow 300ms ease-in-out;
+}
+.card-hover:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 24px 48px rgba(0,0,0,0.5), 0 0 24px rgba(236,72,153,0.08);
+}
+
+/* ── Glassmorphism card ── */
+.glass-card {
+  background: rgba(17, 24, 39, 0.45);
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* ── HUD corner brackets ── */
+.hud-corners {
+  position: relative;
+}
+.hud-corners::before,
+.hud-corners::after {
+  content: '';
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  border-color: rgba(236, 72, 153, 0.5);
+  border-style: solid;
+  pointer-events: none;
+  z-index: 2;
+  transition: border-color 300ms ease;
+}
+.hud-corners:hover::before,
+.hud-corners:hover::after {
+  border-color: rgba(236, 72, 153, 0.9);
+}
+.hud-corners::before {
+  top: -4px; left: -4px;
+  border-width: 2px 0 0 2px;
+}
+.hud-corners::after {
+  bottom: -4px; right: -4px;
+  border-width: 0 2px 2px 0;
+}
+
+/* ── HUD scan line overlay ── */
+.hud-scanline {
+  position: relative;
+  overflow: hidden;
+}
+.hud-scanline::after {
+  content: '';
+  position: absolute;
+  left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(236,72,153,0.12), transparent);
+  animation: scan 4s linear infinite;
+  pointer-events: none;
+}
+
+/* ── Stardust noise texture overlay ── */
+.stardust {
+  position: relative;
+}
+.stardust::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  opacity: 0.028;
+  mix-blend-mode: screen;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ── Focus ring (WCAG compliant + futuristic) ── */
+*:focus-visible {
+  outline: 1px solid #EC4899;
+  outline-offset: 4px;
+}
+
+/* ── Input glow focus (bottom border) ── */
+.input-glow {
+  border: none;
+  border-bottom: 2px solid rgba(59,130,246,0.25);
+  border-radius: 0;
+  background: transparent;
+  transition: border-color 300ms ease, box-shadow 300ms ease;
+}
+.input-glow:focus {
+  border-bottom-color: #EC4899;
+  box-shadow: 0 2px 0 0 rgba(236,72,153,0.3);
+  outline: none;
+}
+
+/* ── Podcast EQ bars ── */
+.eq-bar {
+  width: 3px;
+  border-radius: 2px;
+  transform-origin: bottom;
+  animation: eq-bar 0.6s ease-in-out infinite alternate;
+}
