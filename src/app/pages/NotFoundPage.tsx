@@ -41,7 +41,7 @@ export function NotFoundPage() {
       </div>
 
       {/* Footer deco */}
-      <div className="absolute bottom-10 left-0 right-0 font-mono text-[0.6rem] text-gray-800 tracking-[0.3em] pointer-events-none">
+      <div className="absolute bottom-10 left-0 right-0 font-mono text-xs text-gray-500 tracking-[0.3em] pointer-events-none">
         ERROR_CODE_404 // COORDINATES_UNKNOWN
       </div>
     </div>
