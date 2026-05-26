@@ -40,6 +40,9 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+  --brand-orange: #FFA500;
+  --brand-pink: #EC4899;
+  --brand-blue: #3B82F6;
 }
 
 .dark {
@@ -118,6 +121,14 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
+  --color-brand-orange: var(--brand-orange);
+  --color-brand-pink: var(--brand-pink);
+  --color-brand-blue: var(--brand-blue);
+  --color-dark: #0B0F19;
+  --color-dark-secondary: #05080F;
+  --shadow-glow-pink: 0 0 20px rgba(236, 72, 153, 0.3);
+  --shadow-glow-blue: 0 0 20px rgba(59, 130, 246, 0.3);
+  --shadow-glow-orange: 0 0 20px rgba(255, 165, 0, 0.3);
 }
 
 @layer base {

@@ -139,8 +139,8 @@ export function LandingPage() {
         <StarfieldCanvas />
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_50%_40%,rgba(11,15,25,0.3)_0%,rgba(11,15,25,0.82)_100%)]" />
         
-        <div className="absolute top-1/4 right-0 w-96 h-96 rounded-full pointer-events-none animate-pulse-glow bg-secondary/15 blur-[120px]" />
-        <div className="absolute bottom-1/4 left-0 w-96 h-96 rounded-full pointer-events-none animate-pulse-glow bg-accent/10 blur-[120px] [animation-delay:4s]" />
+        <div className="absolute top-1/4 right-0 w-96 h-96 rounded-full pointer-events-none animate-pulse-glow bg-brand-pink/15 blur-[120px]" />
+        <div className="absolute bottom-1/4 left-0 w-96 h-96 rounded-full pointer-events-none animate-pulse-glow bg-brand-blue/10 blur-[120px] [animation-delay:4s]" />
 
         <div className="relative z-10 w-full max-w-5xl mx-auto px-4 sm:px-6 py-20 flex flex-col items-center text-center">
           <div className="mb-8 animate-float drop-shadow-[0_0_40px_rgba(236,72,153,0.5)]">
@@ -160,7 +160,7 @@ export function LandingPage() {
               <TextDecode 
                 text="of Space Explorers" 
                 delay={500} 
-                className="bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent inline-block"
+                className="bg-gradient-to-r from-brand-orange via-brand-pink to-brand-blue bg-clip-text text-transparent inline-block"
               />
             </span>
           </h1>
@@ -173,7 +173,7 @@ export function LandingPage() {
           <div className="flex flex-col sm:flex-row items-center gap-4 reveal reveal-delay-1">
             <Link
               to="/register"
-              className="group flex items-center gap-3 px-8 py-4 rounded-xl font-mono text-[0.85rem] font-bold tracking-wider text-white shadow-[0_0_35px_rgba(236,72,153,0.45)] bg-gradient-to-r from-secondary via-primary to-secondary bg-[length:200%_auto] animate-gradient-shift hover:shadow-[0_0_50px_rgba(236,72,153,0.7)] active:scale-95 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-secondary"
+              className="group flex items-center gap-3 px-8 py-4 rounded-xl font-mono text-[0.85rem] font-bold tracking-wider text-white shadow-[0_0_35px_rgba(236,72,153,0.45)] bg-gradient-to-r from-brand-pink via-brand-orange to-brand-pink bg-[length:200%_auto] animate-gradient-shift hover:shadow-[0_0_50px_rgba(236,72,153,0.7)] active:scale-95 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-brand-pink"
             >
               INITIATE_LAUNCH // JOIN_COMMUNITY
               <ArrowRight size={17} />
@@ -187,8 +187,8 @@ export function LandingPage() {
           </div>
 
           <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 opacity-30" aria-hidden="true">
-            <div className="w-px h-14 bg-gradient-to-b from-transparent to-secondary" />
-            <div className="w-1.5 h-1.5 rounded-full bg-secondary" />
+            <div className="w-px h-14 bg-gradient-to-b from-transparent to-brand-pink/50" />
+            <div className="w-1.5 h-1.5 rounded-full bg-brand-pink" />
           </div>
         </div>
       </section>
@@ -205,7 +205,7 @@ export function LandingPage() {
                 <AnimatedCounter
                   target={c.raw}
                   suffix={c.suffix}
-                  className="text-3xl md:text-5xl font-extrabold leading-none bg-gradient-to-br from-secondary to-primary bg-clip-text text-transparent"
+                  className="text-3xl md:text-5xl font-extrabold leading-none bg-gradient-to-br from-brand-orange to-brand-pink bg-clip-text text-transparent"
                 />
                 <p className="mt-2 font-mono text-gray-400 text-xs tracking-[0.14em]">
                   [{c.label}]
@@ -219,7 +219,7 @@ export function LandingPage() {
       {/* ── THREE PILLARS ── */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
         <div className="text-center mb-16 reveal">
-          <p className="font-mono text-secondary text-xs tracking-[0.18em] mb-3">
+          <p className="font-mono text-brand-pink text-xs tracking-[0.18em] mb-3">
             // MISSION_BRIEFING :: CORE_DIRECTIVES
           </p>
           <h2 className="text-white text-2xl sm:text-3xl md:text-4xl font-bold leading-tight">
@@ -235,10 +235,10 @@ export function LandingPage() {
                 key={p.title}
                 className={`p-8 rounded-2xl glass-card hud-corners reveal reveal-delay-${i + 1}`}
               >
-                <div className="mb-4 text-secondary">
+                <div className="mb-4 text-brand-pink">
                   <IconComponent size={32} className="drop-shadow-[0_0_8px_rgba(236,72,153,0.4)]" />
                 </div>
-                <span className="font-mono block text-secondary text-xs tracking-[0.14em] mb-2">
+                <span className="font-mono block text-brand-pink text-xs tracking-[0.14em] mb-2">
                   // {p.label}
                 </span>
                 <h3 className="text-white text-xl font-bold mb-3">
@@ -281,7 +281,7 @@ export function LandingPage() {
             </p>
             <Link
               to="/register"
-              className="inline-flex items-center gap-2 px-7 py-3.5 rounded-xl font-mono text-xs font-bold tracking-widest text-white shadow-glow-pink bg-gradient-to-r from-secondary via-primary to-secondary bg-[length:200%_auto] animate-gradient-shift"
+              className="inline-flex items-center gap-2 px-7 py-3.5 rounded-xl font-mono text-xs font-bold tracking-widest text-white shadow-glow-pink bg-gradient-to-r from-brand-pink via-brand-orange to-brand-pink bg-[length:200%_auto] animate-gradient-shift"
             >
               BEGIN_MISSION
               <ChevronRight size={17} />
@@ -294,7 +294,7 @@ export function LandingPage() {
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
         <div className="flex items-center justify-between mb-12 reveal">
           <div>
-            <p className="font-mono text-secondary text-xs tracking-[0.14em] mb-2">
+            <p className="font-mono text-brand-pink text-xs tracking-[0.14em] mb-2">
               // DATA_ARCHIVES :: RECENT_TRANSMISSIONS
             </p>
             <h2 className="text-white text-xl sm:text-2xl md:text-3xl font-bold">
@@ -375,7 +375,7 @@ export function LandingPage() {
                       <span className="w-1 h-1 rounded-full bg-gray-700" />
                       <span>BY_{post.author}</span>
                     </div>
-                    <h3 className="text-white font-bold leading-snug mb-4 group-hover:text-secondary group-focus-within:text-secondary transition-colors line-clamp-2">
+                    <h3 className="text-white font-bold leading-snug mb-4 group-hover:text-brand-pink group-focus-within:text-brand-pink transition-colors line-clamp-2">
                       {post.title}
                     </h3>
                     <div className="mt-auto flex items-center justify-between">
@@ -490,16 +490,16 @@ function OnboardingModalWrapper({ onboardingStep, setOnboardingStep }: Onboardin
     >
       <div 
         ref={modalRef} 
-        className="relative w-full max-w-md bg-dark/95 border border-secondary/20 rounded-2xl p-6 shadow-glow-pink text-left space-y-6"
+        className="relative w-full max-w-md bg-dark/95 border border-brand-pink/20 rounded-2xl p-6 shadow-glow-pink text-left space-y-6"
       >
         {/* HUD Cutout corners */}
-        <div className="absolute top-0 left-0 w-6 h-6 border-t-2 border-l-2 border-secondary rounded-tl-lg" />
-        <div className="absolute top-0 right-0 w-6 h-6 border-t-2 border-r-2 border-secondary rounded-tr-lg" />
-        <div className="absolute bottom-0 left-0 w-6 h-6 border-b-2 border-l-2 border-secondary rounded-bl-lg" />
-        <div className="absolute bottom-0 right-0 w-6 h-6 border-b-2 border-r-2 border-secondary rounded-br-lg" />
+        <div className="absolute top-0 left-0 w-6 h-6 border-t-2 border-l-2 border-brand-pink rounded-tl-lg" />
+        <div className="absolute top-0 right-0 w-6 h-6 border-t-2 border-r-2 border-brand-pink rounded-tr-lg" />
+        <div className="absolute bottom-0 left-0 w-6 h-6 border-b-2 border-l-2 border-brand-pink rounded-bl-lg" />
+        <div className="absolute bottom-0 right-0 w-6 h-6 border-b-2 border-r-2 border-brand-pink rounded-br-lg" />
 
         <div className="space-y-2">
-          <span className="font-mono text-[10px] text-secondary tracking-wider">
+          <span className="font-mono text-[10px] text-brand-pink tracking-wider">
             CADET_ONBOARDING // STAGE_0{onboardingStep}_OF_03
           </span>
           <h3 className="text-white text-lg font-bold">
@@ -522,7 +522,7 @@ function OnboardingModalWrapper({ onboardingStep, setOnboardingStep }: Onboardin
               setOnboardingStep(null);
               toast.success("Walkthrough skipped. Terminals ready.");
             }}
-            className="text-xs font-mono text-gray-400 hover:text-gray-300 cursor-pointer focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-secondary"
+            className="text-xs font-mono text-gray-400 hover:text-gray-300 cursor-pointer focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-brand-pink"
           >
             SKIP_WALKTHROUGH
           </button>
@@ -531,7 +531,7 @@ function OnboardingModalWrapper({ onboardingStep, setOnboardingStep }: Onboardin
             {onboardingStep > 1 && (
               <button 
                 onClick={() => setOnboardingStep(onboardingStep - 1)}
-                className="px-3 py-1.5 rounded-lg font-mono text-[10px] text-gray-400 border border-white/10 hover:bg-white/5 cursor-pointer focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-secondary"
+                className="px-3 py-1.5 rounded-lg font-mono text-[10px] text-gray-400 border border-white/10 hover:bg-white/5 cursor-pointer focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-brand-pink"
               >
                 PREV
               </button>
@@ -546,7 +546,7 @@ function OnboardingModalWrapper({ onboardingStep, setOnboardingStep }: Onboardin
                   toast.success("Cadet onboarding synchronized! Welcome to ISYA.");
                 }
               }}
-              className="px-4 py-1.5 rounded-lg font-mono text-[10px] text-white bg-secondary hover:bg-secondary/90 cursor-pointer focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-secondary"
+              className="px-4 py-1.5 rounded-lg font-mono text-[10px] text-white bg-brand-pink hover:bg-brand-pink/90 cursor-pointer focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-brand-pink"
             >
               {onboardingStep === 3 ? "SYNCHRONIZE" : "NEXT_SECTOR"}
             </button>
