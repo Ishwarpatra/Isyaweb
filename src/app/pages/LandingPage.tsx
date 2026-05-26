@@ -157,9 +157,11 @@ export function LandingPage() {
             <span aria-hidden="true">
               <TextDecode text="Empowering the Next Generation" delay={200} />
               <br />
-              <span className="bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent">
-                <TextDecode text="of Space Explorers" delay={500} />
-              </span>
+              <TextDecode 
+                text="of Space Explorers" 
+                delay={500} 
+                className="bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent inline-block"
+              />
             </span>
           </h1>
 
