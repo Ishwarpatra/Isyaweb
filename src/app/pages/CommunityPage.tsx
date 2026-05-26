@@ -1,19 +1,44 @@
-import { useState } from "react";
-import { Search, MapPin, MessageCircle, Heart, Share2, Plus } from "lucide-react";
+import React, { useState } from "react";
+import { Search, MapPin, MessageCircle, Heart, Share2, Plus, X, AlertCircle } from "lucide-react";
 import { useScrollReveal } from "../hooks/useScrollReveal";
+import { useAuth } from "../hooks/useAuth";
+import { toast } from "sonner";
 
-const MEMBERS = [
-  { id: 1, name: "Sarah Chen", role: "Astrophysicist", country: "🇺🇸 USA", avatar: "SC", color: "#FFA500", joined: "2024", posts: 34 },
-  { id: 2, name: "David Osei", role: "Research Fellow", country: "🇬🇭 Ghana", avatar: "DO", color: "#EC4899", joined: "2023", posts: 61 },
-  { id: 3, name: "Yuki Tanaka", role: "Radio Astronomer", country: "🇯🇵 Japan", avatar: "YT", color: "#4A90E2", joined: "2025", posts: 22 },
-  { id: 4, name: "Amara Diallo", role: "Science Communicator", country: "🇸🇳 Senegal", avatar: "AD", color: "#00D9FF", joined: "2024", posts: 48 },
-  { id: 5, name: "Luis Reyes", role: "Aerospace Engineer", country: "🇲🇽 Mexico", avatar: "LR", color: "#10B981", joined: "2023", posts: 77 },
-  { id: 6, name: "Fatima Al-Rashid", role: "Space Policy Analyst", country: "🇸🇦 Saudi Arabia", avatar: "FA", color: "#FFD700", joined: "2025", posts: 19 },
-  { id: 7, name: "Carlos Mendez", role: "Robotics Engineer", country: "🇦🇷 Argentina", avatar: "CM", color: "#EC4899", joined: "2024", posts: 41 },
-  { id: 8, name: "Priya Sharma", role: "Data Scientist", country: "🇮🇳 India", avatar: "PS", color: "#FFA500", joined: "2023", posts: 55 },
+export interface Member {
+  id: number;
+  name: string;
+  role: string;
+  country: string;
+  color: string;
+  joined: string;
+  posts: number;
+  connected?: boolean;
+}
+
+export interface Post {
+  id: number;
+  author: string;
+  avatar: string;
+  color: string;
+  time: string;
+  content: string;
+  likes: number;
+  comments: number;
+  liked: boolean;
+}
+
+const MEMBERS: Member[] = [
+  { id: 1, name: "Sarah Chen", role: "Astrophysicist", country: "🇺🇸 USA", color: "#FFA500", joined: "2024", posts: 34 },
+  { id: 2, name: "David Osei", role: "Research Fellow", country: "🇬🇭 Ghana", color: "#EC4899", joined: "2023", posts: 61 },
+  { id: 3, name: "Yuki Tanaka", role: "Radio Astronomer", country: "🇯🇵 Japan", color: "#4A90E2", joined: "2025", posts: 22 },
+  { id: 4, name: "Amara Diallo", role: "Science Communicator", country: "🇸🇳 Senegal", color: "#00D9FF", joined: "2024", posts: 48 },
+  { id: 5, name: "Luis Reyes", role: "Aerospace Engineer", country: "🇲🇽 Mexico", color: "#10B981", joined: "2023", posts: 77 },
+  { id: 6, name: "Fatima Al-Rashid", role: "Space Policy Analyst", country: "🇸🇦 Saudi Arabia", color: "#FFD700", joined: "2025", posts: 19 },
+  { id: 7, name: "Carlos Mendez", role: "Robotics Engineer", country: "🇦🇷 Argentina", color: "#EC4899", joined: "2024", posts: 41 },
+  { id: 8, name: "Priya Sharma", role: "Data Scientist", country: "🇮🇳 India", color: "#FFA500", joined: "2023", posts: 55 },
 ];
 
-const POSTS = [
+const INITIAL_POSTS: Post[] = [
   {
     id: 1,
     author: "David Osei",
@@ -74,22 +99,92 @@ const EVENT_COLORS: Record<string, string> = {
   Deadline: "text-red-400 bg-red-400/10",
 };
 
+export function getInitials(name: string): string {
+  if (!name) return "??";
+  const parts = name.trim().split(/\s+/);
+  if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+}
+
 export function CommunityPage() {
   const sectionRef = useScrollReveal<HTMLDivElement>();
+  const { user } = useAuth();
   const [activeView, setActiveView] = useState<"feed" | "members">("feed");
   const [search, setSearch] = useState("");
-  const [likedPosts, setLikedPosts] = useState<Set<number>>(new Set([2]));
 
-  const filteredMembers = MEMBERS.filter((m) =>
-    search === "" || m.name.toLowerCase().includes(search.toLowerCase()) || m.role.toLowerCase().includes(search.toLowerCase())
+  // Stateful posts & members
+  const [posts, setPosts] = useState<Post[]>(INITIAL_POSTS);
+  const [members, setMembers] = useState<Member[]>(MEMBERS);
+
+  // Modal State
+  const [isComposeOpen, setIsComposeOpen] = useState(false);
+  const [newPostContent, setNewPostContent] = useState("");
+
+  const filteredMembers = members.filter((m) =>
+    search === "" ||
+    m.name.toLowerCase().includes(search.toLowerCase()) ||
+    m.role.toLowerCase().includes(search.toLowerCase())
   );
 
   const toggleLike = (id: number) => {
-    setLikedPosts((prev) => {
-      const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
-      return next;
-    });
+    setPosts((prev) =>
+      prev.map((post) => {
+        if (post.id === id) {
+          const liked = !post.liked;
+          return {
+            ...post,
+            liked,
+            likes: liked ? post.likes + 1 : post.likes - 1,
+          };
+        }
+        return post;
+      })
+    );
+  };
+
+  const handleConnect = (id: number) => {
+    setMembers((prev) =>
+      prev.map((m) => {
+        if (m.id === id) {
+          const nextState = !m.connected;
+          if (nextState) {
+            toast.success(`Connection request sent to ${m.name}!`);
+          } else {
+            toast.success(`Removed connection request to ${m.name}.`);
+          }
+          return { ...m, connected: nextState };
+        }
+        return m;
+      })
+    );
+  };
+
+  const handleCreatePost = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newPostContent.trim()) {
+      toast.error("Cannot broadcast empty signal transmission.");
+      return;
+    }
+
+    const postAuthorName = user ? user.name : "Guest Cadet";
+    const postColor = user?.role === "admin" ? "#EC4899" : "#FFA500";
+
+    const newPost: Post = {
+      id: Date.now(),
+      author: postAuthorName,
+      avatar: getInitials(postAuthorName),
+      color: postColor,
+      time: "Just now",
+      content: newPostContent.trim(),
+      likes: 0,
+      comments: 0,
+      liked: false,
+    };
+
+    setPosts([newPost, ...posts]);
+    setNewPostContent("");
+    setIsComposeOpen(false);
+    toast.success("Broadcast packet sent successfully!");
   };
 
   return (
@@ -97,7 +192,7 @@ export function CommunityPage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         {/* Header */}
         <div className="mb-10 reveal">
-          <p className="font-mono text-orange-500 text-[0.7rem] tracking-[0.15em] mb-2 uppercase">
+          <p className="font-mono text-orange-500 text-xs tracking-[0.15em] mb-2 uppercase">
             // MEMBER_COMMUNITY :: STATUS_ONLINE
           </p>
           <h1 className="text-white text-[clamp(2rem,5vw,2.8rem)] font-bold leading-tight">
@@ -113,10 +208,10 @@ export function CommunityPage() {
               role="tab"
               aria-selected={activeView === view}
               onClick={() => setActiveView(view)}
-              className={`px-5 py-2 rounded-xl text-sm font-semibold transition-all border ${
+              className={`px-5 py-2 rounded-xl text-xs font-semibold transition-all border cursor-pointer ${
                 activeView === view 
                   ? "bg-orange-500/10 text-orange-500 border-orange-500/30" 
-                  : "bg-white/5 text-gray-500 border-white/5 hover:bg-white/10"
+                  : "bg-white/5 text-gray-400 border-white/5 hover:bg-white/10"
               }`}
             >
               {view === "feed" ? "Community Feed" : "Members Directory"}
@@ -132,14 +227,20 @@ export function CommunityPage() {
                 {/* Compose box */}
                 <div className="p-4 rounded-2xl bg-[#0F1629] border border-white/10 flex items-center gap-3">
                   <div className="w-10 h-10 rounded-full bg-gradient-to-br from-orange-500 to-pink-500 flex items-center justify-center shrink-0">
-                    <span className="text-white text-xs font-bold">ME</span>
+                    <span className="text-white text-xs font-bold font-mono">
+                      {user ? getInitials(user.name) : "ME"}
+                    </span>
                   </div>
-                  <button className="flex-1 px-4 py-2.5 rounded-xl text-left text-gray-500 text-sm bg-white/5 hover:bg-white/10 transition-colors">
+                  <button
+                    onClick={() => setIsComposeOpen(true)}
+                    className="flex-1 px-4 py-2.5 rounded-xl text-left text-gray-400 text-xs bg-white/5 hover:bg-white/10 transition-colors cursor-pointer"
+                  >
                     Share something with the community...
                   </button>
                   <button
+                    onClick={() => setIsComposeOpen(true)}
                     aria-label="Create post"
-                    className="p-2.5 rounded-xl bg-gradient-to-br from-orange-500 to-pink-500 text-white hover:scale-105 transition-transform"
+                    className="p-2.5 rounded-xl bg-gradient-to-br from-orange-500 to-pink-500 text-white hover:scale-105 transition-transform cursor-pointer"
                   >
                     <Plus size={18} />
                   </button>
@@ -147,50 +248,55 @@ export function CommunityPage() {
 
                 {/* Feed */}
                 <div className="space-y-4">
-                  {POSTS.map((post) => {
-                    const liked = likedPosts.has(post.id);
-                    return (
-                      <article
-                        key={post.id}
-                        className="p-6 rounded-2xl bg-[#0F1629] border border-white/5"
-                      >
-                        <div className="flex items-start gap-3 mb-4">
-                          <div
-                            className="w-10 h-10 rounded-full flex items-center justify-center shrink-0"
-                            style={{ background: post.color }}
-                          >
-                            <span className="text-white text-sm font-bold">{post.avatar}</span>
-                          </div>
-                          <div>
-                            <p className="text-white font-semibold text-[0.95rem]">
-                              {post.author}
-                            </p>
-                            <p className="text-gray-500 text-xs">{post.time}</p>
-                          </div>
+                  {posts.map((post) => (
+                    <article
+                      key={post.id}
+                      className="p-6 rounded-2xl bg-[#0F1629] border border-white/5"
+                    >
+                      <div className="flex items-start gap-3 mb-4">
+                        <div
+                          className="w-10 h-10 rounded-full flex items-center justify-center shrink-0"
+                          style={{ background: post.color }}
+                        >
+                          <span className="text-white text-xs font-bold font-mono">{post.avatar}</span>
                         </div>
-                        <p className="text-gray-300 leading-relaxed text-[0.9rem] mb-5">
-                          {post.content}
-                        </p>
-                        <div className="flex items-center gap-6 pt-4 border-t border-white/5">
-                          <button
-                            onClick={() => toggleLike(post.id)}
-                            className={`flex items-center gap-1.5 text-sm transition-colors ${liked ? "text-pink-500" : "text-gray-500 hover:text-gray-300"}`}
-                          >
-                            <Heart size={16} fill={liked ? "currentColor" : "none"} />
-                            {post.likes + (liked && !post.liked ? 1 : !liked && post.liked ? -1 : 0)}
-                          </button>
-                          <button className="flex items-center gap-1.5 text-gray-500 text-sm hover:text-gray-300">
-                            <MessageCircle size={16} />
-                            {post.comments}
-                          </button>
-                          <button className="flex items-center gap-1.5 text-gray-500 text-sm hover:text-gray-300 ml-auto">
-                            <Share2 size={16} />
-                            Share
-                          </button>
+                        <div>
+                          <p className="text-white font-semibold text-xs">
+                            {post.author}
+                          </p>
+                          <p className="text-gray-400 text-xs font-mono">{post.time}</p>
                         </div>
-                      </article>
-                    );
-                  })}
+                      </div>
+                      <p className="text-gray-300 leading-relaxed text-xs mb-5">
+                        {post.content}
+                      </p>
+                      <div className="flex items-center gap-6 pt-4 border-t border-white/5">
+                        <button
+                          onClick={() => toggleLike(post.id)}
+                          className={`flex items-center gap-1.5 text-xs transition-colors cursor-pointer ${
+                            post.liked ? "text-pink-500 font-bold" : "text-gray-400 hover:text-gray-200"
+                          }`}
+                        >
+                          <Heart size={16} fill={post.liked ? "currentColor" : "none"} />
+                          {post.likes}
+                        </button>
+                        <button className="flex items-center gap-1.5 text-gray-400 text-xs hover:text-gray-200 cursor-pointer">
+                          <MessageCircle size={16} />
+                          {post.comments}
+                        </button>
+                        <button 
+                          onClick={() => {
+                            navigator.clipboard.writeText(post.content);
+                            toast.success("Signal coordinates copied to clipboard!");
+                          }}
+                          className="flex items-center gap-1.5 text-gray-400 text-xs hover:text-gray-200 ml-auto cursor-pointer"
+                        >
+                          <Share2 size={16} />
+                          Share
+                        </button>
+                      </div>
+                    </article>
+                  ))}
                 </div>
               </div>
             )}
@@ -204,10 +310,11 @@ export function CommunityPage() {
                     placeholder="Search members by name or role..."
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
-                    className="w-full pl-10 pr-4 py-3 rounded-xl text-white text-sm bg-[#0F1629] border border-white/10 focus:border-orange-500/50 outline-none transition-colors"
+                    className="w-full pl-10 pr-4 py-3 rounded-xl text-white text-xs bg-[#0F1629] border border-white/10 focus:border-orange-500/50 outline-none transition-colors"
                   />
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {/* Fixed cols: responsive grid col sizes correctly fit tablets & wider devices */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-4">
                   {filteredMembers.map((member) => (
                     <div
                       key={member.id}
@@ -217,18 +324,28 @@ export function CommunityPage() {
                         className="w-12 h-12 rounded-full flex items-center justify-center shrink-0 transition-transform group-hover:scale-105"
                         style={{ background: member.color }}
                       >
-                        <span className="text-white font-bold">{member.avatar}</span>
+                        <span className="text-white font-bold font-mono">{getInitials(member.name)}</span>
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-white font-semibold text-[0.95rem] truncate">{member.name}</p>
-                        <p className="text-gray-500 text-xs truncate">{member.role}</p>
+                        <p className="text-white font-semibold text-xs truncate">{member.name}</p>
+                        <p className="text-gray-400 text-xs truncate">{member.role}</p>
                         <div className="flex items-center gap-1.5 mt-1">
-                          <MapPin size={12} className="text-gray-600" />
-                          <span className="text-gray-600 text-[0.75rem]">{member.country}</span>
+                          <MapPin size={12} className="text-gray-500" />
+                          <span className="text-gray-500 text-xs">{member.country}</span>
                         </div>
                       </div>
-                      <button className="px-3 py-1.5 rounded-lg text-[0.75rem] font-bold text-blue-400 bg-blue-400/10 border border-blue-400/20 hover:bg-blue-400/20 transition-colors shrink-0">
-                        Connect
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleConnect(member.id);
+                        }}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors shrink-0 cursor-pointer ${
+                          member.connected 
+                            ? "text-emerald-400 bg-emerald-400/10 border border-emerald-400/20 hover:bg-emerald-400/20"
+                            : "text-blue-400 bg-blue-400/10 border border-blue-400/20 hover:bg-blue-400/20"
+                        }`}
+                      >
+                        {member.connected ? "Pending" : "Connect"}
                       </button>
                     </div>
                   ))}
@@ -243,18 +360,20 @@ export function CommunityPage() {
             <div className="p-6 rounded-2xl bg-[#0F1629] border border-white/10">
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-12 h-12 rounded-full bg-gradient-to-br from-orange-500 to-pink-500 flex items-center justify-center">
-                  <span className="text-white font-bold">ME</span>
+                  <span className="text-white font-bold font-mono">
+                    {user ? getInitials(user.name) : "ME"}
+                  </span>
                 </div>
                 <div>
-                  <p className="text-white font-semibold">Your Profile</p>
-                  <p className="text-gray-500 text-xs">ISYA Member since 2026</p>
+                  <p className="text-white font-semibold text-xs">Your Profile</p>
+                  <p className="text-gray-400 text-xs">ISYA Member since 2026</p>
                 </div>
               </div>
-              <div className="grid grid-cols-3 gap-3 text-center">
+              <div className="grid grid-cols-3 gap-3 text-center border-t border-white/5 pt-4">
                 {[{ v: "12", l: "Posts" }, { v: "48", l: "Connections" }, { v: "3", l: "Projects" }].map(({ v, l }) => (
                   <div key={l}>
-                    <p className="text-white font-bold">{v}</p>
-                    <p className="text-gray-500 text-[0.7rem]">{l}</p>
+                    <p className="text-white font-bold text-xs">{v}</p>
+                    <p className="text-gray-400 text-xs">{l}</p>
                   </div>
                 ))}
               </div>
@@ -262,35 +381,93 @@ export function CommunityPage() {
 
             {/* Upcoming events */}
             <div className="p-6 rounded-2xl bg-[#0F1629] border border-white/10">
-              <h3 className="text-white font-semibold text-[0.95rem] mb-4">
+              <h3 className="text-white font-semibold text-xs mb-4">
                 Upcoming Events
               </h3>
               <div className="space-y-4">
                 {UPCOMING.map((ev) => (
                   <div key={ev.id} className="flex items-center gap-3">
                     <div className={`shrink-0 w-10 h-10 rounded-lg flex items-center justify-center text-center ${EVENT_COLORS[ev.type]}`}>
-                      <span className="font-mono text-[0.65rem] font-bold leading-tight">
+                      <span className="font-mono text-xs font-bold leading-tight">
                         {ev.date.split(" ")[0]}
                         <br />
                         {ev.date.split(" ")[1]}
                       </span>
                     </div>
                     <div>
-                      <p className="text-white text-[0.85rem] font-medium leading-tight mb-1">{ev.title}</p>
-                      <span className={`text-[0.7rem] font-bold uppercase tracking-wider ${EVENT_COLORS[ev.type].split(" ")[0]}`}>
+                      <p className="text-white text-xs font-medium leading-tight mb-1">{ev.title}</p>
+                      <span className={`text-xs font-bold uppercase tracking-wider ${EVENT_COLORS[ev.type].split(" ")[0]}`}>
                         {ev.type}
                       </span>
                     </div>
                   </div>
                 ))}
               </div>
-              <button className="w-full mt-6 py-2.5 rounded-xl text-xs font-bold text-gray-400 bg-white/5 hover:bg-white/10 transition-colors">
+              <button 
+                onClick={() => toast.info("Full event archives coming soon!")}
+                className="w-full mt-6 py-2.5 rounded-xl text-xs font-bold text-gray-400 bg-white/5 hover:bg-white/10 transition-colors cursor-pointer"
+              >
                 VIEW_ALL_EVENTS_
               </button>
             </div>
           </aside>
         </div>
       </div>
+
+      {/* Compose Signal Modal (Accessible custom Dialog) */}
+      {isComposeOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm">
+          <div className="bg-[#0F1629] border border-white/10 rounded-2xl p-6 w-full max-w-lg shadow-2xl relative hud-corners animate-fade-up">
+            <button
+              onClick={() => setIsComposeOpen(false)}
+              className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors"
+              aria-label="Close modal"
+            >
+              <X size={20} />
+            </button>
+            
+            <div className="mb-4">
+              <h2 className="text-white text-lg font-bold font-mono">// COMPOSE_BROADCAST_SIGNAL</h2>
+              <p className="text-gray-400 text-xs">Transmit a new data pack to the community feed.</p>
+            </div>
+
+            <form onSubmit={handleCreatePost} className="space-y-4">
+              <div>
+                <textarea
+                  value={newPostContent}
+                  onChange={(e) => setNewPostContent(e.target.value)}
+                  maxLength={280}
+                  placeholder="Share a project update, question, or resource..."
+                  rows={5}
+                  className="w-full bg-gray-950/60 border border-white/10 rounded-xl p-4 text-white text-xs outline-none focus:border-orange-500/50 transition-colors resize-none"
+                />
+                <div className="flex justify-between mt-1 text-gray-500 text-xs font-mono">
+                  <span>LIMIT: 280</span>
+                  <span className={newPostContent.length >= 260 ? "text-orange-500" : ""}>
+                    {newPostContent.length} / 280
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => setIsComposeOpen(false)}
+                  className="px-5 py-2 rounded-xl text-xs font-bold text-gray-400 bg-white/5 hover:bg-white/10 transition-colors cursor-pointer"
+                >
+                  CANCEL
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-orange-500 to-pink-500 hover:shadow-lg hover:shadow-pink-500/20 hover:-translate-y-0.5 active:translate-y-0 transition-all cursor-pointer"
+                >
+                  TRANSMIT_SIGNAL →
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
