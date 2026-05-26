@@ -27,6 +27,15 @@ pnpm run build
 pnpm run preview
 ```
 
+## Monorepo Strategy & Workspace Design
+
+The `pnpm-workspace.yaml` is initialized at the root of the repository as part of the architecture roadmap. While the application currently operates as a single root package (`.`), it is designed to scale into a multi-package monorepo:
+1. **Shared Design System**: Future separation of Tailwind design tokens and UI components into a `@isya/design-system` package.
+2. **Shared Telemetry Types**: Extraction of WebSocket and Recharts signal models into `@isya/telemetry-types` for synchronization with backend nodes.
+3. **Command Line Utilities**: Extraction of administrative scripts into `@isya/cli-terminal`.
+
+---
+
 ## Project Structure
 
 ```
@@ -79,13 +88,14 @@ Isyaweb/
 
 | Page | Status | Description |
 |------|--------|-------------|
-| **Landing** | ✅ Working | Hero with starfield canvas, mission briefing, telemetry counters |
-| **Blog** | 🚧 Structure ready | Blog post listing (needs API integration) |
-| **Media** | 🚧 Structure ready | Media gallery (needs asset optimization) |
-| **Community** | 🚧 Structure ready | Community discussion board (needs backend) |
-| **Admin** | 🚧 Structure ready | Admin dashboard (needs authorization) |
-| **Login** | 🚧 Form ready | Authentication (needs validation UI) |
-| **Register** | 🚧 Form ready | User registration (needs validation UI) |
+| **Landing** | ✅ Working | Hero with starfield canvas, mission briefing, telemetry counters (non-linear, scroll-gated) |
+| **Blog** | ✅ Working | Article listing archives with dynamic, interactive detail subviews (`/blog/:id`) |
+| **Media Hub** | ✅ Working | Optimized workshop video lightboxes, audio transmissions, and active initiatives |
+| **Community** | ✅ Working | State-managed discussion feed, like updates, connect actions, and compose dialogs |
+| **Admin Panel** | ✅ Working | Clearanced role checks and security overriding codes, persisting charts and logs |
+| **Login** | ✅ Working | Accessible forms, email/password validation check, session auth hooks, SSO |
+| **Register** | ✅ Working | Step-by-step enlistment forms, age checking, security password strength meters |
+| **Guidelines** | ✅ Working | Interactive formatting of Terms of Service, Privacy policies, and conduct guides |
 
 ## Technology Stack
 
