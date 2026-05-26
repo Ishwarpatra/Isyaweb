@@ -3,6 +3,7 @@ import { Navbar } from "./Navbar";
 import { Footer } from "./Footer";
 import { AuthProvider } from "../../hooks/useAuth";
 import { Toaster } from "../ui/sonner";
+import { ErrorBoundary } from "../ErrorBoundary";
 
 const HIDE_FOOTER_PATHS = ["/login", "/register", "/admin"];
 
@@ -18,7 +19,9 @@ export function Root() {
       >
         <Navbar />
         <main className="flex-1 pt-16">
-          <Outlet />
+          <ErrorBoundary>
+            <Outlet />
+          </ErrorBoundary>
         </main>
         {showFooter && <Footer />}
         <ScrollRestoration />
