@@ -99,7 +99,7 @@ export function LandingPage() {
             <img src={logoImg} alt="ISYA Logo" width="200" height="200" className="w-[clamp(160px,20vw,240px)]" />
           </div>
 
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full mb-6 font-mono text-[0.7rem] tracking-[0.12em] bg-emerald-500/10 border border-emerald-500/30 text-emerald-500">
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full mb-6 font-mono text-xs tracking-[0.12em] bg-emerald-500/10 border border-emerald-500/30 text-emerald-500">
             <span className="animate-live-pulse w-1.5 h-1.5 rounded-full bg-emerald-400" />
             STATUS: ONLINE // ENLISTMENT_OPEN
           </div>
@@ -124,14 +124,14 @@ export function LandingPage() {
             <Link
               to="/register"
               aria-label="Join Community"
-              className="group flex items-center gap-3 px-8 py-4 rounded-xl font-mono text-[0.85rem] font-bold tracking-wider text-white shadow-[0_0_35px_rgba(236,72,153,0.45)] bg-gradient-to-r from-pink-500 via-orange-500 to-pink-500 bg-[length:200%_auto] animate-gradient-shift hover:shadow-[0_0_50px_rgba(236,72,153,0.7)] active:scale-95 transition-all"
+              className="group flex items-center gap-3 px-8 py-4 rounded-xl font-mono text-[0.85rem] font-bold tracking-wider text-white shadow-[0_0_35px_rgba(236,72,153,0.45)] bg-gradient-to-r from-pink-500 via-orange-500 to-pink-500 bg-[length:200%_auto] animate-gradient-shift hover:shadow-[0_0_50px_rgba(236,72,153,0.7)] active:scale-95 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-pink-500"
             >
               INITIATE_LAUNCH // JOIN_COMMUNITY
               <ArrowRight size={17} />
             </Link>
             <Link
               to="/media"
-              className="flex items-center gap-2 px-8 py-4 rounded-xl font-mono text-sm font-semibold tracking-wide text-blue-500 bg-blue-500/10 border border-blue-500/30 hover:bg-blue-500/20 transition-colors"
+              className="flex items-center gap-2 px-8 py-4 rounded-xl font-mono text-sm font-semibold tracking-wide text-blue-500 bg-blue-500/10 border border-blue-500/30 hover:bg-blue-500/20 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500"
             >
               EXPLORE_INITIATIVES →
             </Link>
@@ -147,17 +147,17 @@ export function LandingPage() {
       {/* ── TELEMETRY COUNTERS ── */}
       <section className="bg-[#05080F]/90 border-y border-pink-500/10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14">
-          <p className="text-center font-mono text-gray-500 text-[0.68rem] tracking-[0.18em] mb-8">
+          <p className="text-center font-mono text-gray-500 text-sm tracking-[0.18em] mb-8">
             // MISSION_CONTROL :: LIVE_TELEMETRY_FEED
           </p>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
             {counters.map((c) => (
               <div key={c.label} className="text-center">
                 <AnimatedCounter
-                  target={c.display}
+                  target={c.raw}
                   className="text-[clamp(2rem,4.5vw,3rem)] font-extrabold leading-none bg-gradient-to-br from-pink-500 to-orange-500 bg-clip-text text-transparent"
                 />
-                <p className="mt-2 font-mono text-gray-500 text-[0.65rem] tracking-[0.14em]">
+                <p className="mt-2 font-mono text-gray-500 text-xs tracking-[0.14em]">
                   [{c.label}]
                 </p>
               </div>
@@ -184,7 +184,7 @@ export function LandingPage() {
               className={`p-8 rounded-2xl glass-card hud-corners reveal reveal-delay-${i + 1}`}
             >
               <div className="text-4xl mb-4" role="img" aria-label={p.label}>{p.icon}</div>
-              <span className="font-mono block text-pink-500 text-[0.65rem] tracking-[0.14em] mb-2">
+              <span className="font-mono block text-pink-500 text-xs tracking-[0.14em] mb-2">
                 // {p.label}
               </span>
               <h3 className="text-white text-xl font-bold mb-3">
@@ -212,7 +212,7 @@ export function LandingPage() {
           <div className="max-w-xl reveal">
             <div className="flex items-center gap-2 mb-4">
               <Globe size={15} className="text-blue-500" />
-              <span className="font-mono text-blue-500 text-[0.65rem] tracking-[0.14em]">
+              <span className="font-mono text-blue-500 text-xs tracking-[0.14em]">
                 // GLOBAL_NETWORK :: STATUS_ACTIVE
               </span>
             </div>
@@ -238,7 +238,7 @@ export function LandingPage() {
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
         <div className="flex items-center justify-between mb-12 reveal">
           <div>
-            <p className="font-mono text-pink-500 text-[0.65rem] tracking-[0.14em] mb-2">
+            <p className="font-mono text-pink-500 text-xs tracking-[0.14em] mb-2">
               // DATA_ARCHIVES :: RECENT_TRANSMISSIONS
             </p>
             <h2 className="text-white text-[clamp(1.6rem,3vw,2rem)] font-bold">
