@@ -3,6 +3,7 @@ import { Link } from "react-router";
 import { ImageWithFallback } from "../components/figma/ImageWithFallback";
 import { ArrowRight, Globe, ChevronRight } from "lucide-react";
 import { useScrollReveal } from "../hooks/useScrollReveal";
+import { toast } from "sonner";
 import { StarfieldCanvas } from "../components/StarfieldCanvas";
 import { TextDecode } from "../components/TextDecode";
 import { AnimatedCounter } from "../components/AnimatedCounter";
@@ -86,6 +87,16 @@ export function LandingPage() {
   const [posts, setPosts] = useState<typeof latestPosts>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [onboardingStep, setOnboardingStep] = useState<number | null>(null);
+
+  useEffect(() => {
+    // Show onboarding walkthrough to logged-in users who haven't completed it yet
+    const userSession = sessionStorage.getItem("isya_user");
+    const onboardingDone = sessionStorage.getItem("isya_onboarding_done");
+    if (userSession && !onboardingDone) {
+      setOnboardingStep(1);
+    }
+  }, []);
 
   const fetchTransmissions = () => {
     setLoading(true);
@@ -345,6 +356,74 @@ export function LandingPage() {
           )}
         </div>
       </section>
+
+      {/* Immersive Walkthrough Onboarding Modal */}
+      {onboardingStep !== null && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/85 backdrop-blur-md">
+          <div className="relative w-full max-w-md bg-[#0B0F19]/95 border border-pink-500/20 rounded-2xl p-6 shadow-[0_8px_32px_rgba(236,72,153,0.3)] text-left space-y-6">
+            {/* HUD Cutout corners */}
+            <div className="absolute top-0 left-0 w-6 h-6 border-t-2 border-l-2 border-pink-500 rounded-tl-lg" />
+            <div className="absolute top-0 right-0 w-6 h-6 border-t-2 border-r-2 border-pink-500 rounded-tr-lg" />
+            <div className="absolute bottom-0 left-0 w-6 h-6 border-b-2 border-l-2 border-pink-500 rounded-bl-lg" />
+            <div className="absolute bottom-0 right-0 w-6 h-6 border-b-2 border-r-2 border-pink-500 rounded-br-lg" />
+
+            <div className="space-y-2">
+              <span className="font-mono text-[10px] text-pink-500 tracking-wider">
+                CADET_ONBOARDING // STAGE_0{onboardingStep}_OF_03
+              </span>
+              <h3 className="text-white text-lg font-bold">
+                {onboardingStep === 1 && "Sector Home (Command Center)"}
+                {onboardingStep === 2 && "Data Archives & Observatories"}
+                {onboardingStep === 3 && "Secure Control Terminals"}
+              </h3>
+            </div>
+
+            <p className="text-gray-400 text-sm leading-relaxed">
+              {onboardingStep === 1 && "Welcome, Cadet! You have successfully established a datalink with the ISYA network. This Home Sector is your central command center, housing live telemetry, mission directives, and transmission logs."}
+              {onboardingStep === 2 && "Access the Blog and Media sectors to explore research articles, view video briefings of symposiums, or tune into podcast transmissions hosted by aerospace specialists and fellow crew members."}
+              {onboardingStep === 3 && "As you gain clearances, navigate to the Admin Sector where you can manage telemetry gauges, review pending registration files, and decrypt signal stream log vectors."}
+            </p>
+
+            <div className="flex items-center justify-between pt-4 border-t border-white/5">
+              <button 
+                onClick={() => {
+                  sessionStorage.setItem("isya_onboarding_done", "true");
+                  setOnboardingStep(null);
+                  toast.success("Walkthrough skipped. Terminals ready.");
+                }}
+                className="text-xs font-mono text-gray-500 hover:text-gray-300 cursor-pointer"
+              >
+                SKIP_WALKTHROUGH
+              </button>
+
+              <div className="flex gap-2">
+                {onboardingStep > 1 && (
+                  <button 
+                    onClick={() => setOnboardingStep(onboardingStep - 1)}
+                    className="px-3 py-1.5 rounded-lg font-mono text-[10px] text-gray-400 border border-white/10 hover:bg-white/5 cursor-pointer"
+                  >
+                    PREV
+                  </button>
+                )}
+                <button 
+                  onClick={() => {
+                    if (onboardingStep < 3) {
+                      setOnboardingStep(onboardingStep + 1);
+                    } else {
+                      sessionStorage.setItem("isya_onboarding_done", "true");
+                      setOnboardingStep(null);
+                      toast.success("Cadet onboarding synchronized! Welcome to ISYA.");
+                    }
+                  }}
+                  className="px-4 py-1.5 rounded-lg font-mono text-[10px] text-white bg-pink-500 hover:bg-pink-600 cursor-pointer"
+                >
+                  {onboardingStep === 3 ? "SYNCHRONIZE" : "NEXT_SECTOR"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
