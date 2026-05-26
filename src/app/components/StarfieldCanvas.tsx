@@ -21,24 +21,17 @@ export function StarfieldCanvas() {
   const particles = useRef<Particle[]>([]);
   const animRef = useRef<number>(0);
   const active = useRef(false);
-  const lastFrameTime = useRef<number>(0);
   const isIntersecting = useRef(false);
 
   const initParticles = (width: number, height: number) => {
-    // Check reduced motion
-    const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (prefersReducedMotion) {
-      particles.current = [];
-      return;
-    }
-
     const count = width < 768 ? MOBILE_PARTICLE_COUNT : DESKTOP_PARTICLE_COUNT;
+    const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
     particles.current = Array.from({ length: count }, () => ({
       x: Math.random() * width,
       y: Math.random() * height,
-      vx: (Math.random() - 0.5) * 0.15,
-      vy: (Math.random() - 0.5) * 0.15,
+      vx: prefersReducedMotion ? 0 : (Math.random() - 0.5) * 0.15,
+      vy: prefersReducedMotion ? 0 : (Math.random() - 0.5) * 0.15,
       radius: Math.random() * 1.8 + 0.4,
       opacity: Math.random() * 0.7 + 0.2,
       color: COLORS[Math.floor(Math.random() * COLORS.length)],
@@ -50,45 +43,66 @@ export function StarfieldCanvas() {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    // Throttle frame rate to ~60fps maximum
-    const elapsed = timestamp - lastFrameTime.current;
-    if (elapsed < 16) {
-      animRef.current = requestAnimationFrame(draw);
-      return;
-    }
-    lastFrameTime.current = timestamp;
+    const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
     try {
       const ctx = canvas.getContext("2d");
       if (!ctx) return;
 
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      const dpr = window.devicePixelRatio || 1;
+      const rectWidth = canvas.width / dpr;
+      const rectHeight = canvas.height / dpr;
+
+      ctx.clearRect(0, 0, rectWidth, rectHeight);
 
       const pts = particles.current;
       const mx = mouse.current.x;
       const my = mouse.current.y;
 
-      // Draw connections near cursor
-      if (mx !== null && my !== null && pts.length > 0) {
-        const nearbyIndices: number[] = [];
-        for (let i = 0; i < pts.length; i++) {
-          const p = pts[i];
-          const dx = p.x - mx;
-          const dy = p.y - my;
-          if (dx * dx + dy * dy < CURSOR_RADIUS * CURSOR_RADIUS) {
-            nearbyIndices.push(i);
+      // Draw connections near cursor using Spatial Hash Grid
+      if (!prefersReducedMotion && mx !== null && my !== null && pts.length > 0) {
+        const grid: { [key: string]: Particle[] } = {};
+        const cellSize = CURSOR_RADIUS;
+
+        // Group particles into cell keys
+        for (const p of pts) {
+          const cellX = Math.floor(p.x / cellSize);
+          const cellY = Math.floor(p.y / cellSize);
+          const key = `${cellX},${cellY}`;
+          if (!grid[key]) grid[key] = [];
+          grid[key].push(p);
+        }
+
+        // Query only adjacent cells surrounding cursor
+        const cellX = Math.floor(mx / cellSize);
+        const cellY = Math.floor(my / cellSize);
+        const nearbyParticles: Particle[] = [];
+
+        for (let dx = -1; dx <= 1; dx++) {
+          for (let dy = -1; dy <= 1; dy++) {
+            const key = `${cellX + dx},${cellY + dy}`;
+            const cellParticles = grid[key];
+            if (cellParticles) {
+              for (const p of cellParticles) {
+                const pdx = p.x - mx;
+                const pdy = p.y - my;
+                if (pdx * pdx + pdy * pdy < CURSOR_RADIUS * CURSOR_RADIUS) {
+                  nearbyParticles.push(p);
+                }
+              }
+            }
           }
         }
 
-        if (nearbyIndices.length > 1) {
-          for (let i = 0; i < nearbyIndices.length; i++) {
-            const p = pts[nearbyIndices[i]];
+        if (nearbyParticles.length > 1) {
+          for (let i = 0; i < nearbyParticles.length; i++) {
+            const p = nearbyParticles[i];
             const dx = p.x - mx;
             const dy = p.y - my;
             const distToCursorSq = dx * dx + dy * dy;
 
-            for (let j = i + 1; j < nearbyIndices.length; j++) {
-              const q = pts[nearbyIndices[j]];
+            for (let j = i + 1; j < nearbyParticles.length; j++) {
+              const q = nearbyParticles[j];
               const ex = q.x - mx;
               const ey = q.y - my;
               const distToCursorSq2 = ex * ex + ey * ey;
@@ -110,7 +124,7 @@ export function StarfieldCanvas() {
 
       // Draw and update particles
       for (const p of pts) {
-        if (mx !== null && my !== null) {
+        if (!prefersReducedMotion && mx !== null && my !== null) {
           const pdx = mx - p.x;
           const pdy = my - p.y;
           const distSq = pdx * pdx + pdy * pdy;
@@ -122,15 +136,17 @@ export function StarfieldCanvas() {
           }
         }
 
-        p.vx *= 0.98;
-        p.vy *= 0.98;
-        p.x += p.vx;
-        p.y += p.vy;
+        if (!prefersReducedMotion) {
+          p.vx *= 0.98;
+          p.vy *= 0.98;
+          p.x += p.vx;
+          p.y += p.vy;
 
-        if (p.x < 0) p.x = canvas.width;
-        if (p.x > canvas.width) p.x = 0;
-        if (p.y < 0) p.y = canvas.height;
-        if (p.y > canvas.height) p.y = 0;
+          if (p.x < 0) p.x = rectWidth;
+          if (p.x > rectWidth) p.x = 0;
+          if (p.y < 0) p.y = rectHeight;
+          if (p.y > rectHeight) p.y = 0;
+        }
 
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
@@ -145,6 +161,11 @@ export function StarfieldCanvas() {
       return;
     }
 
+    if (prefersReducedMotion) {
+      active.current = false;
+      return;
+    }
+
     animRef.current = requestAnimationFrame(draw);
   }, []);
 
@@ -152,16 +173,27 @@ export function StarfieldCanvas() {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    // Check reduced motion
     const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (prefersReducedMotion) {
-      return;
-    }
 
     const resize = () => {
-      canvas.width = canvas.offsetWidth || window.innerWidth;
-      canvas.height = canvas.offsetHeight || window.innerHeight;
-      initParticles(canvas.width, canvas.height);
+      const dpr = window.devicePixelRatio || 1;
+      const rectWidth = canvas.offsetWidth || window.innerWidth;
+      const rectHeight = canvas.offsetHeight || window.innerHeight;
+      canvas.width = rectWidth * dpr;
+      canvas.height = rectHeight * dpr;
+
+      const ctx = canvas.getContext("2d");
+      if (ctx) {
+        ctx.scale(dpr, dpr);
+      }
+
+      initParticles(rectWidth, rectHeight);
+
+      if (prefersReducedMotion) {
+        active.current = true;
+        draw();
+        active.current = false;
+      }
     };
 
     let resizeTimeout: ReturnType<typeof setTimeout>;
@@ -173,6 +205,7 @@ export function StarfieldCanvas() {
     resize();
     window.addEventListener("resize", handleResize);
 
+    // Mouse events
     const onMouseMove = (e: MouseEvent) => {
       const rect = canvas.getBoundingClientRect();
       mouse.current = { x: e.clientX - rect.left, y: e.clientY - rect.top };
@@ -181,8 +214,30 @@ export function StarfieldCanvas() {
       mouse.current = { x: null, y: null };
     };
 
+    // Touch events
+    const onTouchStart = (e: TouchEvent) => {
+      if (e.touches.length > 0) {
+        const touch = e.touches[0];
+        const rect = canvas.getBoundingClientRect();
+        mouse.current = { x: touch.clientX - rect.left, y: touch.clientY - rect.top };
+      }
+    };
+    const onTouchMove = (e: TouchEvent) => {
+      if (e.touches.length > 0) {
+        const touch = e.touches[0];
+        const rect = canvas.getBoundingClientRect();
+        mouse.current = { x: touch.clientX - rect.left, y: touch.clientY - rect.top };
+      }
+    };
+    const onTouchEnd = () => {
+      mouse.current = { x: null, y: null };
+    };
+
     canvas.addEventListener("mousemove", onMouseMove);
     canvas.addEventListener("mouseleave", onMouseLeave);
+    canvas.addEventListener("touchstart", onTouchStart, { passive: true });
+    canvas.addEventListener("touchmove", onTouchMove, { passive: true });
+    canvas.addEventListener("touchend", onTouchEnd, { passive: true });
 
     // Page visibility check: pause animation loop when tab is hidden
     const handleVisibilityChange = () => {
@@ -190,9 +245,13 @@ export function StarfieldCanvas() {
         active.current = false;
         cancelAnimationFrame(animRef.current);
       } else {
-        if (isIntersecting.current && !active.current) {
+        if (isIntersecting.current && !active.current && !prefersReducedMotion) {
           active.current = true;
           animRef.current = requestAnimationFrame(draw);
+        } else if (isIntersecting.current && prefersReducedMotion) {
+          active.current = true;
+          draw();
+          active.current = false;
         }
       }
     };
@@ -202,9 +261,13 @@ export function StarfieldCanvas() {
       ([entry]) => {
         isIntersecting.current = entry.isIntersecting;
         if (entry.isIntersecting && !document.hidden) {
-          if (!active.current) {
+          if (!active.current && !prefersReducedMotion) {
             active.current = true;
             animRef.current = requestAnimationFrame(draw);
+          } else if (prefersReducedMotion) {
+            active.current = true;
+            draw();
+            active.current = false;
           }
         } else {
           active.current = false;
@@ -221,6 +284,9 @@ export function StarfieldCanvas() {
       window.removeEventListener("resize", handleResize);
       canvas.removeEventListener("mousemove", onMouseMove);
       canvas.removeEventListener("mouseleave", onMouseLeave);
+      canvas.removeEventListener("touchstart", onTouchStart);
+      canvas.removeEventListener("touchmove", onTouchMove);
+      canvas.removeEventListener("touchend", onTouchEnd);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
       observer.disconnect();
     };

@@ -10,12 +10,19 @@ interface TextDecodeProps {
 const CHARS = "0123456789ABCDEF";
 
 export function TextDecode({ text, delay = 0, duration = 800, className = "" }: TextDecodeProps) {
+  const [mounted, setMounted] = useState(false);
   const [displayText, setDisplayText] = useState(text);
   const [isDecoding, setIsDecoding] = useState(false);
   const hasAnimated = useRef(false);
   const nodeRef = useRef<HTMLSpanElement>(null);
 
   useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!mounted) return;
+
     // Check if user prefers reduced motion
     const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     if (prefersReducedMotion) {
@@ -71,11 +78,11 @@ export function TextDecode({ text, delay = 0, duration = 800, className = "" }: 
     }
 
     return () => observer.disconnect();
-  }, [text, delay, duration]);
+  }, [mounted, text, delay, duration]);
 
   return (
     <span ref={nodeRef} className={className} aria-live="off">
-      {displayText}
+      {!mounted ? text : displayText}
     </span>
   );
 }

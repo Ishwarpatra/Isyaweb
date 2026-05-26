@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { Outlet, useLocation, ScrollRestoration } from "react-router";
 import { Navbar } from "./Navbar";
 import { Footer } from "./Footer";
@@ -12,11 +13,34 @@ export function Root() {
   const showFooter = !HIDE_FOOTER_PATHS.some((p) => location.pathname.startsWith(p));
   const showNavbar = !location.pathname.startsWith("/admin");
 
+  useEffect(() => {
+    // 1. Check if there is a hash to scroll to
+    if (location.hash) {
+      const id = location.hash.replace("#", "");
+      const element = document.getElementById(id);
+      if (element) {
+        const timer = setTimeout(() => {
+          element.scrollIntoView({ behavior: "smooth" });
+          element.setAttribute("tabindex", "-1");
+          element.focus({ preventScroll: true });
+        }, 100);
+        return () => clearTimeout(timer);
+      }
+    }
+
+    // 2. Otherwise shift focus to #main-content to manage route transition focus context
+    const mainContent = document.getElementById("main-content");
+    if (mainContent) {
+      mainContent.setAttribute("tabindex", "-1");
+      mainContent.focus({ preventScroll: true });
+    }
+  }, [location.pathname, location.hash]);
+
   return (
     <AuthProvider>
       <div
-        className="min-h-screen flex flex-col"
-        style={{ background: "#0B0F19", color: "#FFFFFF" }}
+        className="min-h-screen flex flex-col bg-dark"
+        style={{ color: "#FFFFFF" }}
       >
         <a 
           href="#main-content" 

@@ -30,8 +30,13 @@ export function AnimatedCounter({ target, suffix = "", duration = 2000, classNam
       { threshold: 0.15 }
     );
 
+    let timer: ReturnType<typeof setTimeout>;
     if (nodeRef.current) {
-      observer.observe(nodeRef.current);
+      timer = setTimeout(() => {
+        if (nodeRef.current) {
+          observer.observe(nodeRef.current);
+        }
+      }, 300);
     }
 
     const animate = () => {
@@ -63,7 +68,10 @@ export function AnimatedCounter({ target, suffix = "", duration = 2000, classNam
       window.requestAnimationFrame(step);
     };
 
-    return () => observer.disconnect();
+    return () => {
+      clearTimeout(timer);
+      observer.disconnect();
+    };
   }, [target, suffix, duration]);
 
   return (
