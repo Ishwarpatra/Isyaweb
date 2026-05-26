@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Search } from "lucide-react";
 import { ImageWithFallback } from "../components/figma/ImageWithFallback";
 import { useScrollReveal } from "../hooks/useScrollReveal";
 
@@ -26,7 +26,7 @@ const ALL_POSTS = [
 const POSTS_PER_PAGE = 6;
 
 export function BlogPage() {
-  const sectionRef = useScrollReveal();
+  const sectionRef = useScrollReveal<HTMLDivElement>();
   const [activeCategory, setActiveCategory] = useState("ALL");
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
@@ -46,50 +46,35 @@ export function BlogPage() {
   const paginated = grid.slice((currentPage - 1) * POSTS_PER_PAGE, currentPage * POSTS_PER_PAGE);
 
   return (
-    <div ref={sectionRef as React.RefObject<HTMLDivElement>} className="stardust" style={{ background: "#0B0F19", minHeight: "100vh" }}>
+    <div ref={sectionRef} className="stardust bg-[#0B0F19] min-h-screen">
       {/* ── Sticky search + filter bar ── */}
-      <div
-        className="sticky top-16 z-30"
-        style={{ background: "rgba(5,8,15,0.9)", backdropFilter: "blur(20px)", borderBottom: "1px solid rgba(236,72,153,0.1)" }}
-      >
+      <div className="sticky top-16 z-30 bg-[#05080F]/90 backdrop-blur-xl border-b border-pink-500/10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex flex-col sm:flex-row items-start sm:items-center gap-3">
           {/* Terminal search */}
-          <div className="relative flex items-center min-w-[240px]">
-            <span className="absolute left-3 font-mono" style={{ color: "#EC4899", fontSize: "0.75rem" }}>{">"}</span>
+          <div className="relative flex items-center min-w-[240px] w-full sm:w-auto">
+            <Search size={14} className="absolute left-3 text-pink-500" />
             <input
               type="text"
               placeholder="QUERY_ARCHIVES_ |"
+              aria-label="Search archives"
               value={searchQuery}
               onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
-              className="w-full pl-7 pr-4 py-2 font-mono outline-none"
-              style={{
-                background: "rgba(17,24,39,0.6)",
-                border: "1px solid rgba(236,72,153,0.2)",
-                borderRadius: 8,
-                color: "#fff",
-                fontSize: "0.72rem",
-                letterSpacing: "0.06em",
-              }}
+              className="w-full pl-9 pr-4 py-2 font-mono text-[0.72rem] tracking-wider text-white bg-gray-900/60 border border-pink-500/20 rounded-lg outline-none focus:border-pink-500/50 transition-colors"
             />
           </div>
           {/* Toggle filters */}
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-2" role="tablist" aria-label="Filter by category">
             {CATEGORIES.map((cat) => (
               <button
                 key={cat}
+                role="tab"
+                aria-selected={activeCategory === cat}
                 onClick={() => { setActiveCategory(cat); setCurrentPage(1); }}
-                className="font-mono btn-press"
-                style={{
-                  padding: "4px 12px",
-                  borderRadius: 6,
-                  fontSize: "0.6rem",
-                  letterSpacing: "0.1em",
-                  background: activeCategory === cat ? "rgba(236,72,153,0.2)" : "rgba(255,255,255,0.04)",
-                  color: activeCategory === cat ? "#EC4899" : "#9CA3AF",
-                  border: `1px solid ${activeCategory === cat ? "rgba(236,72,153,0.4)" : "rgba(255,255,255,0.06)"}`,
-                  fontWeight: activeCategory === cat ? 700 : 400,
-                  transition: "all 200ms ease",
-                }}
+                className={`px-3 py-1 rounded-md font-mono text-[0.6rem] tracking-widest transition-all ${
+                  activeCategory === cat 
+                    ? "bg-pink-500/20 text-pink-500 border border-pink-500/40 font-bold" 
+                    : "bg-white/5 text-gray-400 border border-white/5 hover:bg-white/10"
+                }`}
               >
                 [{cat}]
               </button>
@@ -101,64 +86,50 @@ export function BlogPage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14">
         {/* Header */}
         <div className="mb-10 reveal">
-          <p className="font-mono mb-2" style={{ color: "#EC4899", fontSize: "0.65rem", letterSpacing: "0.16em" }}>
+          <p className="font-mono text-pink-500 text-[0.65rem] tracking-[0.16em] mb-2">
             // DATA_ARCHIVES :: SECTOR_7G :: {filtered.length}_RECORDS_FOUND
           </p>
-          <h1 className="text-white" style={{ fontSize: "clamp(2rem, 5vw, 3rem)", fontWeight: 700, lineHeight: 1.2 }}>
+          <h1 className="text-white text-[clamp(2rem,5vw,3rem)] font-bold leading-tight">
             The Data Archives
           </h1>
         </div>
 
         {/* Featured article */}
         {featured && (
-          <article
-            className="rounded-xl overflow-hidden mb-10 group cursor-pointer hud-corners glass-card"
-            style={{ border: "1px solid rgba(236,72,153,0.12)" }}
-          >
+          <article className="rounded-xl overflow-hidden mb-10 group glass-card hud-corners border border-pink-500/10">
             <div className="grid grid-cols-1 md:grid-cols-2">
-              <div className="relative overflow-hidden" style={{ minHeight: 280 }}>
+              <div className="relative aspect-video md:aspect-auto min-h-[280px] overflow-hidden">
                 <ImageWithFallback
                   src={featured.image}
                   alt={featured.title}
                   className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.05]"
-                  style={{ minHeight: 280 }}
                 />
                 <div className="absolute top-3 left-3">
-                  <span
-                    className="font-mono px-2 py-1 rounded"
-                    style={{ background: "rgba(249,115,22,0.85)", color: "#000", fontSize: "0.6rem", letterSpacing: "0.1em", fontWeight: 700 }}
-                  >
+                  <span className="font-mono px-2 py-1 rounded bg-orange-500/90 text-black text-[0.6rem] font-bold tracking-wider">
                     ★ FEATURED_TRANSMISSION
                   </span>
                 </div>
-                {/* Data reveal */}
-                <div
-                  className="absolute bottom-0 left-0 right-0 px-4 py-2 translate-y-full group-hover:translate-y-0 transition-transform duration-300"
-                  style={{ background: "rgba(5,8,15,0.93)", backdropFilter: "blur(8px)" }}
-                >
-                  <p className="font-mono" style={{ color: "#EC4899", fontSize: "0.6rem", letterSpacing: "0.1em" }}>
-                    // SECTOR_READ_TIME: {featured.readTime} | AUTH_LEVEL: PUBLIC | CLEARANCE: OPEN
+                <div className="absolute bottom-0 left-0 right-0 px-4 py-2 translate-y-full group-hover:translate-y-0 transition-transform duration-300 bg-[#05080F]/90 backdrop-blur-md">
+                  <p className="font-mono text-pink-500 text-[0.6rem] tracking-wider">
+                    // SECTOR_READ_TIME: {featured.readTime} | AUTH_LEVEL: PUBLIC
                   </p>
                 </div>
               </div>
               <div className="p-8 flex flex-col justify-center">
-                <span
-                  className="font-mono inline-block px-2 py-1 rounded mb-4 self-start"
-                  style={{ background: `${featured.tagColor}18`, color: featured.tagColor, fontSize: "0.6rem", letterSpacing: "0.1em", border: `1px solid ${featured.tagColor}33` }}
-                >
+                <span className="font-mono inline-block px-2 py-1 rounded mb-4 self-start text-orange-500 text-[0.6rem] tracking-wider bg-orange-500/10 border border-orange-500/20">
                   {featured.tag}
                 </span>
-                <h2 className="text-white mb-4" style={{ fontSize: "1.4rem", fontWeight: 700, lineHeight: 1.3 }}>
+                <h2 className="text-white text-2xl font-bold leading-tight mb-4 group-hover:text-pink-500 transition-colors">
                   {featured.title}
                 </h2>
-                <p style={{ color: "#9CA3AF", lineHeight: 1.75, fontSize: "0.875rem", marginBottom: "1.5rem" }}>
+                <p className="text-gray-400 text-sm leading-relaxed mb-6">
                   {featured.excerpt}
                 </p>
-                <div className="flex items-center gap-2 font-mono" style={{ color: "#9CA3AF", fontSize: "0.62rem", letterSpacing: "0.08em" }}>
+                <div className="flex items-center gap-3 font-mono text-gray-500 text-[0.62rem] tracking-wider">
                   <span>{featured.date}</span>
-                  <span>|</span>
+                  <span className="w-1 h-1 rounded-full bg-gray-700" />
                   <span>{featured.author}</span>
-                  <span>|</span>
+                  <span className="w-1 h-1 rounded-full bg-gray-700" />
                   <span>{featured.readTime} READ</span>
                 </div>
               </div>
@@ -168,91 +139,74 @@ export function BlogPage() {
 
         {/* Article grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
-          {paginated.map((post, idx) => (
-            <article
-              key={post.id}
-              className={`rounded-xl overflow-hidden group cursor-pointer card-hover hud-corners reveal reveal-delay-${Math.min(idx + 1, 6)} glass-card`}
-              style={{ border: "1px solid rgba(255,255,255,0.06)" }}
-            >
-              <div className="relative overflow-hidden" style={{ height: 200 }}>
-                <ImageWithFallback
-                  src={post.image}
-                  alt={post.title}
-                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.08]"
-                />
-                {/* Tag over image */}
-                <div className="absolute top-3 left-3">
-                  <span
-                    className="font-mono px-2 py-0.5 rounded"
-                    style={{
-                      background: `${post.tagColor}25`,
-                      color: post.tagColor,
-                      fontSize: "0.58rem",
-                      letterSpacing: "0.1em",
-                      border: `1px solid ${post.tagColor}40`,
-                      backdropFilter: "blur(6px)",
-                    }}
-                  >
-                    {post.tag}
-                  </span>
+          {paginated.length > 0 ? (
+            paginated.map((post, idx) => (
+              <article
+                key={post.id}
+                className={`flex flex-col rounded-xl overflow-hidden group glass-card hud-corners border border-white/5 reveal reveal-delay-${Math.min(idx + 1, 6)}`}
+              >
+                <div className="relative aspect-[16/10] overflow-hidden">
+                  <ImageWithFallback
+                    src={post.image}
+                    alt={post.title}
+                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                  />
+                  <div className="absolute top-3 left-3">
+                    <span className="font-mono px-2 py-0.5 rounded text-[0.58rem] tracking-wider backdrop-blur-md" style={{ background: `${post.tagColor}25`, color: post.tagColor, border: `1px solid ${post.tagColor}40` }}>
+                      {post.tag}
+                    </span>
+                  </div>
+                  <div className="absolute bottom-0 left-0 right-0 px-3 py-1.5 translate-y-full group-hover:translate-y-0 transition-transform duration-300 bg-[#05080F]/90 backdrop-blur-md">
+                    <p className="font-mono text-pink-500 text-[0.56rem] tracking-wider">
+                      // READ_TIME: {post.readTime} | AUTH_LEVEL: PUBLIC
+                    </p>
+                  </div>
                 </div>
-                {/* Slide-up terminal data on hover */}
-                <div
-                  className="absolute bottom-0 left-0 right-0 px-3 py-1.5 translate-y-full group-hover:translate-y-0 transition-transform duration-300"
-                  style={{ background: "rgba(5,8,15,0.92)", backdropFilter: "blur(8px)" }}
-                >
-                  <p className="font-mono" style={{ color: "#EC4899", fontSize: "0.56rem", letterSpacing: "0.08em" }}>
-                    // READ_TIME: {post.readTime} | AUTH_LEVEL: PUBLIC
+                <div className="p-5 flex flex-col flex-1">
+                  <h3 className="text-white text-[0.925rem] font-semibold leading-relaxed mb-3 group-hover:text-pink-500 transition-colors line-clamp-2">
+                    {post.title}
+                  </h3>
+                  <p className="text-gray-400 text-[0.8rem] leading-relaxed mb-4 line-clamp-2">
+                    {post.excerpt}
                   </p>
+                  <div className="mt-auto flex items-center gap-2 font-mono text-gray-500 text-[0.6rem] tracking-wider">
+                    <span>{post.date}</span>
+                    <span className="w-1 h-1 rounded-full bg-gray-700" />
+                    <span>{post.author}</span>
+                  </div>
                 </div>
-              </div>
-              <div className="p-5">
-                <h3
-                  className="text-white mb-2"
-                  style={{
-                    fontSize: "0.925rem", fontWeight: 600, lineHeight: 1.4,
-                    display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden",
-                  }}
-                >
-                  {post.title}
-                </h3>
-                <p style={{ color: "#9CA3AF", fontSize: "0.8rem", lineHeight: 1.6, marginBottom: "0.875rem",
-                  display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
-                  {post.excerpt}
-                </p>
-                <div className="flex items-center gap-2 font-mono" style={{ color: "#9CA3AF", fontSize: "0.6rem", letterSpacing: "0.06em" }}>
-                  <span>{post.date}</span>
-                  <span>|</span>
-                  <span>{post.author}</span>
-                </div>
-              </div>
-            </article>
-          ))}
+              </article>
+            ))
+          ) : (
+            <div className="col-span-full py-20 text-center">
+              <p className="font-mono text-gray-500 text-sm tracking-widest">
+                [!] NO_RECORDS_MATCH_YOUR_QUERY_ |
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Pagination */}
         {totalPages > 1 && (
-          <div className="flex items-center justify-center gap-2">
+          <nav className="flex items-center justify-center gap-2" aria-label="Pagination">
             <button
               onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
               disabled={currentPage === 1}
-              className="w-9 h-9 rounded-lg flex items-center justify-center disabled:opacity-30 glass-card btn-press"
-              style={{ color: "#9CA3AF" }}
+              aria-label="Previous page"
+              className="w-10 h-10 rounded-lg flex items-center justify-center bg-white/5 border border-white/10 text-gray-400 disabled:opacity-20 hover:bg-white/10 transition-colors"
             >
-              <ChevronLeft size={16} />
+              <ChevronLeft size={18} />
             </button>
             {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
               <button
                 key={page}
                 onClick={() => setCurrentPage(page)}
-                className="w-9 h-9 rounded-lg flex items-center justify-center font-mono btn-press"
-                style={{
-                  background: currentPage === page ? "rgba(236,72,153,0.2)" : "rgba(17,24,39,0.5)",
-                  border: `1px solid ${currentPage === page ? "rgba(236,72,153,0.5)" : "rgba(255,255,255,0.06)"}`,
-                  color: currentPage === page ? "#EC4899" : "#9CA3AF",
-                  fontSize: "0.75rem",
-                  fontWeight: currentPage === page ? 700 : 400,
-                }}
+                aria-current={currentPage === page ? "page" : undefined}
+                className={`w-10 h-10 rounded-lg font-mono text-xs transition-all ${
+                  currentPage === page 
+                    ? "bg-pink-500/20 text-pink-500 border border-pink-500/40 font-bold" 
+                    : "bg-white/5 text-gray-400 border border-white/10 hover:bg-white/10"
+                }`}
               >
                 {page}
               </button>
@@ -260,18 +214,12 @@ export function BlogPage() {
             <button
               onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
               disabled={currentPage === totalPages}
-              className="w-9 h-9 rounded-lg flex items-center justify-center disabled:opacity-30 glass-card btn-press"
-              style={{ color: "#9CA3AF" }}
+              aria-label="Next page"
+              className="w-10 h-10 rounded-lg flex items-center justify-center bg-white/5 border border-white/10 text-gray-400 disabled:opacity-20 hover:bg-white/10 transition-colors"
             >
-              <ChevronRight size={16} />
+              <ChevronRight size={18} />
             </button>
-          </div>
-        )}
-
-        {filtered.length === 0 && (
-          <div className="text-center py-24 font-mono" style={{ color: "#9CA3AF", fontSize: "0.75rem", letterSpacing: "0.1em" }}>
-            // NO_RECORDS_FOUND :: QUERY_RETURNED_NULL
-          </div>
+          </nav>
         )}
       </div>
     </div>

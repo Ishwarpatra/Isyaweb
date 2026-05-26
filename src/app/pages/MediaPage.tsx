@@ -1,6 +1,7 @@
-import { useState } from "react";
-import { Play, Pause, Clock, Headphones, Youtube, ExternalLink, Radio } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Play, Pause, Clock, Headphones, Youtube, ExternalLink, Radio, X } from "lucide-react";
 import { ImageWithFallback } from "../components/figma/ImageWithFallback";
+import { useScrollReveal } from "../hooks/useScrollReveal";
 
 const OBS1 = "https://images.unsplash.com/photo-1727034394040-0377258a5791?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHx0ZWxlc2NvcGUlMjBvYnNlcnZhdG9yeSUyMG5pZ2h0JTIwc2t5JTIwc3RhcnN8ZW58MXx8fHwxNzc5MTIxMTY2fDA&ixlib=rb-4.1.0&q=80&w=1080";
 const NEBULA = "https://images.unsplash.com/photo-1706562018605-909733434781?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHw1fHxzcGFjZSUyMGdhbGF4eSUyMGNvc21vcyUyMGRhcmslMjBuZWJ1bGF8ZW58MXx8fHwxNzc5MTIxMTYwfDA&ixlib=rb-4.1.0&q=80&w=1080";
@@ -33,43 +34,11 @@ const INITIATIVES = [
   { id: 4, icon: "📡", title: "Space Data Hackathon", code: "INIT_HACKATHON", description: "Analyze real mission data and compete for prizes from leading space agencies.", participants: 215, status: "UPCOMING" },
 ];
 
-const EQ_BAR_DELAYS = [0, 0.15, 0.3, 0.1, 0.25, 0.05, 0.2];
-
-function EQBars({ active }: { active: boolean }) {
-  return (
-    <div className="flex items-end gap-0.5" style={{ height: 20 }}>
-      {EQ_BAR_DELAYS.map((delay, i) => (
-        <div
-          key={i}
-          style={{
-            width: 3,
-            height: active ? undefined : 4,
-            background: "#EC4899",
-            borderRadius: 2,
-            animation: active ? `eq-bar 0.6s ease-in-out ${delay}s infinite alternate` : "none",
-            minHeight: 4,
-            maxHeight: 20,
-          }}
-        />
-      ))}
-    </div>
-  );
-}
-
 function LiveBeacon() {
   return (
-    <div
-      className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full"
-      style={{
-        background: "rgba(16,185,129,0.1)",
-        border: "1px solid rgba(16,185,129,0.25)",
-      }}
-    >
-      <span
-        className="animate-live-pulse inline-block w-2 h-2 rounded-full"
-        style={{ background: "#10B981", boxShadow: "0 0 6px #10B981" }}
-      />
-      <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.65rem", color: "#10B981", letterSpacing: "0.12em" }}>
+    <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/25">
+      <span className="animate-live-pulse inline-block w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_6px_#10B981]" />
+      <span className="font-mono text-[0.65rem] text-emerald-500 tracking-[0.12em]">
         LIVE_TRANSMISSION
       </span>
     </div>
@@ -77,10 +46,9 @@ function LiveBeacon() {
 }
 
 export function MediaPage() {
+  const sectionRef = useScrollReveal<HTMLDivElement>();
   const [activeTab, setActiveTab] = useState<"videos" | "podcasts" | "initiatives">("videos");
   const [lightboxVideo, setLightboxVideo] = useState<string | null>(null);
-  const [playingPodcast, setPlayingPodcast] = useState<number | null>(null);
-  const [progress, setProgress] = useState<Record<number, number>>({});
 
   const tabs = [
     { id: "videos" as const, label: "VIDEO_ARCHIVE", icon: Youtube },
@@ -88,96 +56,65 @@ export function MediaPage() {
     { id: "initiatives" as const, label: "ACTIVE_MISSIONS", icon: Radio },
   ];
 
-  const statusColors: Record<string, { bg: string; color: string }> = {
-    ACTIVE: { bg: "rgba(16,185,129,0.12)", color: "#10B981" },
-    ENROLLING: { bg: "rgba(249,115,22,0.12)", color: "#F97316" },
-    UPCOMING: { bg: "rgba(59,130,246,0.12)", color: "#3B82F6" },
+  const statusColors: Record<string, string> = {
+    ACTIVE: "text-emerald-500 bg-emerald-500/10 border-emerald-500/20",
+    ENROLLING: "text-orange-500 bg-orange-500/10 border-orange-500/20",
+    UPCOMING: "text-blue-500 bg-blue-500/10 border-blue-500/20",
   };
 
+  useEffect(() => {
+    if (lightboxVideo) {
+      document.body.style.overflow = "hidden";
+      const handleEscape = (e: KeyboardEvent) => {
+        if (e.key === "Escape") setLightboxVideo(null);
+      };
+      window.addEventListener("keydown", handleEscape);
+      return () => {
+        document.body.style.overflow = "";
+        window.removeEventListener("keydown", handleEscape);
+      };
+    }
+  }, [lightboxVideo]);
+
   return (
-    <div style={{ background: "#0B0F19", minHeight: "100vh" }} className="stardust">
+    <div ref={sectionRef} className="stardust bg-[#0B0F19] min-h-screen">
       {/* Header */}
-      <div
-        className="pt-20 pb-14 text-center relative overflow-hidden"
-        style={{ background: "linear-gradient(180deg, #05080F 0%, #0B0F19 100%)" }}
-      >
-        <div
-          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full pointer-events-none animate-pulse-glow"
-          style={{ background: "rgba(236,72,153,0.08)", filter: "blur(120px)" }}
-        />
-        <div
-          className="absolute top-1/3 left-1/4 w-72 h-72 rounded-full pointer-events-none animate-pulse-glow"
-          style={{ background: "rgba(59,130,246,0.07)", filter: "blur(100px)", animationDelay: "3s" }}
-        />
+      <div className="pt-20 pb-14 text-center relative overflow-hidden bg-gradient-to-b from-[#05080F] to-[#0B0F19]">
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full pointer-events-none animate-pulse-glow bg-pink-500/10 blur-[120px]" />
         <div className="relative z-10 max-w-3xl mx-auto px-4">
           <div className="flex items-center justify-center gap-3 mb-4">
             <LiveBeacon />
           </div>
-          <p
-            className="mb-3"
-            style={{ fontFamily: "'JetBrains Mono', monospace", color: "#EC4899", fontSize: "0.7rem", letterSpacing: "0.2em" }}
-          >
+          <p className="font-mono text-pink-500 text-[0.7rem] tracking-[0.2em] mb-3">
             // ISYA_MEDIA_NODE :: TRANSMISSION_HUB
           </p>
-          <h1
-            className="text-white mb-4"
-            style={{ fontSize: "clamp(2rem, 5vw, 3rem)", fontWeight: 700, lineHeight: 1.2, letterSpacing: "-0.02em" }}
-          >
+          <h1 className="text-white text-[clamp(2rem,5vw,3rem)] font-bold leading-tight tracking-tight mb-4">
             Watch, Listen, Explore
           </h1>
-          <p style={{ color: "#6B7280", lineHeight: 1.7, fontSize: "0.9rem" }}>
+          <p className="text-gray-500 text-[0.9rem] leading-relaxed">
             Discover videos, podcasts, and missions from the ISYA community — all in one place.
           </p>
-
-          {/* Signal bars decoration */}
-          <div className="flex items-end justify-center gap-1 mt-6">
-            {[8, 12, 16, 20, 16, 12, 8, 12, 16, 20, 16, 12, 8].map((h, i) => (
-              <div
-                key={i}
-                style={{
-                  width: 3,
-                  height: h,
-                  background: i === 4 || i === 8 ? "#EC4899" : "rgba(236,72,153,0.3)",
-                  borderRadius: 2,
-                  animation: `eq-bar 0.8s ease-in-out ${i * 0.06}s infinite alternate`,
-                }}
-              />
-            ))}
-          </div>
         </div>
       </div>
 
       {/* Tabs */}
-      <div
-        className="sticky top-16 z-30"
-        style={{
-          background: "rgba(5,8,15,0.92)",
-          backdropFilter: "blur(20px) saturate(180%)",
-          borderBottom: "1px solid rgba(236,72,153,0.08)",
-        }}
-      >
+      <div className="sticky top-16 z-30 bg-[#05080F]/90 backdrop-blur-xl border-b border-pink-500/10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center gap-1 overflow-x-auto">
+          <div className="flex items-center gap-1 overflow-x-auto scrollbar-hide" role="tablist">
             {tabs.map(({ id, label, icon: Icon }) => (
               <button
                 key={id}
+                role="tab"
+                aria-selected={activeTab === id}
                 onClick={() => setActiveTab(id)}
-                className="flex items-center gap-2 px-5 py-4 transition-all duration-200 relative shrink-0"
-                style={{
-                  color: activeTab === id ? "#EC4899" : "#4B5563",
-                  fontFamily: "'JetBrains Mono', monospace",
-                  fontSize: "0.7rem",
-                  letterSpacing: "0.1em",
-                  fontWeight: activeTab === id ? 600 : 400,
-                }}
+                className={`flex items-center gap-2 px-5 py-4 transition-all duration-200 relative shrink-0 font-mono text-[0.7rem] tracking-widest ${
+                  activeTab === id ? "text-pink-500 font-bold" : "text-gray-500 hover:text-gray-300"
+                }`}
               >
                 <Icon size={14} />
                 {label}
                 {activeTab === id && (
-                  <div
-                    className="absolute bottom-0 left-0 right-0 h-0.5"
-                    style={{ background: "linear-gradient(90deg, transparent, #EC4899, transparent)" }}
-                  />
+                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-pink-500 to-transparent" />
                 )}
               </button>
             ))}
@@ -186,433 +123,150 @@ export function MediaPage() {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        {/* ── Videos ── */}
+        {/* Videos */}
         {activeTab === "videos" && (
-          <div>
-            <div
-              className="flex items-center gap-3 mb-8"
-              style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.65rem", color: "#374151", letterSpacing: "0.1em" }}
-            >
-              <span style={{ color: "#EC4899" }}>▶</span>
+          <div role="tabpanel">
+            <div className="flex items-center gap-3 mb-8 font-mono text-[0.65rem] text-gray-700 tracking-wider">
+              <span className="text-pink-500">▶</span>
               SECTOR_ARCHIVE :: VIDEO_FEEDS // {VIDEOS.length}_RECORDINGS_INDEXED
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {VIDEOS.map((video, idx) => (
-                <div
+                <button
                   key={video.id}
-                  className="rounded-xl overflow-hidden group cursor-pointer transition-all duration-400 relative"
-                  style={{
-                    background: "rgba(17,24,39,0.5)",
-                    border: "1px solid rgba(236,72,153,0.08)",
-                    backdropFilter: "blur(8px)",
-                  }}
                   onClick={() => setLightboxVideo(video.youtubeId)}
-                  onMouseEnter={(e) => {
-                    (e.currentTarget as HTMLDivElement).style.border = "1px solid rgba(236,72,153,0.25)";
-                    (e.currentTarget as HTMLDivElement).style.boxShadow = "0 0 30px rgba(236,72,153,0.08), 0 8px 32px rgba(0,0,0,0.4)";
-                    (e.currentTarget as HTMLDivElement).style.transform = "translateY(-4px)";
-                  }}
-                  onMouseLeave={(e) => {
-                    (e.currentTarget as HTMLDivElement).style.border = "1px solid rgba(236,72,153,0.08)";
-                    (e.currentTarget as HTMLDivElement).style.boxShadow = "none";
-                    (e.currentTarget as HTMLDivElement).style.transform = "translateY(0)";
-                  }}
+                  className="text-left rounded-xl overflow-hidden group bg-gray-900/50 border border-pink-500/10 backdrop-blur-md transition-all hover:-translate-y-1 hover:border-pink-500/30 hover:shadow-[0_8px_32px_rgba(0,0,0,0.4)] relative"
                 >
-                  {/* HUD corner brackets */}
                   <div className="hud-corners absolute inset-0 pointer-events-none z-10" />
-
-                  <div className="relative overflow-hidden" style={{ aspectRatio: "16/9" }}>
+                  <div className="relative aspect-video overflow-hidden">
                     <ImageWithFallback
                       src={video.image}
                       alt={video.title}
                       className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                     />
-                    {/* Scan line overlay */}
-                    <div
-                      className="absolute inset-0 pointer-events-none"
-                      style={{ background: "repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.04) 2px, rgba(0,0,0,0.04) 4px)" }}
-                    />
-                    <div
-                      className="absolute inset-0 flex items-center justify-center transition-all duration-300"
-                      style={{ background: "rgba(5,8,15,0.45)" }}
-                    >
-                      <div
-                        className="w-14 h-14 rounded-full flex items-center justify-center transition-all duration-300 group-hover:scale-110"
-                        style={{
-                          background: "rgba(236,72,153,0.85)",
-                          boxShadow: "0 0 30px rgba(236,72,153,0.4)",
-                        }}
-                      >
+                    <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                      <div className="w-14 h-14 rounded-full bg-pink-500/80 flex items-center justify-center shadow-[0_0_30px_rgba(236,72,153,0.4)] group-hover:scale-110 transition-transform">
                         <Play size={20} className="text-white ml-0.5" />
                       </div>
                     </div>
-                    {/* Live badge */}
                     {video.isLive && (
-                      <div className="absolute top-2 left-2">
+                      <div className="absolute top-2 left-2 scale-75 origin-top-left">
                         <LiveBeacon />
                       </div>
                     )}
-                    {/* Duration */}
-                    <div
-                      className="absolute bottom-2 right-2 px-2 py-0.5 rounded"
-                      style={{
-                        background: "rgba(5,8,15,0.9)",
-                        color: "#E5E7EB",
-                        fontFamily: "'JetBrains Mono', monospace",
-                        fontSize: "0.7rem",
-                        border: "1px solid rgba(255,255,255,0.06)",
-                      }}
-                    >
+                    <div className="absolute bottom-2 right-2 px-2 py-0.5 rounded bg-black/90 text-gray-200 font-mono text-[0.7rem] border border-white/10">
                       {video.duration}
                     </div>
-                    {/* Index */}
-                    <div
-                      className="absolute top-2 right-2 w-6 h-6 rounded flex items-center justify-center"
-                      style={{
-                        background: "rgba(5,8,15,0.8)",
-                        fontFamily: "'JetBrains Mono', monospace",
-                        fontSize: "0.6rem",
-                        color: "#4B5563",
-                        border: "1px solid rgba(255,255,255,0.04)",
-                      }}
-                    >
-                      {String(idx + 1).padStart(2, "0")}
-                    </div>
                   </div>
-
                   <div className="p-4">
-                    <h3
-                      className="text-white mb-2 transition-colors duration-200 group-hover:text-pink-300"
-                      style={{ fontSize: "0.9rem", fontWeight: 600, lineHeight: 1.4 }}
-                    >
+                    <h3 className="text-white font-semibold text-sm line-clamp-2 mb-3 group-hover:text-pink-500 transition-colors">
                       {video.title}
                     </h3>
-                    <div
-                      className="flex items-center gap-3"
-                      style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.6rem", color: "#374151", letterSpacing: "0.08em" }}
-                    >
-                      <span style={{ color: "#6B7280" }}>VIEWS_{video.views}</span>
-                      <span>|</span>
-                      <span style={{ color: "#EC4899" }}>AUTH_LEVEL: PUBLIC</span>
+                    <div className="flex items-center justify-between font-mono text-[0.6rem] text-gray-500">
+                      <span>{video.views} VIEWS</span>
+                      <span>IDX_{String(idx + 1).padStart(2, "0")}</span>
                     </div>
                   </div>
-                </div>
+                </button>
               ))}
             </div>
           </div>
         )}
 
-        {/* ── Podcasts ── */}
+        {/* Podcasts */}
         {activeTab === "podcasts" && (
-          <div className="max-w-3xl mx-auto">
-            <div
-              className="flex items-center gap-3 mb-8"
-              style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.65rem", color: "#374151", letterSpacing: "0.1em" }}
-            >
-              <span style={{ color: "#EC4899" }}>◉</span>
-              AUDIO_CHANNEL :: ISYA_FREQUENCY // {PODCASTS.length}_EPISODES_AVAILABLE
-            </div>
-
-            {/* Now Playing indicator */}
-            {playingPodcast !== null && (
+          <div role="tabpanel" className="max-w-4xl mx-auto space-y-4">
+            {PODCASTS.map((podcast) => (
               <div
-                className="flex items-center gap-4 p-4 rounded-xl mb-6"
-                style={{
-                  background: "rgba(236,72,153,0.06)",
-                  border: "1px solid rgba(236,72,153,0.2)",
-                }}
+                key={podcast.id}
+                className="p-6 rounded-xl bg-gray-900/50 border border-pink-500/10 backdrop-blur-md flex flex-col sm:flex-row items-start sm:items-center gap-6 group hover:border-pink-500/30 transition-colors"
               >
-                <EQBars active={true} />
-                <div>
-                  <p style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.6rem", color: "#EC4899", letterSpacing: "0.12em" }}>
-                    NOW_BROADCASTING
-                  </p>
-                  <p className="text-white" style={{ fontSize: "0.85rem", fontWeight: 600, marginTop: 2 }}>
-                    {PODCASTS.find((p) => p.id === playingPodcast)?.title}
+                <button className="w-12 h-12 rounded-full bg-pink-500/10 flex items-center justify-center text-pink-500 hover:bg-pink-500 hover:text-white transition-all shrink-0">
+                  <Play size={20} className="ml-0.5" />
+                </button>
+                <div className="flex-1">
+                  <div className="flex items-center gap-3 mb-1 font-mono text-[0.6rem] text-pink-500 tracking-wider">
+                    <span>{podcast.episode}</span>
+                    <span className="w-1 h-1 rounded-full bg-pink-500/30" />
+                    <span>{podcast.freq}</span>
+                  </div>
+                  <h3 className="text-white font-bold text-lg group-hover:text-pink-500 transition-colors">
+                    {podcast.title}
+                  </h3>
+                  <p className="text-gray-500 text-sm mt-1">
+                    GUEST: {podcast.guest}
                   </p>
                 </div>
-              </div>
-            )}
-
-            <div className="flex flex-col gap-3">
-              {PODCASTS.map((ep) => {
-                const isPlaying = playingPodcast === ep.id;
-                return (
-                  <div
-                    key={ep.id}
-                    className="p-5 rounded-xl transition-all duration-300 relative"
-                    style={{
-                      background: isPlaying ? "rgba(236,72,153,0.05)" : "rgba(17,24,39,0.5)",
-                      border: `1px solid ${isPlaying ? "rgba(236,72,153,0.25)" : "rgba(236,72,153,0.06)"}`,
-                      backdropFilter: "blur(8px)",
-                    }}
-                  >
-                    {isPlaying && (
-                      <div className="hud-corners absolute inset-0 pointer-events-none" />
-                    )}
-                    <div className="flex items-center gap-4">
-                      {/* Play button */}
-                      <button
-                        onClick={() => setPlayingPodcast(isPlaying ? null : ep.id)}
-                        className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0 transition-all duration-200"
-                        style={{
-                          background: isPlaying ? "linear-gradient(135deg, #EC4899, #3B82F6)" : "rgba(236,72,153,0.1)",
-                          color: isPlaying ? "#fff" : "#EC4899",
-                          boxShadow: isPlaying ? "0 0 25px rgba(236,72,153,0.3)" : "none",
-                          border: isPlaying ? "none" : "1px solid rgba(236,72,153,0.2)",
-                        }}
-                        aria-label={isPlaying ? "Pause" : "Play"}
-                      >
-                        {isPlaying ? <Pause size={18} /> : <Play size={18} className="ml-0.5" />}
-                      </button>
-
-                      {/* Info */}
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-3 mb-1">
-                          <span
-                            style={{
-                              fontFamily: "'JetBrains Mono', monospace",
-                              fontSize: "0.65rem",
-                              color: "#EC4899",
-                              letterSpacing: "0.1em",
-                            }}
-                          >
-                            {ep.episode}
-                          </span>
-                          <span style={{ color: "#1F2937", fontSize: "0.65rem" }}>|</span>
-                          <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.65rem", color: "#4B5563", letterSpacing: "0.06em" }}>
-                            {ep.date}
-                          </span>
-                          <span style={{ color: "#1F2937", fontSize: "0.65rem" }}>|</span>
-                          <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.65rem", color: "#374151", letterSpacing: "0.06em" }}>
-                            FREQ_{ep.freq}
-                          </span>
-                        </div>
-                        <p
-                          className="text-white"
-                          style={{ fontSize: "0.92rem", fontWeight: 600, lineHeight: 1.3 }}
-                        >
-                          {ep.title}
-                        </p>
-                        <p
-                          style={{
-                            fontFamily: "'JetBrains Mono', monospace",
-                            fontSize: "0.62rem",
-                            color: "#4B5563",
-                            marginTop: "0.25rem",
-                            letterSpacing: "0.06em",
-                          }}
-                        >
-                          HOST: {ep.guest}
-                        </p>
-
-                        {/* Progress bar */}
-                        {isPlaying && (
-                          <div className="mt-3">
-                            <div className="relative">
-                              <input
-                                type="range"
-                                min={0}
-                                max={100}
-                                value={progress[ep.id] ?? 0}
-                                onChange={(e) =>
-                                  setProgress((prev) => ({ ...prev, [ep.id]: +e.target.value }))
-                                }
-                                className="w-full"
-                                style={{ height: 3, accentColor: "#EC4899" }}
-                              />
-                            </div>
-                            <div
-                              className="flex justify-between mt-1"
-                              style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.6rem", color: "#374151" }}
-                            >
-                              <span>00:00</span>
-                              <span>{ep.duration}</span>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Right side */}
-                      <div className="shrink-0 flex flex-col items-end gap-2">
-                        {isPlaying ? (
-                          <EQBars active={true} />
-                        ) : (
-                          <div className="flex items-center gap-1" style={{ color: "#374151" }}>
-                            <Clock size={12} />
-                          </div>
-                        )}
-                        <span
-                          style={{
-                            fontFamily: "'JetBrains Mono', monospace",
-                            fontSize: "0.65rem",
-                            color: "#4B5563",
-                          }}
-                        >
-                          {ep.duration}
-                        </span>
-                      </div>
-                    </div>
+                <div className="flex flex-col items-end gap-1 font-mono text-[0.65rem] text-gray-600 shrink-0">
+                  <div className="flex items-center gap-1.5">
+                    <Clock size={12} />
+                    {podcast.duration}
                   </div>
-                );
-              })}
-            </div>
+                  <div>{podcast.date}</div>
+                </div>
+              </div>
+            ))}
           </div>
         )}
 
-        {/* ── Initiatives ── */}
+        {/* Initiatives */}
         {activeTab === "initiatives" && (
-          <div>
-            <div
-              className="flex items-center gap-3 mb-8"
-              style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.65rem", color: "#374151", letterSpacing: "0.1em" }}
-            >
-              <span style={{ color: "#EC4899" }}>◈</span>
-              MISSION_CONTROL :: ACTIVE_OPERATIONS // {INITIATIVES.length}_MISSIONS_TRACKED
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-              {INITIATIVES.map((init) => {
-                const sc = statusColors[init.status] ?? statusColors.UPCOMING;
-                return (
-                  <div
-                    key={init.id}
-                    className="p-8 rounded-xl transition-all duration-300 cursor-pointer group relative"
-                    style={{
-                      background: "rgba(17,24,39,0.5)",
-                      border: "1px solid rgba(236,72,153,0.08)",
-                      backdropFilter: "blur(8px)",
-                    }}
-                    onMouseEnter={(e) => {
-                      (e.currentTarget as HTMLDivElement).style.border = "1px solid rgba(236,72,153,0.2)";
-                      (e.currentTarget as HTMLDivElement).style.transform = "translateY(-3px)";
-                      (e.currentTarget as HTMLDivElement).style.boxShadow = "0 0 25px rgba(236,72,153,0.06)";
-                    }}
-                    onMouseLeave={(e) => {
-                      (e.currentTarget as HTMLDivElement).style.border = "1px solid rgba(236,72,153,0.08)";
-                      (e.currentTarget as HTMLDivElement).style.transform = "translateY(0)";
-                      (e.currentTarget as HTMLDivElement).style.boxShadow = "none";
-                    }}
-                  >
-                    <div className="hud-corners absolute inset-0 pointer-events-none" />
-
-                    <div className="flex items-start justify-between mb-5">
-                      <div>
-                        <div
-                          className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl mb-3"
-                          style={{ background: "rgba(236,72,153,0.08)", border: "1px solid rgba(236,72,153,0.12)" }}
-                        >
-                          {init.icon}
-                        </div>
-                        <p style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.6rem", color: "#374151", letterSpacing: "0.1em" }}>
-                          {init.code}
-                        </p>
-                      </div>
-                      <span
-                        className="px-3 py-1 rounded-full"
-                        style={{
-                          background: sc.bg,
-                          color: sc.color,
-                          fontFamily: "'JetBrains Mono', monospace",
-                          fontSize: "0.62rem",
-                          fontWeight: 600,
-                          letterSpacing: "0.08em",
-                          border: `1px solid ${sc.color}33`,
-                        }}
-                      >
-                        {init.status === "ACTIVE" && (
-                          <span className="animate-live-pulse inline-block w-1.5 h-1.5 rounded-full mr-1.5" style={{ background: sc.color }} />
-                        )}
-                        {init.status}
-                      </span>
-                    </div>
-
-                    <h3
-                      className="text-white mb-2 transition-colors duration-200"
-                      style={{ fontSize: "1.05rem", fontWeight: 700 }}
-                    >
-                      {init.title}
-                    </h3>
-                    <p style={{ color: "#6B7280", lineHeight: 1.6, fontSize: "0.85rem", marginBottom: "1.5rem" }}>
-                      {init.description}
-                    </p>
-
-                    <div className="flex items-center justify-between">
-                      <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.62rem", color: "#4B5563", letterSpacing: "0.08em" }}>
-                        AGENTS_ENROLLED: <span style={{ color: "#9CA3AF" }}>{init.participants}</span>
-                      </div>
-                      <button
-                        className="flex items-center gap-1.5 px-4 py-2 rounded-lg transition-all duration-200"
-                        style={{
-                          background: "rgba(236,72,153,0.08)",
-                          color: "#EC4899",
-                          fontFamily: "'JetBrains Mono', monospace",
-                          fontSize: "0.65rem",
-                          fontWeight: 600,
-                          letterSpacing: "0.08em",
-                          border: "1px solid rgba(236,72,153,0.18)",
-                        }}
-                      >
-                        ACCESS_DETAILS
-                        <ExternalLink size={11} />
-                      </button>
-                    </div>
+          <div role="tabpanel" className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {INITIATIVES.map((init) => (
+              <div
+                key={init.id}
+                className="p-8 rounded-2xl glass-card hud-corners border border-white/5 flex flex-col gap-6 group hover:border-pink-500/20 transition-colors"
+              >
+                <div className="flex items-start justify-between">
+                  <div className="text-4xl">{init.icon}</div>
+                  <span className={`px-3 py-1 rounded-full font-mono text-[0.6rem] font-bold tracking-wider border ${statusColors[init.status]}`}>
+                    {init.status}
+                  </span>
+                </div>
+                <div>
+                  <div className="font-mono text-[0.65rem] text-pink-500 tracking-wider mb-1">
+                    // {init.code}
                   </div>
-                );
-              })}
-            </div>
+                  <h3 className="text-white text-xl font-bold mb-3 group-hover:text-pink-500 transition-colors">
+                    {init.title}
+                  </h3>
+                  <p className="text-gray-400 text-sm leading-relaxed">
+                    {init.description}
+                  </p>
+                </div>
+                <div className="mt-auto pt-6 border-t border-white/5 flex items-center justify-between">
+                  <div className="font-mono text-[0.65rem] text-gray-500">
+                    PARTICIPANTS: {init.participants}
+                  </div>
+                  <button className="flex items-center gap-2 text-blue-500 font-mono text-[0.65rem] font-bold tracking-widest hover:text-blue-400 transition-colors">
+                    ENLIST_NOW →
+                  </button>
+                </div>
+              </div>
+            ))}
           </div>
         )}
       </div>
 
       {/* Lightbox */}
       {lightboxVideo && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4"
-          style={{ background: "rgba(5,8,15,0.95)", backdropFilter: "blur(12px)" }}
-          onClick={() => setLightboxVideo(null)}
-        >
-          <div
-            className="w-full max-w-4xl rounded-2xl overflow-hidden relative"
-            style={{ border: "1px solid rgba(236,72,153,0.2)", boxShadow: "0 0 80px rgba(236,72,153,0.1)" }}
-            onClick={(e) => e.stopPropagation()}
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/95 backdrop-blur-sm">
+          <button
+            onClick={() => setLightboxVideo(null)}
+            className="absolute top-6 right-6 p-3 text-gray-400 hover:text-white transition-colors"
+            aria-label="Close video"
           >
-            <div className="hud-corners absolute inset-0 pointer-events-none z-10" />
-            {/* Telemetry header */}
-            <div
-              className="flex items-center justify-between px-4 py-2"
-              style={{ background: "rgba(5,8,15,0.9)", borderBottom: "1px solid rgba(236,72,153,0.1)" }}
-            >
-              <div
-                style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.65rem", color: "#EC4899", letterSpacing: "0.1em" }}
-                className="flex items-center gap-2"
-              >
-                <span className="animate-live-pulse inline-block w-1.5 h-1.5 rounded-full" style={{ background: "#EC4899" }} />
-                STREAM_ACTIVE // VIDEO_FEED_OPEN
-              </div>
-              <button
-                onClick={() => setLightboxVideo(null)}
-                className="w-7 h-7 rounded flex items-center justify-center transition-colors duration-150"
-                style={{
-                  background: "rgba(236,72,153,0.1)",
-                  color: "#EC4899",
-                  fontFamily: "'JetBrains Mono', monospace",
-                  fontSize: "0.7rem",
-                  border: "1px solid rgba(236,72,153,0.2)",
-                }}
-                aria-label="Close"
-              >
-                ✕
-              </button>
-            </div>
-            <div style={{ aspectRatio: "16/9" }}>
-              <iframe
-                className="w-full h-full"
-                src={`https://www.youtube.com/embed/${lightboxVideo}?autoplay=1`}
-                allow="autoplay; fullscreen"
-                allowFullScreen
-                title="Video player"
-              />
-            </div>
+            <X size={32} />
+          </button>
+          <div className="w-full max-w-5xl aspect-video bg-black rounded-2xl overflow-hidden shadow-2xl border border-white/10">
+            <iframe
+              src={`https://www.youtube.com/embed/${lightboxVideo}?autoplay=1`}
+              title="YouTube video player"
+              frameBorder="0"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+              className="w-full h-full"
+            />
           </div>
         </div>
       )}

@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 
-export function useScrollReveal() {
-  const ref = useRef<HTMLElement | null>(null);
+export function useScrollReveal<T extends HTMLElement = HTMLElement>() {
+  const ref = useRef<T>(null);
 
   useEffect(() => {
     const el = ref.current;

@@ -42,10 +42,10 @@ const pillars = [
 ];
 
 const counters = [
-  { raw: "8400+", label: "ACTIVE_MEMBERS", display: "8,400+" },
-  { raw: "60+",   label: "NATIONS_REPRESENTED", display: "60+" },
-  { raw: "150+",  label: "PROJECTS_IN_ORBIT", display: "150+" },
-  { raw: "12",    label: "YEARS_OF_IMPACT", display: "12" },
+  { raw: 8400, label: "ACTIVE_MEMBERS", display: "8,400+" },
+  { raw: 60,   label: "NATIONS_REPRESENTED", display: "60+" },
+  { raw: 150,  label: "PROJECTS_IN_ORBIT", display: "150+" },
+  { raw: 12,    label: "YEARS_OF_IMPACT", display: "12" },
 ];
 
 const latestPosts = [
@@ -82,143 +82,72 @@ const latestPosts = [
 ];
 
 export function LandingPage() {
-  const sectionRef = useScrollReveal();
+  const sectionRef = useScrollReveal<HTMLDivElement>();
 
   return (
-    <div ref={sectionRef as React.RefObject<HTMLDivElement>} className="stardust" style={{ background: "#0B0F19" }}>
-
+    <div ref={sectionRef} className="stardust bg-[#0B0F19]">
       {/* ── HERO ── */}
-      <section
-        className="relative overflow-hidden hud-scanline"
-        style={{ minHeight: "100vh" }}
-      >
-        {/* Interactive starfield */}
+      <section className="relative overflow-hidden hud-scanline min-h-screen flex items-center">
         <StarfieldCanvas />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_50%_40%,rgba(11,15,25,0.3)_0%,rgba(11,15,25,0.82)_100%)]" />
+        
+        <div className="absolute top-1/3 left-1/4 w-96 h-96 rounded-full pointer-events-none animate-pulse-glow bg-pink-500/15 blur-[100px]" />
+        <div className="absolute bottom-1/4 right-1/5 w-80 h-80 rounded-full pointer-events-none animate-pulse-glow bg-blue-500/15 blur-[110px] [animation-delay:4s]" />
 
-        {/* Dim overlay */}
-        <div
-          className="absolute inset-0"
-          style={{
-            background:
-              "radial-gradient(ellipse 80% 60% at 50% 40%, rgba(11,15,25,0.3) 0%, rgba(11,15,25,0.82) 100%)",
-          }}
-        />
-
-        {/* Ambient glow blobs */}
-        <div
-          className="absolute top-1/3 left-1/4 w-96 h-96 rounded-full pointer-events-none animate-pulse-glow"
-          style={{ background: "rgba(236,72,153,0.18)", filter: "blur(100px)" }}
-        />
-        <div
-          className="absolute bottom-1/4 right-1/5 w-80 h-80 rounded-full pointer-events-none animate-pulse-glow"
-          style={{ background: "rgba(59,130,246,0.15)", filter: "blur(110px)", animationDelay: "4s" }}
-        />
-
-        {/* Content */}
-        <div
-          className="relative z-10 flex flex-col items-center justify-center text-center max-w-5xl mx-auto px-4 sm:px-6"
-          style={{ minHeight: "100vh", paddingTop: "5rem", paddingBottom: "5rem" }}
-        >
-          {/* Floating logo */}
-          <div className="mb-8 animate-float" style={{ filter: "drop-shadow(0 0 40px rgba(236,72,153,0.5)) drop-shadow(0 0 80px rgba(59,130,246,0.2))" }}>
-            <img src={logoImg} alt="ISYA" style={{ width: "clamp(160px, 20vw, 240px)" }} />
+        <div className="relative z-10 w-full max-w-5xl mx-auto px-4 sm:px-6 py-20 flex flex-col items-center text-center">
+          <div className="mb-8 animate-float drop-shadow-[0_0_40px_rgba(236,72,153,0.5)]">
+            <img src={logoImg} alt="ISYA Logo" width="200" height="200" className="w-[clamp(160px,20vw,240px)]" />
           </div>
 
-          {/* Status badge */}
-          <div
-            className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full mb-6 font-mono"
-            style={{
-              background: "rgba(16,185,129,0.12)",
-              border: "1px solid rgba(16,185,129,0.3)",
-              color: "#10B981",
-              fontSize: "0.7rem",
-              letterSpacing: "0.12em",
-            }}
-          >
-            <span className="animate-live-pulse w-1.5 h-1.5 rounded-full bg-green-400 inline-block" />
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full mb-6 font-mono text-[0.7rem] tracking-[0.12em] bg-emerald-500/10 border border-emerald-500/30 text-emerald-500">
+            <span className="animate-live-pulse w-1.5 h-1.5 rounded-full bg-emerald-400" />
             STATUS: ONLINE // ENLISTMENT_OPEN
           </div>
 
-          {/* Decode headline */}
-          <h1
-            className="text-white mb-5 max-w-4xl"
-            style={{ fontSize: "clamp(2.2rem, 5.5vw, 3.8rem)", fontWeight: 800, lineHeight: 1.1, letterSpacing: "-0.02em" }}
-          >
-            <TextDecode
-              text="Empowering the Next Generation"
-              delay={200}
-            />{" "}
-            <br />
-            <span
-              style={{
-                background: "linear-gradient(90deg, #F97316, #EC4899, #3B82F6)",
-                WebkitBackgroundClip: "text",
-                WebkitTextFillColor: "transparent",
-                backgroundClip: "text",
-              }}
-            >
-              <TextDecode text="of Space Explorers" delay={500} />
+          <h1 className="text-white mb-5 max-w-4xl text-[clamp(2.2rem,5.5vw,3.8rem)] font-extrabold leading-[1.1] tracking-tight">
+            <span className="sr-only">Empowering the Next Generation of Space Explorers</span>
+            <span aria-hidden="true">
+              <TextDecode text="Empowering the Next Generation" delay={200} />
+              <br />
+              <span className="bg-gradient-to-r from-orange-500 via-pink-500 to-blue-500 bg-clip-text text-transparent">
+                <TextDecode text="of Space Explorers" delay={500} />
+              </span>
             </span>
           </h1>
 
-          <p
-            className="mb-10 max-w-xl reveal"
-            style={{ color: "#9CA3AF", fontSize: "clamp(0.95rem, 1.8vw, 1.1rem)", lineHeight: 1.8 }}
-          >
+          <p className="mb-10 max-w-xl text-gray-400 text-[clamp(0.95rem,1.8vw,1.1rem)] leading-relaxed reveal">
             Join 8,400+ young scientists, engineers, and dreamers across 60+ nations — united
             by a shared mission to push the boundaries of space science.
           </p>
 
-          {/* CTAs */}
           <div className="flex flex-col sm:flex-row items-center gap-4 reveal reveal-delay-1">
             <Link
               to="/register"
-              className="group flex items-center gap-3 px-8 py-4 rounded-xl btn-press animate-gradient-shift"
-              style={{
-                background: "linear-gradient(135deg, #EC4899 0%, #F97316 50%, #EC4899 100%)",
-                backgroundSize: "200% auto",
-                color: "#fff",
-                fontWeight: 700,
-                fontSize: "0.85rem",
-                letterSpacing: "0.06em",
-                boxShadow: "0 0 35px rgba(236,72,153,0.45)",
-                fontFamily: "'JetBrains Mono', monospace",
-              }}
-              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.boxShadow = "0 0 50px rgba(236,72,153,0.7)"; }}
-              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.boxShadow = "0 0 35px rgba(236,72,153,0.45)"; }}
+              aria-label="Join Community"
+              className="group flex items-center gap-3 px-8 py-4 rounded-xl font-mono text-[0.85rem] font-bold tracking-wider text-white shadow-[0_0_35px_rgba(236,72,153,0.45)] bg-gradient-to-r from-pink-500 via-orange-500 to-pink-500 bg-[length:200%_auto] animate-gradient-shift hover:shadow-[0_0_50px_rgba(236,72,153,0.7)] active:scale-95 transition-all"
             >
               INITIATE_LAUNCH // JOIN_COMMUNITY
               <ArrowRight size={17} />
             </Link>
             <Link
               to="/media"
-              className="flex items-center gap-2 px-8 py-4 rounded-xl btn-press"
-              style={{
-                background: "rgba(59,130,246,0.08)",
-                border: "1px solid rgba(59,130,246,0.3)",
-                color: "#3B82F6",
-                fontWeight: 600,
-                fontSize: "0.875rem",
-                fontFamily: "'JetBrains Mono', monospace",
-                letterSpacing: "0.04em",
-              }}
+              className="flex items-center gap-2 px-8 py-4 rounded-xl font-mono text-sm font-semibold tracking-wide text-blue-500 bg-blue-500/10 border border-blue-500/30 hover:bg-blue-500/20 transition-colors"
             >
               EXPLORE_INITIATIVES →
             </Link>
           </div>
 
-          {/* Scroll indicator */}
-          <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 opacity-35">
-            <div className="w-px h-14" style={{ background: "linear-gradient(to bottom, transparent, #EC4899)" }} />
-            <div className="w-1.5 h-1.5 rounded-full" style={{ background: "#EC4899" }} />
+          <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 opacity-30" aria-hidden="true">
+            <div className="w-px h-14 bg-gradient-to-b from-transparent to-pink-500" />
+            <div className="w-1.5 h-1.5 rounded-full bg-pink-500" />
           </div>
         </div>
       </section>
 
       {/* ── TELEMETRY COUNTERS ── */}
-      <section style={{ background: "rgba(5,8,15,0.9)", borderTop: "1px solid rgba(236,72,153,0.12)", borderBottom: "1px solid rgba(236,72,153,0.12)" }}>
+      <section className="bg-[#05080F]/90 border-y border-pink-500/10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14">
-          <p className="text-center font-mono mb-8" style={{ color: "#9CA3AF", fontSize: "0.68rem", letterSpacing: "0.18em" }}>
+          <p className="text-center font-mono text-gray-500 text-[0.68rem] tracking-[0.18em] mb-8">
             // MISSION_CONTROL :: LIVE_TELEMETRY_FEED
           </p>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
@@ -226,21 +155,9 @@ export function LandingPage() {
               <div key={c.label} className="text-center">
                 <AnimatedCounter
                   target={c.display}
-                  className="block"
-                  style={{
-                    fontSize: "clamp(2rem, 4.5vw, 3rem)",
-                    fontWeight: 800,
-                    background: "linear-gradient(135deg, #EC4899, #F97316)",
-                    WebkitBackgroundClip: "text",
-                    WebkitTextFillColor: "transparent",
-                    backgroundClip: "text",
-                    lineHeight: 1,
-                  }}
+                  className="text-[clamp(2rem,4.5vw,3rem)] font-extrabold leading-none bg-gradient-to-br from-pink-500 to-orange-500 bg-clip-text text-transparent"
                 />
-                <p
-                  className="mt-2 font-mono"
-                  style={{ color: "#9CA3AF", fontSize: "0.65rem", letterSpacing: "0.14em" }}
-                >
+                <p className="mt-2 font-mono text-gray-500 text-[0.65rem] tracking-[0.14em]">
                   [{c.label}]
                 </p>
               </div>
@@ -252,13 +169,10 @@ export function LandingPage() {
       {/* ── THREE PILLARS ── */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
         <div className="text-center mb-16 reveal">
-          <p className="font-mono mb-3" style={{ color: "#EC4899", fontSize: "0.68rem", letterSpacing: "0.18em" }}>
+          <p className="font-mono text-pink-500 text-[0.68rem] tracking-[0.18em] mb-3">
             // MISSION_BRIEFING :: CORE_DIRECTIVES
           </p>
-          <h2
-            className="text-white"
-            style={{ fontSize: "clamp(1.8rem, 4vw, 2.5rem)", fontWeight: 700, lineHeight: 1.2 }}
-          >
+          <h2 className="text-white text-[clamp(1.8rem,4vw,2.5rem)] font-bold leading-tight">
             Three Pillars of the Program
           </h2>
         </div>
@@ -267,19 +181,16 @@ export function LandingPage() {
           {pillars.map((p, i) => (
             <div
               key={p.title}
-              className={`p-8 rounded-2xl card-hover hud-corners cursor-default reveal reveal-delay-${i + 1} glass-card`}
+              className={`p-8 rounded-2xl glass-card hud-corners reveal reveal-delay-${i + 1}`}
             >
-              <div className="text-4xl mb-4">{p.icon}</div>
-              <span
-                className="font-mono block mb-2"
-                style={{ color: "#EC4899", fontSize: "0.65rem", letterSpacing: "0.14em" }}
-              >
+              <div className="text-4xl mb-4" role="img" aria-label={p.label}>{p.icon}</div>
+              <span className="font-mono block text-pink-500 text-[0.65rem] tracking-[0.14em] mb-2">
                 // {p.label}
               </span>
-              <h3 className="text-white mb-3" style={{ fontSize: "1.2rem", fontWeight: 700 }}>
+              <h3 className="text-white text-xl font-bold mb-3">
                 {p.title}
               </h3>
-              <p style={{ color: "#9CA3AF", lineHeight: 1.75, fontSize: "0.875rem" }}>
+              <p className="text-gray-400 text-sm leading-relaxed">
                 {p.description}
               </p>
             </div>
@@ -288,49 +199,33 @@ export function LandingPage() {
       </section>
 
       {/* ── FEATURE BANNER ── */}
-      <section className="relative overflow-hidden">
+      <section className="relative overflow-hidden min-h-[500px] flex items-center">
         <div className="absolute inset-0">
           <ImageWithFallback
             src={ROCKET_IMG}
-            alt="Rocket launch"
-            className="w-full h-full object-cover object-center"
+            alt="Rocket launch background"
+            className="w-full h-full object-cover"
           />
-          <div
-            className="absolute inset-0"
-            style={{ background: "linear-gradient(90deg, rgba(11,15,25,0.97) 0%, rgba(11,15,25,0.7) 60%, rgba(11,15,25,0.94) 100%)" }}
-          />
+          <div className="absolute inset-0 bg-gradient-to-r from-[#0B0F19]/95 via-[#0B0F19]/70 to-[#0B0F19]/95" />
         </div>
-        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-28">
+        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
           <div className="max-w-xl reveal">
             <div className="flex items-center gap-2 mb-4">
-              <Globe size={15} style={{ color: "#3B82F6" }} />
-              <span className="font-mono" style={{ color: "#3B82F6", fontSize: "0.65rem", letterSpacing: "0.14em" }}>
+              <Globe size={15} className="text-blue-500" />
+              <span className="font-mono text-blue-500 text-[0.65rem] tracking-[0.14em]">
                 // GLOBAL_NETWORK :: STATUS_ACTIVE
               </span>
             </div>
-            <h2
-              className="text-white mb-5"
-              style={{ fontSize: "clamp(1.8rem, 4vw, 2.8rem)", fontWeight: 700, lineHeight: 1.2 }}
-            >
+            <h2 className="text-white text-[clamp(1.8rem,4vw,2.8rem)] font-bold leading-tight mb-5">
               Launch Your Space Career from Anywhere in the World
             </h2>
-            <p style={{ color: "#9CA3AF", lineHeight: 1.8, marginBottom: "2rem" }}>
+            <p className="text-gray-400 leading-relaxed mb-8">
               Whether you're in Lagos or London, Tokyo or Toronto — ISYA provides the mission
               toolkit, mentorship, and global command network to pursue your passion for space science.
             </p>
             <Link
               to="/register"
-              className="inline-flex items-center gap-2 px-7 py-3.5 rounded-xl btn-press animate-gradient-shift"
-              style={{
-                background: "linear-gradient(135deg, #EC4899 0%, #F97316 50%, #EC4899 100%)",
-                backgroundSize: "200% auto",
-                color: "#fff",
-                fontWeight: 700,
-                fontSize: "0.8rem",
-                fontFamily: "'JetBrains Mono', monospace",
-                letterSpacing: "0.06em",
-                boxShadow: "0 0 25px rgba(236,72,153,0.35)",
-              }}
+              className="inline-flex items-center gap-2 px-7 py-3.5 rounded-xl font-mono text-xs font-bold tracking-widest text-white shadow-[0_0_25px_rgba(236,72,153,0.35)] bg-gradient-to-r from-pink-500 via-orange-500 to-pink-500 bg-[length:200%_auto] animate-gradient-shift"
             >
               BEGIN_MISSION
               <ChevronRight size={17} />
@@ -343,123 +238,55 @@ export function LandingPage() {
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
         <div className="flex items-center justify-between mb-12 reveal">
           <div>
-            <p className="font-mono mb-2" style={{ color: "#EC4899", fontSize: "0.65rem", letterSpacing: "0.14em" }}>
+            <p className="font-mono text-pink-500 text-[0.65rem] tracking-[0.14em] mb-2">
               // DATA_ARCHIVES :: RECENT_TRANSMISSIONS
             </p>
-            <h2 className="text-white" style={{ fontSize: "clamp(1.6rem, 3vw, 2rem)", fontWeight: 700 }}>
+            <h2 className="text-white text-[clamp(1.6rem,3vw,2rem)] font-bold">
               From the ISYA Blog
             </h2>
           </div>
           <Link
             to="/blog"
-            className="hidden sm:flex items-center gap-1.5 font-mono"
-            style={{ color: "#3B82F6", fontSize: "0.7rem", letterSpacing: "0.08em" }}
+            className="hidden sm:flex items-center gap-1.5 font-mono text-blue-500 text-[0.7rem] tracking-wider hover:text-blue-400 transition-colors"
           >
-            VIEW_ALL_RECORDS →
+            VIEW_ALL_RECORDS
+            <ArrowRight size={14} />
           </Link>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {latestPosts.map((post, i) => (
-            <article
+            <Link
               key={post.id}
-              className={`rounded-xl overflow-hidden group cursor-pointer card-hover hud-corners reveal reveal-delay-${i + 1} glass-card`}
+              to={`/blog/${post.id}`}
+              className={`group flex flex-col rounded-2xl overflow-hidden glass-card reveal reveal-delay-${i + 1}`}
             >
-              <div className="relative overflow-hidden" style={{ height: 200 }}>
+              <div className="relative aspect-[16/10] overflow-hidden">
                 <ImageWithFallback
                   src={post.image}
                   alt={post.title}
-                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.08]"
+                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                 />
-                {/* Category tag over image */}
-                <div className="absolute top-3 left-3">
-                  <span
-                    className="font-mono px-2 py-1 rounded"
-                    style={{
-                      background: `${post.tagColor}22`,
-                      color: post.tagColor,
-                      fontSize: "0.6rem",
-                      letterSpacing: "0.1em",
-                      border: `1px solid ${post.tagColor}44`,
-                      backdropFilter: "blur(8px)",
-                    }}
-                  >
-                    {post.tag}
-                  </span>
-                </div>
-                {/* Data reveal on hover */}
-                <div
-                  className="absolute bottom-0 left-0 right-0 px-3 py-2 translate-y-full group-hover:translate-y-0 transition-transform duration-300"
-                  style={{ background: "rgba(5,8,15,0.92)", backdropFilter: "blur(8px)" }}
-                >
-                  <p className="font-mono" style={{ color: "#EC4899", fontSize: "0.6rem", letterSpacing: "0.1em" }}>
-                    // SECTOR_READ_TIME: {post.readTime} | AUTH_LEVEL: PUBLIC
-                  </p>
+                <div className="absolute top-4 left-4 px-3 py-1 rounded-md font-mono text-[0.6rem] font-bold tracking-wider text-white" style={{ background: post.tagColor }}>
+                  {post.tag}
                 </div>
               </div>
-              <div className="p-5">
-                <h3
-                  className="text-white mb-3"
-                  style={{ fontSize: "0.95rem", fontWeight: 600, lineHeight: 1.4, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}
-                >
+              <div className="p-6 flex flex-col flex-1">
+                <div className="flex items-center gap-3 mb-3 font-mono text-[0.6rem] text-gray-500 tracking-wider">
+                  <span>{post.date}</span>
+                  <span className="w-1 h-1 rounded-full bg-gray-700" />
+                  <span>BY_{post.author}</span>
+                </div>
+                <h3 className="text-white font-bold leading-snug mb-4 group-hover:text-pink-500 transition-colors line-clamp-2">
                   {post.title}
                 </h3>
-                <div className="flex items-center gap-2 font-mono" style={{ color: "#9CA3AF", fontSize: "0.62rem", letterSpacing: "0.08em" }}>
-                  <span>{post.date}</span>
-                  <span>|</span>
-                  <span>{post.author}</span>
+                <div className="mt-auto flex items-center justify-between">
+                  <span className="font-mono text-[0.6rem] text-gray-500">{post.readTime}_READ</span>
+                  <span className="text-blue-500 group-hover:translate-x-1 transition-transform">→</span>
                 </div>
               </div>
-            </article>
+            </Link>
           ))}
-        </div>
-      </section>
-
-      {/* ── JOIN CTA ── */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-28">
-        <div
-          className="rounded-2xl p-12 md:p-16 text-center relative overflow-hidden hud-corners reveal glass-card"
-        >
-          <div
-            className="absolute top-0 left-1/3 w-72 h-72 rounded-full pointer-events-none animate-pulse-glow"
-            style={{ background: "rgba(236,72,153,0.15)", filter: "blur(80px)", transform: "translateY(-50%)" }}
-          />
-          <div
-            className="absolute bottom-0 right-1/3 w-72 h-72 rounded-full pointer-events-none animate-pulse-glow"
-            style={{ background: "rgba(59,130,246,0.12)", filter: "blur(80px)", transform: "translateY(50%)", animationDelay: "4s" }}
-          />
-          <div className="relative z-10">
-            <img src={logoImg} alt="ISYA" className="mx-auto mb-6" style={{ width: 80, filter: "drop-shadow(0 0 18px rgba(236,72,153,0.6))" }} />
-            <h2 className="text-white mb-3" style={{ fontSize: "clamp(1.8rem, 4vw, 2.5rem)", fontWeight: 700, lineHeight: 1.2 }}>
-              Ready to Reach for the Stars?
-            </h2>
-            <p style={{ color: "#9CA3AF", maxWidth: 480, margin: "0 auto 2rem", lineHeight: 1.8 }}>
-              Join thousands of young space cadets and take your first step toward an extraordinary
-              career in space science.
-            </p>
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-              <Link
-                to="/register"
-                className="flex items-center gap-2 px-8 py-3.5 rounded-xl btn-press animate-gradient-shift font-mono"
-                style={{
-                  background: "linear-gradient(135deg, #EC4899 0%, #F97316 50%, #EC4899 100%)",
-                  backgroundSize: "200% auto",
-                  color: "#fff",
-                  fontWeight: 700,
-                  fontSize: "0.78rem",
-                  letterSpacing: "0.06em",
-                  boxShadow: "0 0 30px rgba(236,72,153,0.35)",
-                }}
-              >
-                ENLIST_NOW // FREE_ACCESS
-                <ArrowRight size={17} />
-              </Link>
-              <Link to="/blog" className="flex items-center gap-2 px-8 py-3.5 rounded-xl font-mono"
-                style={{ border: "1px solid rgba(255,255,255,0.1)", color: "#9CA3AF", fontSize: "0.78rem", letterSpacing: "0.04em" }}>
-                READ_TRANSMISSIONS
-              </Link>
-            </div>
-          </div>
         </div>
       </section>
     </div>

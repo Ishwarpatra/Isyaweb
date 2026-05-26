@@ -1,66 +1,73 @@
-import { useEffect, useRef, useState } from "react";
-
-const HEX_CHARS = "0123456789ABCDEF";
-const DECODE_DURATION = 700;
-const TICK_INTERVAL = 40;
-
-function randomHex(len: number) {
-  return Array.from({ length: len }, () =>
-    HEX_CHARS[Math.floor(Math.random() * HEX_CHARS.length)]
-  ).join("");
-}
+import { useEffect, useState, useRef } from "react";
 
 interface TextDecodeProps {
   text: string;
-  className?: string;
-  style?: React.CSSProperties;
   delay?: number;
+  duration?: number;
+  className?: string;
 }
 
-export function TextDecode({ text, className, style, delay = 0 }: TextDecodeProps) {
-  const [displayed, setDisplayed] = useState(() => randomHex(text.length));
-  const [done, setDone] = useState(false);
-  const startTime = useRef<number | null>(null);
-  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+const CHARS = "0123456789ABCDEF";
+
+export function TextDecode({ text, delay = 0, duration = 800, className = "" }: TextDecodeProps) {
+  const [displayText, setDisplayText] = useState(text);
+  const [isDecoding, setIsDecoding] = useState(false);
+  const hasAnimated = useRef(false);
+  const nodeRef = useRef<HTMLSpanElement>(null);
 
   useEffect(() => {
-    const timeout = setTimeout(() => {
-      startTime.current = Date.now();
-      timerRef.current = setInterval(() => {
-        const elapsed = Date.now() - (startTime.current ?? 0);
-        const progress = Math.min(elapsed / DECODE_DURATION, 1);
-        const lockedChars = Math.floor(progress * text.length);
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && !hasAnimated.current) {
+          hasAnimated.current = true;
+          setTimeout(startDecode, delay);
+        }
+      },
+      { threshold: 0.1 }
+    );
 
-        setDisplayed(
-          text.slice(0, lockedChars) +
-          randomHex(text.length - lockedChars)
+    if (nodeRef.current) {
+      observer.observe(nodeRef.current);
+    }
+
+    const startDecode = () => {
+      setIsDecoding(true);
+      let iteration = 0;
+      const totalIterations = Math.floor(duration / 40);
+      
+      const interval = setInterval(() => {
+        setDisplayText((prev) =>
+          text
+            .split("")
+            .map((char, index) => {
+              if (index < (iteration / totalIterations) * text.length) {
+                return text[index];
+              }
+              return CHARS[Math.floor(Math.random() * CHARS.length)];
+            })
+            .join("")
         );
 
-        if (progress >= 1) {
-          setDisplayed(text);
-          setDone(true);
-          clearInterval(timerRef.current!);
+        if (iteration >= totalIterations) {
+          clearInterval(interval);
+          setDisplayText(text);
+          setIsDecoding(false);
         }
-      }, TICK_INTERVAL);
-    }, delay);
 
-    return () => {
-      clearTimeout(timeout);
-      if (timerRef.current) clearInterval(timerRef.current);
+        iteration += 1;
+      }, 40);
     };
-  }, [text, delay]);
+
+    return () => observer.disconnect();
+  }, [text, delay, duration]);
 
   return (
-    <span
-      className={className}
-      style={{
-        ...style,
-        fontFamily: done ? "inherit" : "'JetBrains Mono', monospace",
-        letterSpacing: done ? "inherit" : "0.02em",
-        transition: "font-family 200ms ease",
-      }}
-    >
-      {displayed}
+    <span ref={nodeRef} className={className} aria-label={text}>
+      <span aria-hidden={isDecoding} className={isDecoding ? "font-mono opacity-80" : ""}>
+        {displayText}
+      </span>
+      {/* Hidden static text for SEO and Screen Readers during animation */}
+      {isDecoding && <span className="sr-only">{text}</span>}
     </span>
   );
 }

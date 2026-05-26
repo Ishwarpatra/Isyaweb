@@ -1,4 +1,4 @@
-import { createBrowserRouter } from "react-router";
+import { createBrowserRouter, Navigate } from "react-router";
 import { Root } from "./components/layout/Root";
 import { LandingPage } from "./pages/LandingPage";
 import { BlogPage } from "./pages/BlogPage";
@@ -8,7 +8,6 @@ import { RegisterPage } from "./pages/RegisterPage";
 import { CommunityPage } from "./pages/CommunityPage";
 import { AdminPage } from "./pages/AdminPage";
 import { NotFoundPage } from "./pages/NotFoundPage";
-import { ETSWorkspacePage } from "./pages/ETSWorkspacePage";
 
 export const router = createBrowserRouter([
   {
@@ -22,7 +21,10 @@ export const router = createBrowserRouter([
       { path: "register", Component: RegisterPage },
       { path: "community", Component: CommunityPage },
       { path: "admin", Component: AdminPage },
-      { path: "ets", Component: ETSWorkspacePage },
+      // Redirect utility routes to Home or NotFound for now to avoid broken links
+      { path: "reset-password", element: <Navigate to="/login" replace /> },
+      { path: "terms", element: <Navigate to="/" replace /> },
+      { path: "privacy", element: <Navigate to="/" replace /> },
       { path: "*", Component: NotFoundPage },
     ],
   },

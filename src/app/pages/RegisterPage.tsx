@@ -1,9 +1,18 @@
 import { useState } from "react";
 import { Link } from "react-router";
-import { Eye, EyeOff, ChevronRight } from "lucide-react";
+import { Eye, EyeOff, ChevronRight, ShieldCheck } from "lucide-react";
 import logoImg from "../../imports/Logo_ISYA__1_-2.jpeg";
 
-const INTERESTS = ["Astrophysics", "Robotics / Engineering", "Space Communications", "Astrobiology", "Data Science & AI", "Aerospace Design", "Space Policy", "Science Communication"];
+const INTERESTS = [
+  "Astrophysics", 
+  "Robotics / Engineering", 
+  "Space Communications", 
+  "Astrobiology", 
+  "Data Science & AI", 
+  "Aerospace Design", 
+  "Space Policy", 
+  "Science Communication"
+];
 
 const STEPS = [
   { id: 1, code: "IDENTIFICATION", label: "Identity" },
@@ -19,11 +28,11 @@ function shieldStrength(pw: string): { score: number; label: string; color: stri
   if (/[^A-Za-z0-9]/.test(pw)) score++;
   if (pw.length >= 12) score++;
   const levels = [
-    { label: "CRITICAL", color: "#EF4444" },
-    { label: "WEAK", color: "#F97316" },
-    { label: "NOMINAL", color: "#F59E0B" },
-    { label: "STRONG", color: "#10B981" },
-    { label: "MAXIMUM", color: "#3B82F6" },
+    { label: "CRITICAL", color: "text-red-500 bg-red-500" },
+    { label: "WEAK", color: "text-orange-500 bg-orange-500" },
+    { label: "NOMINAL", color: "text-yellow-500 bg-yellow-500" },
+    { label: "STRONG", color: "text-emerald-500 bg-emerald-500" },
+    { label: "MAXIMUM", color: "text-blue-500 bg-blue-500" },
   ];
   return { score, ...levels[Math.min(score, 4)] };
 }
@@ -49,159 +58,189 @@ export function RegisterPage() {
   };
 
   return (
-    <div
-      className="min-h-screen flex items-center justify-center px-4 py-20 relative overflow-hidden stardust"
-      style={{ background: "#0B0F19" }}
-    >
+    <div className="min-h-screen flex items-center justify-center px-4 py-20 relative overflow-hidden bg-[#0B0F19] stardust">
       {/* Breathing glow blobs */}
-      <div className="absolute top-1/4 right-0 w-96 h-96 rounded-full pointer-events-none animate-pulse-glow" style={{ background: "rgba(236,72,153,0.15)", filter: "blur(120px)" }} />
-      <div className="absolute bottom-1/4 left-0 w-96 h-96 rounded-full pointer-events-none animate-pulse-glow" style={{ background: "rgba(59,130,246,0.12)", filter: "blur(120px)", animationDelay: "4s" }} />
+      <div className="absolute top-1/4 right-0 w-96 h-96 rounded-full pointer-events-none animate-pulse-glow bg-pink-500/15 blur-[120px]" />
+      <div className="absolute bottom-1/4 left-0 w-96 h-96 rounded-full pointer-events-none animate-pulse-glow bg-blue-500/10 blur-[120px] [animation-delay:4s]" />
 
       <div className="w-full max-w-lg relative z-10">
         {/* Logo */}
-        <div className="flex flex-col items-center mb-8">
-          <img src={logoImg} alt="ISYA" className="mb-3" style={{ width: 100, filter: "drop-shadow(0 0 20px rgba(236,72,153,0.5))" }} />
-          <p className="font-mono" style={{ color: "#EC4899", fontSize: "0.7rem", letterSpacing: "0.16em" }}>
+        <div className="flex flex-col items-center mb-10">
+          <img 
+            src={logoImg} 
+            alt="ISYA Logo" 
+            width="100"
+            height="100"
+            className="w-[100px] mb-4 drop-shadow-[0_0_20px_rgba(236,72,153,0.5)] animate-float" 
+          />
+          <p className="font-mono text-pink-500 text-[0.7rem] tracking-[0.2em]">
             // ENLISTMENT_PORTAL :: SECURE_CHANNEL
           </p>
         </div>
 
-        {/* Rocket trajectory progress */}
-        <div className="flex items-center justify-center gap-0 mb-8">
+        {/* Progress Tracker */}
+        <div className="flex items-center justify-center mb-10" aria-label="Registration Progress">
           {STEPS.map((s, i) => (
             <div key={s.id} className="flex items-center">
               <div className="flex flex-col items-center">
                 <div
-                  className="w-8 h-8 rounded-full flex items-center justify-center font-mono transition-all duration-300"
-                  style={{
-                    background: step >= s.id ? "rgba(236,72,153,0.9)" : "rgba(17,24,39,0.8)",
-                    border: `1px solid ${step >= s.id ? "#EC4899" : "rgba(255,255,255,0.1)"}`,
-                    color: step >= s.id ? "#fff" : "#9CA3AF",
-                    fontSize: "0.7rem",
-                    fontWeight: 700,
-                    boxShadow: step === s.id ? "0 0 16px rgba(236,72,153,0.6)" : "none",
-                  }}
+                  className={`w-9 h-9 rounded-full flex items-center justify-center font-mono text-xs font-bold transition-all border ${
+                    step >= s.id 
+                      ? "bg-pink-500 text-white border-pink-500 shadow-[0_0_16px_rgba(236,72,153,0.4)]" 
+                      : "bg-gray-900/80 text-gray-600 border-white/10"
+                  }`}
                 >
                   {step > s.id ? "✓" : s.id}
                 </div>
-                <span className="font-mono mt-1" style={{ color: step >= s.id ? "#EC4899" : "#9CA3AF", fontSize: "0.55rem", letterSpacing: "0.08em" }}>
+                <span className={`font-mono text-[0.55rem] tracking-widest mt-2 ${step >= s.id ? "text-pink-500" : "text-gray-700"}`}>
                   {s.code}
                 </span>
               </div>
               {i < STEPS.length - 1 && (
-                <div className="mx-2 mb-4 flex items-center gap-0.5">
-                  {[0,1,2,3,4].map((d) => (
-                    <div key={d} className="w-2 h-px" style={{ background: step > s.id ? "#EC4899" : "rgba(255,255,255,0.12)" }} />
+                <div className="mx-4 mb-6 flex items-center gap-1">
+                  {[1, 2, 3].map((dot) => (
+                    <div 
+                      key={dot} 
+                      className={`w-1.5 h-1.5 rounded-full ${step > s.id ? "bg-pink-500" : "bg-white/5"}`} 
+                    />
                   ))}
-                  <span style={{ color: step > s.id ? "#EC4899" : "rgba(255,255,255,0.2)", fontSize: "0.65rem" }}>→</span>
                 </div>
               )}
             </div>
           ))}
         </div>
 
-        {/* Card */}
-        <div
-          className="rounded-2xl p-8 hud-corners glass-card"
-          style={{ border: "1px solid rgba(236,72,153,0.15)" }}
-        >
-          <h2 className="text-white mb-1" style={{ fontWeight: 700, fontSize: "1.3rem" }}>
-            {STEPS[step - 1].code.replace("_", " ")}
-          </h2>
-          <p className="font-mono mb-6" style={{ color: "#9CA3AF", fontSize: "0.65rem", letterSpacing: "0.1em" }}>
-            STEP {step} OF {STEPS.length} // {STEPS[step - 1].label.toUpperCase()}
-          </p>
+        {/* Form Card */}
+        <div className="rounded-2xl p-8 bg-gray-900/70 backdrop-blur-2xl border border-pink-500/15 shadow-2xl relative hud-corners">
+          <div className="mb-8">
+            <h2 className="text-white text-xl font-bold tracking-tight mb-1">
+              {STEPS[step - 1].code.replace("_", " ")}
+            </h2>
+            <p className="font-mono text-gray-500 text-[0.65rem] tracking-widest">
+              STEP {step} OF {STEPS.length} // {STEPS[step - 1].label.toUpperCase()}
+            </p>
+          </div>
 
-          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-
+          <form onSubmit={handleSubmit} className="space-y-6">
             {/* Step 1: Identification */}
             {step === 1 && (
-              <>
-                <div className="grid grid-cols-2 gap-3">
-                  {[{ id: "firstName", label: "FIRST_NAME", ph: "Emma" }, { id: "lastName", label: "LAST_NAME", ph: "Johnson" }].map((f) => (
-                    <div key={f.id}>
-                      <label className="font-mono block mb-1.5" style={{ color: "#9CA3AF", fontSize: "0.62rem", letterSpacing: "0.1em" }}>{f.label}</label>
-                      <input type="text" required placeholder={f.ph} className="w-full px-3 py-2.5 rounded-lg outline-none" style={{ background: "rgba(5,8,15,0.6)", border: "1px solid rgba(236,72,153,0.15)", color: "#fff", fontSize: "0.875rem", transition: "border-color 200ms" }}
-                        onFocus={(e) => { e.currentTarget.style.borderColor = "rgba(236,72,153,0.5)"; }}
-                        onBlur={(e) => { e.currentTarget.style.borderColor = "rgba(236,72,153,0.15)"; }}
-                      />
-                    </div>
-                  ))}
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label htmlFor="firstName" className="block font-mono text-[0.62rem] text-gray-500 tracking-widest mb-2">FIRST_NAME</label>
+                    <input 
+                      id="firstName"
+                      type="text" 
+                      required 
+                      placeholder="Emma" 
+                      className="w-full bg-gray-950/60 border border-pink-500/10 rounded-lg px-4 py-3 text-white text-sm focus:border-pink-500/50 outline-none transition-colors"
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="lastName" className="block font-mono text-[0.62rem] text-gray-500 tracking-widest mb-2">LAST_NAME</label>
+                    <input 
+                      id="lastName"
+                      type="text" 
+                      required 
+                      placeholder="Johnson" 
+                      className="w-full bg-gray-950/60 border border-pink-500/10 rounded-lg px-4 py-3 text-white text-sm focus:border-pink-500/50 outline-none transition-colors"
+                    />
+                  </div>
                 </div>
                 <div>
-                  <label className="font-mono block mb-1.5" style={{ color: "#9CA3AF", fontSize: "0.62rem", letterSpacing: "0.1em" }}>EMAIL_ADDRESS</label>
-                  <input type="email" required placeholder="cadet@example.com" className="w-full px-3 py-2.5 rounded-lg outline-none" style={{ background: "rgba(5,8,15,0.6)", border: "1px solid rgba(236,72,153,0.15)", color: "#fff", fontSize: "0.875rem" }}
-                    onFocus={(e) => { e.currentTarget.style.borderColor = "rgba(236,72,153,0.5)"; }}
-                    onBlur={(e) => { e.currentTarget.style.borderColor = "rgba(236,72,153,0.15)"; }}
+                  <label htmlFor="email" className="block font-mono text-[0.62rem] text-gray-500 tracking-widest mb-2">EMAIL_ADDRESS</label>
+                  <input 
+                    id="email"
+                    type="email" 
+                    required 
+                    placeholder="cadet@example.com" 
+                    className="w-full bg-gray-950/60 border border-pink-500/10 rounded-lg px-4 py-3 text-white text-sm focus:border-pink-500/50 outline-none transition-colors"
                   />
                 </div>
                 <div>
-                  <label className="font-mono block mb-1.5" style={{ color: "#9CA3AF", fontSize: "0.62rem", letterSpacing: "0.1em" }}>AGE_GRADE_LEVEL</label>
-                  <select required className="w-full px-3 py-2.5 rounded-lg outline-none appearance-none" style={{ background: "rgba(5,8,15,0.6)", border: "1px solid rgba(236,72,153,0.15)", color: "#9CA3AF", fontSize: "0.875rem" }}>
-                    <option value="">— SELECT —</option>
-                    {["14-15 (Secondary)", "16-17 (Secondary+)", "18-20 (Undergraduate)", "21-24 (Postgraduate)"].map((o) => (
-                      <option key={o} value={o} style={{ background: "#0B0F19" }}>{o}</option>
-                    ))}
-                  </select>
+                  <label htmlFor="age" className="block font-mono text-[0.62rem] text-gray-500 tracking-widest mb-2">AGE_GRADE_LEVEL</label>
+                  <div className="relative">
+                    <select 
+                      id="age"
+                      required 
+                      className="w-full bg-gray-950/60 border border-pink-500/10 rounded-lg px-4 py-3 text-gray-400 text-sm focus:border-pink-500/50 outline-none appearance-none cursor-pointer"
+                    >
+                      <option value="">— SELECT —</option>
+                      <option value="14-15">14-15 (Secondary)</option>
+                      <option value="16-17">16-17 (Secondary+)</option>
+                      <option value="18-20">18-20 (Undergraduate)</option>
+                      <option value="21-24">21-24 (Postgraduate)</option>
+                    </select>
+                    <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-600">
+                      <ChevronRight size={16} className="rotate-90" />
+                    </div>
+                  </div>
                 </div>
-              </>
+              </div>
             )}
 
             {/* Step 2: Specialization */}
             {step === 2 && (
-              <>
-                <div>
-                  <label className="font-mono block mb-2" style={{ color: "#9CA3AF", fontSize: "0.62rem", letterSpacing: "0.1em" }}>PRIMARY_SPECIALIZATION</label>
-                  <div className="grid grid-cols-2 gap-2">
-                    {INTERESTS.map((interest) => (
-                      <label key={interest} className="flex items-center gap-2 p-2.5 rounded-lg cursor-pointer group glass-card" style={{ border: "1px solid rgba(255,255,255,0.06)" }}>
-                        <input type="radio" name="interest" value={interest} required className="sr-only" />
-                        <div className="w-3.5 h-3.5 rounded-full border border-pink-500 flex items-center justify-center">
-                          <div className="w-1.5 h-1.5 rounded-full bg-pink-500 opacity-0 group-has-[:checked]:opacity-100 transition-opacity" />
-                        </div>
-                        <span style={{ color: "#9CA3AF", fontSize: "0.75rem", lineHeight: 1.3 }}>{interest}</span>
-                      </label>
-                    ))}
-                  </div>
+              <div>
+                <label className="block font-mono text-[0.62rem] text-gray-500 tracking-widest mb-4">PRIMARY_SPECIALIZATION</label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {INTERESTS.map((interest) => (
+                    <label 
+                      key={interest} 
+                      className="relative flex items-center gap-3 p-4 rounded-xl bg-white/5 border border-white/5 hover:border-pink-500/20 cursor-pointer transition-all group has-[:checked]:bg-pink-500/5 has-[:checked]:border-pink-500/30"
+                    >
+                      <input type="radio" name="interest" value={interest} required className="sr-only" />
+                      <div className="w-4 h-4 rounded-full border border-pink-500/50 flex items-center justify-center group-has-[:checked]:border-pink-500">
+                        <div className="w-2 h-2 rounded-full bg-pink-500 opacity-0 group-has-[:checked]:opacity-100 transition-opacity" />
+                      </div>
+                      <span className="text-gray-400 text-xs group-has-[:checked]:text-white transition-colors">{interest}</span>
+                    </label>
+                  ))}
                 </div>
-              </>
+              </div>
             )}
 
             {/* Step 3: Clearance */}
             {step === 3 && (
-              <>
+              <div className="space-y-6">
                 <div>
-                  <label className="font-mono block mb-1.5" style={{ color: "#9CA3AF", fontSize: "0.62rem", letterSpacing: "0.1em" }}>SECURITY_PASSPHRASE</label>
+                  <label htmlFor="password" className="block font-mono text-[0.62rem] text-gray-500 tracking-widest mb-2">SECURITY_PASSPHRASE</label>
                   <div className="relative">
                     <input
+                      id="password"
                       type={showPassword ? "text" : "password"}
                       required
+                      autoComplete="new-password"
                       placeholder="Min. 8 characters"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      className="w-full pl-4 pr-10 py-2.5 rounded-lg outline-none"
-                      style={{ background: "rgba(5,8,15,0.6)", border: "1px solid rgba(236,72,153,0.15)", color: "#fff", fontSize: "0.875rem" }}
-                      onFocus={(e) => { e.currentTarget.style.borderColor = "rgba(236,72,153,0.5)"; }}
-                      onBlur={(e) => { e.currentTarget.style.borderColor = "rgba(236,72,153,0.15)"; }}
+                      className="w-full bg-gray-950/60 border border-pink-500/10 rounded-lg px-4 py-3 text-white text-sm focus:border-pink-500/50 outline-none transition-colors pr-10"
                     />
-                    <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2" style={{ color: "#9CA3AF" }} aria-label="Toggle password">
-                      {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
+                    <button 
+                      type="button" 
+                      onClick={() => setShowPassword(!showPassword)} 
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-600 hover:text-pink-500 transition-colors"
+                      aria-label={showPassword ? "Hide password" : "Show password"}
+                    >
+                      {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                     </button>
                   </div>
 
-                  {/* Shield Integrity Meter */}
                   {password.length > 0 && (
-                    <div className="mt-3 p-3 rounded-lg" style={{ background: "rgba(5,8,15,0.7)", border: "1px solid rgba(255,255,255,0.06)" }}>
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="font-mono" style={{ color: "#9CA3AF", fontSize: "0.58rem", letterSpacing: "0.1em" }}>SHIELD_INTEGRITY</span>
-                        <span className="font-mono" style={{ color: shield.color, fontSize: "0.62rem", fontWeight: 700, letterSpacing: "0.1em" }}>
+                    <div className="mt-4 p-4 rounded-xl bg-black/40 border border-white/5 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="font-mono text-[0.6rem] text-gray-600 tracking-widest">SHIELD_INTEGRITY</span>
+                        <span className={`font-mono text-[0.65rem] font-bold tracking-widest ${shield.color.split(" ")[0]}`}>
                           {shield.label}
                         </span>
                       </div>
-                      <div className="flex gap-1">
+                      <div className="flex gap-1.5">
                         {[0, 1, 2, 3, 4].map((i) => (
-                          <div key={i} className="flex-1 h-1.5 rounded-full transition-all duration-300"
-                            style={{ background: i < shield.score ? shield.color : "rgba(255,255,255,0.08)" }}
+                          <div 
+                            key={i} 
+                            className={`flex-1 h-1.5 rounded-full transition-all duration-500 ${
+                              i < shield.score ? shield.color.split(" ")[1] : "bg-white/5"
+                            }`}
                           />
                         ))}
                       </div>
@@ -209,43 +248,56 @@ export function RegisterPage() {
                   )}
                 </div>
 
-                {/* Protocol acceptance toggles */}
-                <div className="flex flex-col gap-3 mt-1">
-                  {[
-                    { id: "terms", checked: agreed, onChange: () => setAgreed(!agreed), label: "ACCEPTANCE_OF_PROTOCOL — Terms of Service & Privacy Policy", required: true },
-                    { id: "newsletter", checked: newsletter, onChange: () => setNewsletter(!newsletter), label: "SUBSCRIBE_TO_TRANSMISSIONS — ISYA newsletter & updates", required: false },
-                  ].map((cb) => (
-                    <label key={cb.id} htmlFor={cb.id} className="flex items-start gap-3 cursor-pointer">
-                      <div className="relative mt-0.5 shrink-0">
-                        <input id={cb.id} type="checkbox" checked={cb.checked} onChange={cb.onChange} required={cb.required} className="sr-only" />
-                        <div
-                          className="w-5 h-5 rounded flex items-center justify-center transition-all duration-200"
-                          style={{
-                            background: cb.checked ? "rgba(236,72,153,0.9)" : "rgba(5,8,15,0.7)",
-                            border: cb.checked ? "none" : "1px solid rgba(236,72,153,0.3)",
-                            boxShadow: cb.checked ? "0 0 12px rgba(236,72,153,0.5)" : "none",
-                          }}
-                        >
-                          {cb.checked && <svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4L3.5 6.5L9 1" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>}
-                        </div>
+                <div className="space-y-3">
+                  <label className="flex items-start gap-3 cursor-pointer group">
+                    <div className="relative mt-0.5">
+                      <input 
+                        type="checkbox" 
+                        checked={agreed} 
+                        onChange={() => setAgreed(!agreed)} 
+                        required 
+                        className="sr-only" 
+                      />
+                      <div className={`w-5 h-5 rounded border transition-all ${
+                        agreed ? "bg-pink-500 border-pink-500 shadow-[0_0_12px_rgba(236,72,153,0.5)]" : "bg-gray-950/60 border-white/10 group-hover:border-pink-500/50"
+                      } flex items-center justify-center`}>
+                        {agreed && <ShieldCheck size={14} className="text-white" />}
                       </div>
-                      <span className="font-mono" style={{ color: "#9CA3AF", fontSize: "0.65rem", letterSpacing: "0.06em", lineHeight: 1.6 }}>
-                        {cb.label}
-                      </span>
-                    </label>
-                  ))}
+                    </div>
+                    <span className="font-mono text-[0.65rem] text-gray-500 leading-relaxed tracking-wider">
+                      ACCEPTANCE_OF_PROTOCOL — <Link to="/terms" className="text-pink-500 hover:underline">Terms of Service</Link> & <Link to="/privacy" className="text-pink-500 hover:underline">Privacy Policy</Link>
+                    </span>
+                  </label>
+
+                  <label className="flex items-start gap-3 cursor-pointer group">
+                    <div className="relative mt-0.5">
+                      <input 
+                        type="checkbox" 
+                        checked={newsletter} 
+                        onChange={() => setNewsletter(!newsletter)} 
+                        className="sr-only" 
+                      />
+                      <div className={`w-5 h-5 rounded border transition-all ${
+                        newsletter ? "bg-pink-500 border-pink-500 shadow-[0_0_12px_rgba(236,72,153,0.5)]" : "bg-gray-950/60 border-white/10 group-hover:border-pink-500/50"
+                      } flex items-center justify-center`}>
+                        {newsletter && <ShieldCheck size={14} className="text-white" />}
+                      </div>
+                    </div>
+                    <span className="font-mono text-[0.65rem] text-gray-500 leading-relaxed tracking-wider">
+                      SUBSCRIBE_TO_TRANSMISSIONS — ISYA newsletter & updates
+                    </span>
+                  </label>
                 </div>
-              </>
+              </div>
             )}
 
-            {/* Navigation buttons */}
-            <div className="flex gap-3 mt-2">
+            {/* Actions */}
+            <div className="flex gap-3 pt-4">
               {step > 1 && (
                 <button
                   type="button"
                   onClick={handleBack}
-                  className="flex-1 py-3 rounded-xl btn-press font-mono"
-                  style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", color: "#9CA3AF", fontSize: "0.72rem", letterSpacing: "0.08em" }}
+                  className="flex-1 py-3.5 rounded-xl font-mono text-[0.7rem] font-bold tracking-widest text-gray-500 bg-white/5 border border-white/10 hover:bg-white/10 transition-all"
                 >
                   ← PREVIOUS_SECTOR
                 </button>
@@ -254,47 +306,34 @@ export function RegisterPage() {
                 <button
                   type="button"
                   onClick={handleNext}
-                  className="flex-1 py-3 rounded-xl btn-press font-mono animate-gradient-shift"
-                  style={{
-                    background: "linear-gradient(135deg, #EC4899 0%, #F97316 50%, #EC4899 100%)",
-                    backgroundSize: "200% auto",
-                    color: "#fff",
-                    fontWeight: 700,
-                    fontSize: "0.72rem",
-                    letterSpacing: "0.08em",
-                    boxShadow: "0 0 20px rgba(236,72,153,0.35)",
-                  }}
+                  className="flex-1 py-3.5 rounded-xl font-mono text-[0.7rem] font-bold tracking-widest text-white bg-gradient-to-r from-pink-500 to-orange-500 shadow-lg shadow-pink-500/20 hover:shadow-pink-500/40 hover:-translate-y-0.5 transition-all flex items-center justify-center gap-2"
                 >
-                  NEXT_SECTOR →
-                  <ChevronRight size={14} className="inline ml-1" />
+                  NEXT_SECTOR
+                  <ChevronRight size={16} />
                 </button>
               ) : (
                 <button
                   type="submit"
                   disabled={loading || !agreed}
-                  className="flex-1 py-3 rounded-xl btn-press font-mono"
-                  style={{
-                    background: loading || !agreed ? "rgba(236,72,153,0.3)" : "linear-gradient(135deg, #EC4899 0%, #F97316 50%, #EC4899 100%)",
-                    backgroundSize: "200% auto",
-                    color: "#fff",
-                    fontWeight: 700,
-                    fontSize: "0.72rem",
-                    letterSpacing: "0.08em",
-                    boxShadow: loading || !agreed ? "none" : "0 0 25px rgba(236,72,153,0.4)",
-                    cursor: loading || !agreed ? "not-allowed" : "pointer",
-                  }}
+                  className={`flex-1 py-3.5 rounded-xl font-mono text-[0.7rem] font-bold tracking-widest text-white transition-all ${
+                    loading || !agreed 
+                      ? "bg-pink-500/30 cursor-not-allowed" 
+                      : "bg-gradient-to-r from-pink-500 to-orange-500 shadow-lg shadow-pink-500/20 hover:shadow-pink-500/40 hover:-translate-y-0.5"
+                  }`}
                 >
-                  {loading ? "PROCESSING_CLEARANCE..." : "CONFIRM_ENLISTMENT ✓"}
+                  {loading ? "PROCESSING..." : "FINALIZE_ENLISTMENT // JOIN"}
                 </button>
               )}
             </div>
           </form>
-        </div>
 
-        <p className="text-center mt-6 font-mono" style={{ color: "#9CA3AF", fontSize: "0.65rem", letterSpacing: "0.06em" }}>
-          Already enlisted?{" "}
-          <Link to="/login" style={{ color: "#EC4899", fontWeight: 700 }}>AUTHENTICATE →</Link>
-        </p>
+          <div className="mt-8 pt-6 border-t border-white/5 flex items-center justify-between">
+            <p className="font-mono text-gray-800 text-[0.75rem]">ALREADY_ENLISTED?</p>
+            <Link to="/login" className="font-mono text-[0.7rem] font-bold text-pink-500 tracking-widest hover:text-pink-400 transition-colors">
+              ACCESS_TERMINAL →
+            </Link>
+          </div>
+        </div>
       </div>
     </div>
   );
