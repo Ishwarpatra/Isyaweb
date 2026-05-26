@@ -14,6 +14,11 @@ const COLORS = ["#EC4899", "#3B82F6", "#FFFFFF", "#F97316", "#10B981"];
 const DESKTOP_PARTICLE_COUNT = 120;
 const MOBILE_PARTICLE_COUNT = 40;
 const CURSOR_RADIUS = 100;
+const CURSOR_RADIUS_SQ = CURSOR_RADIUS * CURSOR_RADIUS;
+
+// Pre-allocated reusable array — ZERO GC pressure per frame.
+// We reset its length to 0 each frame instead of allocating a new [].
+const nearbyParticles: Particle[] = [];
 
 export function StarfieldCanvas() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -23,9 +28,12 @@ export function StarfieldCanvas() {
   const active = useRef(false);
   const isIntersecting = useRef(false);
 
+  // Cache the matchMedia object so we can add a change listener (not just a one-off .matches check)
+  const reducedMotionMQ = useRef<MediaQueryList | null>(null);
+
   const initParticles = (width: number, height: number) => {
     const count = width < 768 ? MOBILE_PARTICLE_COUNT : DESKTOP_PARTICLE_COUNT;
-    const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const prefersReducedMotion = reducedMotionMQ.current?.matches ?? false;
 
     particles.current = Array.from({ length: count }, () => ({
       x: Math.random() * width,
@@ -43,7 +51,7 @@ export function StarfieldCanvas() {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const prefersReducedMotion = reducedMotionMQ.current?.matches ?? false;
 
     try {
       const ctx = canvas.getContext("2d");
@@ -64,7 +72,6 @@ export function StarfieldCanvas() {
         const grid: { [key: string]: Particle[] } = {};
         const cellSize = CURSOR_RADIUS;
 
-        // Group particles into cell keys
         for (const p of pts) {
           const cellX = Math.floor(p.x / cellSize);
           const cellY = Math.floor(p.y / cellSize);
@@ -73,10 +80,11 @@ export function StarfieldCanvas() {
           grid[key].push(p);
         }
 
-        // Query only adjacent cells surrounding cursor
         const cellX = Math.floor(mx / cellSize);
         const cellY = Math.floor(my / cellSize);
-        const nearbyParticles: Particle[] = [];
+
+        // Reuse the pre-allocated array — no heap allocation on hot path
+        nearbyParticles.length = 0;
 
         for (let dx = -1; dx <= 1; dx++) {
           for (let dy = -1; dy <= 1; dy++) {
@@ -86,7 +94,7 @@ export function StarfieldCanvas() {
               for (const p of cellParticles) {
                 const pdx = p.x - mx;
                 const pdy = p.y - my;
-                if (pdx * pdx + pdy * pdy < CURSOR_RADIUS * CURSOR_RADIUS) {
+                if (pdx * pdx + pdy * pdy < CURSOR_RADIUS_SQ) {
                   nearbyParticles.push(p);
                 }
               }
@@ -107,7 +115,7 @@ export function StarfieldCanvas() {
               const ey = q.y - my;
               const distToCursorSq2 = ex * ex + ey * ey;
 
-              if (distToCursorSq2 < CURSOR_RADIUS * CURSOR_RADIUS) {
+              if (distToCursorSq2 < CURSOR_RADIUS_SQ) {
                 const distToCursor = Math.sqrt(distToCursorSq);
                 const alpha = 0.18 * (1 - distToCursor / CURSOR_RADIUS);
                 ctx.beginPath();
@@ -173,12 +181,43 @@ export function StarfieldCanvas() {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    // Set up the media query object ONCE and keep a ref — lets us listen for live changes
+    reducedMotionMQ.current = window.matchMedia("(prefers-reduced-motion: reduce)");
+
+    const handleReducedMotionChange = (e: MediaQueryListEvent) => {
+      if (e.matches) {
+        // User just turned on reduced-motion: kill the loop, draw one static frame
+        active.current = false;
+        cancelAnimationFrame(animRef.current);
+        // Re-init particles with zero velocity, then draw one frame
+        const dpr = window.devicePixelRatio || 1;
+        const w = canvas.width / dpr;
+        const h = canvas.height / dpr;
+        initParticles(w, h);
+        active.current = true;
+        draw();
+        active.current = false;
+      } else if (isIntersecting.current && !document.hidden) {
+        // User just turned off reduced-motion: resume the loop
+        active.current = true;
+        animRef.current = requestAnimationFrame(draw);
+      }
+    };
+
+    reducedMotionMQ.current.addEventListener("change", handleReducedMotionChange);
+
+    const prefersReducedMotion = reducedMotionMQ.current.matches;
 
     const resize = () => {
       const dpr = window.devicePixelRatio || 1;
-      const rectWidth = canvas.offsetWidth || window.innerWidth;
-      const rectHeight = canvas.offsetHeight || window.innerHeight;
+
+      // Guard against 0-width: canvas may be hidden (display:none parent)
+      // Use getBoundingClientRect which returns 0 only if truly invisible,
+      // and fall back to window dimensions only when genuinely full-bleed.
+      const rect = canvas.getBoundingClientRect();
+      const rectWidth = rect.width > 0 ? rect.width : (canvas.offsetWidth > 0 ? canvas.offsetWidth : window.innerWidth);
+      const rectHeight = rect.height > 0 ? rect.height : (canvas.offsetHeight > 0 ? canvas.offsetHeight : window.innerHeight);
+
       canvas.width = rectWidth * dpr;
       canvas.height = rectHeight * dpr;
 
@@ -197,12 +236,32 @@ export function StarfieldCanvas() {
     };
 
     let resizeTimeout: ReturnType<typeof setTimeout>;
+    let prevWidth = window.innerWidth;
+
     const handleResize = () => {
       clearTimeout(resizeTimeout);
-      resizeTimeout = setTimeout(resize, 150);
+      resizeTimeout = setTimeout(() => {
+        const newWidth = window.innerWidth;
+        // Skip trivial height-only changes (iOS address bar show/hide)
+        if (Math.abs(newWidth - prevWidth) > 50) {
+          prevWidth = newWidth;
+          resize();
+        } else if (Math.abs(canvas.getBoundingClientRect().height - canvas.height / (window.devicePixelRatio || 1)) > 50) {
+          resize();
+        }
+      }, 150);
     };
 
-    resize();
+    // Initial render: defer by one rAF to guarantee the DOM has painted and
+    // `getBoundingClientRect()` returns real dimensions (not 0).
+    requestAnimationFrame(() => {
+      resize();
+      if (!prefersReducedMotion && isIntersecting.current && !document.hidden) {
+        active.current = true;
+        animRef.current = requestAnimationFrame(draw);
+      }
+    });
+
     window.addEventListener("resize", handleResize);
 
     // Mouse events
@@ -239,16 +298,17 @@ export function StarfieldCanvas() {
     canvas.addEventListener("touchmove", onTouchMove, { passive: true });
     canvas.addEventListener("touchend", onTouchEnd, { passive: true });
 
-    // Page visibility check: pause animation loop when tab is hidden
+    // Pause animation loop when tab is hidden
     const handleVisibilityChange = () => {
       if (document.hidden) {
         active.current = false;
         cancelAnimationFrame(animRef.current);
       } else {
-        if (isIntersecting.current && !active.current && !prefersReducedMotion) {
+        const preferReduced = reducedMotionMQ.current?.matches ?? false;
+        if (isIntersecting.current && !active.current && !preferReduced) {
           active.current = true;
           animRef.current = requestAnimationFrame(draw);
-        } else if (isIntersecting.current && prefersReducedMotion) {
+        } else if (isIntersecting.current && preferReduced) {
           active.current = true;
           draw();
           active.current = false;
@@ -260,11 +320,12 @@ export function StarfieldCanvas() {
     const observer = new IntersectionObserver(
       ([entry]) => {
         isIntersecting.current = entry.isIntersecting;
+        const preferReduced = reducedMotionMQ.current?.matches ?? false;
         if (entry.isIntersecting && !document.hidden) {
-          if (!active.current && !prefersReducedMotion) {
+          if (!active.current && !preferReduced) {
             active.current = true;
             animRef.current = requestAnimationFrame(draw);
-          } else if (prefersReducedMotion) {
+          } else if (preferReduced) {
             active.current = true;
             draw();
             active.current = false;
@@ -281,6 +342,8 @@ export function StarfieldCanvas() {
     return () => {
       active.current = false;
       cancelAnimationFrame(animRef.current);
+      clearTimeout(resizeTimeout);
+      reducedMotionMQ.current?.removeEventListener("change", handleReducedMotionChange);
       window.removeEventListener("resize", handleResize);
       canvas.removeEventListener("mousemove", onMouseMove);
       canvas.removeEventListener("mouseleave", onMouseLeave);

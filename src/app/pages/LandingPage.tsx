@@ -1,13 +1,15 @@
 import React, { useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import { Link } from "react-router";
 import { ImageWithFallback } from "../components/figma/ImageWithFallback";
-import { ArrowRight, Globe, ChevronRight, Satellite, Telescope, Rocket } from "lucide-react";
+import { ArrowRight, Globe, ChevronRight, Satellite, Telescope, Rocket, Radio } from "lucide-react";
 import { useScrollReveal } from "../hooks/useScrollReveal";
 import { toast } from "sonner";
 import { StarfieldCanvas } from "../components/StarfieldCanvas";
 import { TextDecode } from "../components/TextDecode";
 import { AnimatedCounter } from "../components/AnimatedCounter";
 import { lockScroll, unlockScroll } from "../hooks/useScrollLock";
+import { useAuth } from "../hooks/useAuth";
 import logoImg from "../../imports/Logo_ISYA__1_-2.jpeg";
 
 const ROCKET_IMG =
@@ -83,10 +85,15 @@ const latestPosts = [
   },
 ];
 
+// Module-level cache: persists across route unmounts so returning to Home
+// never triggers a redundant re-fetch and never shows skeleton loaders again.
+let _postsCache: typeof latestPosts | null = null;
+
 export function LandingPage() {
   const sectionRef = useScrollReveal<HTMLDivElement>();
-  const [posts, setPosts] = useState<typeof latestPosts>([]);
-  const [loading, setLoading] = useState(true);
+  const { user } = useAuth();
+  const [posts, setPosts] = useState<typeof latestPosts>(_postsCache ?? []);
+  const [loading, setLoading] = useState(_postsCache === null);
   const [error, setError] = useState<string | null>(null);
   const [onboardingStep, setOnboardingStep] = useState<number | null>(null);
   const [isRetrying, setIsRetrying] = useState(false);
@@ -110,20 +117,21 @@ export function LandingPage() {
       clearTimeout(timeoutRef.current);
     }
 
-    timeoutRef.current = setTimeout(() => {
-      try {
-        setPosts(latestPosts);
-        setError(null);
-      } catch (err: any) {
-        setError("ERR_DATALINK_TIMEOUT: The ground station telemetry buffer has timing desync.");
-      } finally {
-        setLoading(false);
-        setIsRetrying(false);
-      }
-    }, 1000);
+    // Synchronous — no artificial delay. Data is local; there is no network round-trip.
+    try {
+      _postsCache = latestPosts;
+      setPosts(latestPosts);
+      setError(null);
+    } catch (err: any) {
+      setError("ERR_DATALINK_TIMEOUT: The ground station telemetry buffer has timing desync.");
+    } finally {
+      setLoading(false);
+      setIsRetrying(false);
+    }
   };
 
   useEffect(() => {
+    if (_postsCache !== null) return; // Already hydrated — skip the fetch entirely
     fetchTransmissions();
     return () => {
       if (timeoutRef.current) {
@@ -133,7 +141,7 @@ export function LandingPage() {
   }, []);
 
   return (
-    <div ref={sectionRef} className="stardust bg-dark">
+    <main ref={sectionRef} className="stardust bg-dark">
       {/* ── HERO ── */}
       <section className="relative overflow-hidden hud-scanline min-h-screen flex items-center">
         <StarfieldCanvas />
@@ -171,16 +179,26 @@ export function LandingPage() {
           </p>
 
           <div className="flex flex-col sm:flex-row items-center gap-4 reveal reveal-delay-1">
-            <Link
-              to="/register"
-              className="group flex items-center gap-3 px-8 py-4 rounded-xl font-mono text-[0.85rem] font-bold tracking-wider text-white shadow-[0_0_35px_rgba(236,72,153,0.45)] bg-gradient-to-r from-brand-pink via-brand-orange to-brand-pink bg-[length:200%_auto] animate-gradient-shift hover:shadow-[0_0_50px_rgba(236,72,153,0.7)] active:scale-95 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-brand-pink"
-            >
-              INITIATE_LAUNCH // JOIN_COMMUNITY
-              <ArrowRight size={17} />
-            </Link>
+            {user ? (
+              <Link
+                to="/admin"
+                className="group flex items-center gap-3 px-8 py-4 rounded-xl font-mono text-[0.85rem] font-bold tracking-wider text-white shadow-[0_0_35px_rgba(236,72,153,0.45)] bg-gradient-to-r from-brand-pink via-brand-orange to-brand-pink bg-[length:200%_auto] animate-gradient-shift hover:shadow-[0_0_50px_rgba(236,72,153,0.7)] active:scale-95 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#EC4899]"
+              >
+                GO_TO_COMMAND_CENTER
+                <ArrowRight className="w-4 h-4" />
+              </Link>
+            ) : (
+              <Link
+                to="/register"
+                className="group flex items-center gap-3 px-8 py-4 rounded-xl font-mono text-[0.85rem] font-bold tracking-wider text-white shadow-[0_0_35px_rgba(236,72,153,0.45)] bg-gradient-to-r from-brand-pink via-brand-orange to-brand-pink bg-[length:200%_auto] animate-gradient-shift hover:shadow-[0_0_50px_rgba(236,72,153,0.7)] active:scale-95 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#EC4899]"
+              >
+                INITIATE_LAUNCH // JOIN_COMMUNITY
+                <ArrowRight className="w-4 h-4" />
+              </Link>
+            )}
             <Link
               to="/media#initiatives"
-              className="flex items-center gap-2 px-8 py-4 rounded-xl font-mono text-sm font-semibold tracking-wide text-accent bg-accent/10 border border-accent/30 hover:bg-accent/20 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-accent"
+              className="flex items-center gap-2 px-8 py-4 rounded-xl font-mono text-sm font-semibold tracking-wide text-accent bg-accent/10 border border-accent/30 hover:bg-accent/20 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#EC4899]"
             >
               EXPLORE_INITIATIVES →
             </Link>
@@ -227,7 +245,7 @@ export function LandingPage() {
           </h2>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {pillars.map((p, i) => {
             const IconComponent = p.icon;
             return (
@@ -267,7 +285,7 @@ export function LandingPage() {
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
           <div className="max-w-xl reveal">
             <div className="flex items-center gap-2 mb-4">
-              <Globe size={15} className="text-accent" />
+              <Globe className="w-4 h-4 text-accent" aria-hidden="true" />
               <span className="font-mono text-accent text-xs tracking-[0.14em]">
                 // GLOBAL_NETWORK :: STATUS_ACTIVE
               </span>
@@ -281,10 +299,10 @@ export function LandingPage() {
             </p>
             <Link
               to="/register"
-              className="inline-flex items-center gap-2 px-7 py-3.5 rounded-xl font-mono text-xs font-bold tracking-widest text-white shadow-glow-pink bg-gradient-to-r from-brand-pink via-brand-orange to-brand-pink bg-[length:200%_auto] animate-gradient-shift"
+              className="inline-flex items-center gap-2 px-7 py-3.5 rounded-xl font-mono text-xs font-bold tracking-widest text-white shadow-glow-pink bg-gradient-to-r from-brand-pink via-brand-orange to-brand-pink bg-[length:200%_auto] animate-gradient-shift focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#EC4899]"
             >
               BEGIN_MISSION
-              <ChevronRight size={17} />
+              <ChevronRight className="w-4 h-4" />
             </Link>
           </div>
         </div>
@@ -347,22 +365,39 @@ export function LandingPage() {
               </button>
             </div>
           ) : posts.length === 0 ? (
-            <div className="p-8 rounded-2xl border border-white/5 bg-white/[0.02] text-center max-w-xl mx-auto">
-              <p className="font-mono text-gray-400 text-xs mb-2">// BUFFER_EMPTY</p>
-              <p className="text-gray-400 text-sm">No telemetry transmissions currently logged in this sector.</p>
+            <div className="p-10 rounded-2xl border border-brand-pink/10 bg-brand-pink/[0.03] text-center max-w-xl mx-auto flex flex-col items-center gap-4">
+              {/* Thematic ghost icon */}
+              <div className="relative w-16 h-16 flex items-center justify-center">
+                <Radio className="w-10 h-10 text-gray-600" aria-hidden="true" />
+                <span className="absolute inset-0 rounded-full border-2 border-gray-700 animate-ping opacity-20" />
+              </div>
+              <p className="font-mono text-brand-pink text-xs tracking-wider">// BUFFER_EMPTY</p>
+              <p className="text-gray-400 text-sm leading-relaxed">
+                No telemetry transmissions are logged in this sector. The data link may be idle.
+              </p>
+              <button
+                onClick={fetchTransmissions}
+                className="mt-2 px-6 py-2.5 rounded-xl font-mono text-xs font-bold text-white bg-brand-pink/20 border border-brand-pink/40 hover:bg-brand-pink/30 transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#EC4899]"
+              >
+                REFRESH_SECTOR
+              </button>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {posts.map((post, i) => (
-                <Link
+                // Pseudo-block-link pattern: the card is a plain div; only the title is an <a>.
+                // A ::before pseudo-element (via .post-card-link) expands the click area over
+                // the full card without creating invalid nested <a> DOM structure.
+                <article
                   key={post.id}
-                  to={`/blog/${post.id}`}
-                  className={`group flex flex-col rounded-2xl overflow-hidden glass-card reveal reveal-delay-${i + 1}`}
+                  className={`post-card group flex flex-col rounded-2xl overflow-hidden glass-card reveal reveal-delay-${i + 1} relative`}
                 >
                   <div className="relative aspect-[16/10] overflow-hidden">
                     <ImageWithFallback
                       src={post.image}
-                      alt={post.title}
+                      alt=""
+                      aria-hidden="true"
+                      loading="lazy"
                       className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110 group-focus-within:scale-110"
                     />
                     <div className="absolute top-4 left-4 px-3 py-1 rounded-md font-mono text-xs font-bold tracking-wider text-white" style={{ background: post.tagColor }}>
@@ -372,18 +407,24 @@ export function LandingPage() {
                   <div className="p-6 flex flex-col flex-1">
                     <div className="flex items-center gap-3 mb-3 font-mono text-xs text-gray-400 tracking-wider">
                       <span>{post.date}</span>
-                      <span className="w-1 h-1 rounded-full bg-gray-700" />
-                      <span>BY_{post.author}</span>
+                      <span className="w-1 h-1 rounded-full bg-gray-700" aria-hidden="true" />
+                      <span aria-label={`By ${post.author.replace(/_/g, " ")}`}>BY_{post.author}</span>
                     </div>
-                    <h3 className="text-white font-bold leading-snug mb-4 group-hover:text-brand-pink group-focus-within:text-brand-pink transition-colors line-clamp-2">
-                      {post.title}
+                    <h3 className="text-white font-bold leading-snug mb-4 line-clamp-2">
+                      {/* This <a> is the only interactive element — the ::before expands it */}
+                      <Link
+                        to={`/blog/${post.id}`}
+                        className="post-card-link group-hover:text-brand-pink group-focus-within:text-brand-pink transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#EC4899] rounded"
+                      >
+                        {post.title}
+                      </Link>
                     </h3>
                     <div className="mt-auto flex items-center justify-between">
                       <span className="font-mono text-xs text-gray-400">{post.readTime}_READ</span>
-                      <span className="text-accent group-hover:translate-x-1 group-focus-within:translate-x-1 transition-transform">→</span>
+                      <span className="text-accent group-hover:translate-x-1 group-focus-within:translate-x-1 transition-transform" aria-hidden="true">→</span>
                     </div>
                   </div>
-                </Link>
+                </article>
               ))}
             </div>
           )}
@@ -395,7 +436,7 @@ export function LandingPage() {
         onboardingStep={onboardingStep} 
         setOnboardingStep={setOnboardingStep} 
       />
-    </div>
+    </main>
   );
 }
 
@@ -481,16 +522,18 @@ function OnboardingModalWrapper({ onboardingStep, setOnboardingStep }: Onboardin
 
   if (onboardingStep === null) return null;
 
-  return (
+  const modalContent = (
     <div 
-      className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/85 backdrop-blur-md"
+      className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-[#0B0F19]/95"
       role="dialog"
       aria-modal="true"
-      aria-label="Cadet Onboarding Walkthrough"
+      aria-labelledby="onboarding-title"
     >
+      {/* stopPropagation prevents outside-click listeners from closing modal via event bubbling */}
       <div 
         ref={modalRef} 
-        className="relative w-full max-w-md bg-dark/95 border border-brand-pink/20 rounded-2xl p-6 shadow-glow-pink text-left space-y-6"
+        className="relative w-full max-w-md bg-dark/95 border border-brand-pink/20 rounded-2xl p-6 shadow-glow-pink text-left flex flex-col max-h-[85dvh] overflow-y-auto overscroll-contain"
+        onClick={(e) => e.stopPropagation()}
       >
         {/* HUD Cutout corners */}
         <div className="absolute top-0 left-0 w-6 h-6 border-t-2 border-l-2 border-brand-pink rounded-tl-lg" />
@@ -499,10 +542,10 @@ function OnboardingModalWrapper({ onboardingStep, setOnboardingStep }: Onboardin
         <div className="absolute bottom-0 right-0 w-6 h-6 border-b-2 border-r-2 border-brand-pink rounded-br-lg" />
 
         <div className="space-y-2">
-          <span className="font-mono text-[10px] text-brand-pink tracking-wider">
+          <span className="font-mono text-[10px] text-brand-pink tracking-wider" aria-hidden="true">
             CADET_ONBOARDING // STAGE_0{onboardingStep}_OF_03
           </span>
-          <h3 className="text-white text-lg font-bold">
+          <h3 id="onboarding-title" className="text-white text-lg font-bold">
             {onboardingStep === 1 && "Sector Home (Command Center)"}
             {onboardingStep === 2 && "Data Archives & Observatories"}
             {onboardingStep === 3 && "Secure Control Terminals"}
@@ -555,4 +598,6 @@ function OnboardingModalWrapper({ onboardingStep, setOnboardingStep }: Onboardin
       </div>
     </div>
   );
+
+  return createPortal(modalContent, document.body);
 }

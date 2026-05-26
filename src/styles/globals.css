@@ -45,10 +45,12 @@
   50%       { transform: scaleY(1); }
 }
 
-/* Pulsing red live beacon */
-@keyframes live-pulse {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(239,68,68,0.6); }
-  50%       { box-shadow: 0 0 0 8px rgba(239,68,68,0); }
+/* Pulsing red live beacon — composite-only (transform + opacity), zero main-thread paint.
+   The actual shadow is baked as a static box-shadow on the host element.
+   The ::after pseudo-element is animated using only GPU-accelerated properties. */
+@keyframes live-pulse-scale {
+  0%, 100% { transform: scale(1);   opacity: 0.7; }
+  50%       { transform: scale(2.2); opacity: 0; }
 }
 
 /* Counter lock-in flicker */
@@ -74,7 +76,20 @@
 }
 .animate-twinkle      { animation: twinkle 2.5s ease-in-out infinite; }
 .animate-radar        { animation: radar-sweep 4s linear infinite; }
-.animate-live-pulse   { animation: live-pulse 1.4s ease-in-out infinite; }
+.animate-live-pulse {
+  position: relative;
+}
+/* Halo ring rendered on a hidden ::after so the main element is never repainted */
+.animate-live-pulse::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: rgba(239, 68, 68, 0.6);
+  animation: live-pulse-scale 1.4s ease-in-out infinite;
+  will-change: transform, opacity;
+  pointer-events: none;
+}
 
 /* ── Scroll reveal ── */
 .reveal {
@@ -100,13 +115,15 @@
   transform: scale(0.96) !important;
 }
 
-/* ── Card hover elevation lift ── */
+/* ── Card hover elevation lift (only for true pointer devices) ── */
 .card-hover {
   transition: transform 300ms ease-in-out, box-shadow 300ms ease-in-out;
 }
-.card-hover:hover {
-  transform: translateY(-8px);
-  box-shadow: 0 24px 48px rgba(0,0,0,0.5), 0 0 24px rgba(236,72,153,0.08);
+@media (hover: hover) and (pointer: fine) {
+  .card-hover:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 24px 48px rgba(0,0,0,0.5), 0 0 24px rgba(236,72,153,0.08);
+  }
 }
 
 /* ── Glassmorphism card ── */
@@ -185,8 +202,9 @@
   position: absolute;
   inset: 0;
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-  opacity: 0.028;
-  mix-blend-mode: screen;
+  opacity: 0.03;
+  /* No mix-blend-mode — avoids promoting every text layer to a compositor surface
+     which would destroy subpixel antialiasing on Windows ClearType. */
   pointer-events: none;
   z-index: 0;
 }
@@ -218,7 +236,9 @@
   border-bottom-color: #EC4899;
   background: rgba(255, 255, 255, 0.04);
   box-shadow: 0 2px 0 0 rgba(236,72,153,0.3);
-  outline: none;
+  /* Transparent outline lets Windows High Contrast Mode inject its own system border */
+  outline: 2px solid transparent;
+  outline-offset: 2px;
 }
 
 /* ── Podcast EQ bars ── */
@@ -245,4 +265,51 @@
 }
 .overflow-y-auto::-webkit-scrollbar-thumb:hover {
   background: rgba(236, 72, 153, 0.6);
+}
+
+/* ── Notification panel slide-up entrance ── */
+@keyframes slide-up {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-slide-up { animation: slide-up 150ms ease-out; }
+
+/* ── Pseudo-block-link: expands a title <a> to cover its card container ──
+   Usage: add .post-card (relative) to the card, .post-card-link to the <a> inside.
+   The ::before stretches over the entire card without DOM-nesting <a> inside <a>. */
+.post-card { isolation: isolate; }
+.post-card-link::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border-radius: inherit;
+}
+/* Bring non-link interactive children above the pseudo overlay */
+.post-card button,
+.post-card [role="button"] {
+  position: relative;
+  z-index: 2;
+}
+
+/* ── Prefers reduced motion — kill all decorative animations ── */
+@media (prefers-reduced-motion: reduce) {
+  .animate-float,
+  .animate-pulse-glow,
+  .animate-gradient-shift,
+  .animate-twinkle,
+  .animate-radar,
+  .animate-live-pulse,
+  .hud-scanline::after {
+    animation: none !important;
+  }
+  /* Keep reveal transitions but make them instant */
+  .reveal {
+    transition: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+  .animate-live-pulse::after {
+    animation: none !important;
+  }
 }

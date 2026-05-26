@@ -56,7 +56,12 @@ export function Root() {
         </main>
         {showFooter && <Footer />}
         <ScrollRestoration />
-        <Toaster closeButton position="bottom-right" theme="dark" />
+        <Toaster
+          closeButton
+          position="bottom-right"
+          theme="dark"
+          toastOptions={{ aria: { role: "status", "aria-live": "assertive" } }}
+        />
       </div>
     </AuthProvider>
   );
