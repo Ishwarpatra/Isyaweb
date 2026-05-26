@@ -14,8 +14,11 @@ export function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const location = useLocation();
 
-  const isActive = (path: string) =>
-    path === "/" ? location.pathname === "/" : location.pathname === path || location.pathname.startsWith(`${path}/`);
+  const isActive = (path: string) => {
+    if (path === "/") return location.pathname === "/";
+    // Exact match: /community should NOT highlight for /community-guidelines
+    return location.pathname === path;
+  };
 
   const closeMenu = useCallback(() => setMobileOpen(false), []);
 
@@ -52,7 +55,7 @@ export function Navbar() {
               <Link
                 key={link.path}
                 to={link.path}
-                className={`relative px-4 py-2 rounded-lg transition-all duration-300 text-sm ${
+                className={`relative px-4 py-2 rounded-lg transition-all duration-300 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-orange-500 ${
                   isActive(link.path) ? "text-[#FFA500] bg-[#FFA500]/8 font-semibold" : "text-[#B0B8C1] font-normal hover:text-white"
                 }`}
               >
@@ -67,13 +70,13 @@ export function Navbar() {
           <div className="hidden md:flex items-center gap-3">
             <Link
               to="/login"
-              className="px-4 py-2 rounded-xl transition-all duration-200 text-[#B0B8C1] text-sm font-medium hover:text-white"
+              className="px-4 py-2 rounded-xl transition-all duration-200 text-[#B0B8C1] text-sm font-medium hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500"
             >
               Sign In
             </Link>
             <Link
               to="/register"
-              className="px-5 py-2 rounded-xl transition-all duration-300 text-white text-sm font-semibold shadow-[0_0_18px_rgba(255,165,0,0.28)] bg-gradient-to-br from-[#FFA500] to-[#EC4899] bg-[length:200%_auto] hover:shadow-[0_0_28px_rgba(236,72,153,0.5)] active:scale-95"
+              className="px-5 py-2 rounded-xl transition-all duration-300 text-white text-sm font-semibold shadow-[0_0_18px_rgba(255,165,0,0.28)] bg-gradient-to-br from-[#FFA500] to-[#EC4899] bg-[length:200%_auto] hover:shadow-[0_0_28px_rgba(236,72,153,0.5)] active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-orange-500"
             >
               Join ISYA
             </Link>
@@ -91,7 +94,12 @@ export function Navbar() {
       </div>
 
       {mobileOpen && (
-        <div className="md:hidden fixed inset-0 top-16 z-40 bg-[#0B0F19]/98 border-t border-[#4A90E2]/10 overflow-y-auto">
+        <div 
+          className="md:hidden fixed inset-0 top-16 z-40 bg-[#0B0F19]/98 border-t border-[#4A90E2]/10 overflow-y-auto"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Mobile navigation menu"
+        >
           <div className="px-4 py-4 flex flex-col gap-1">
             {navLinks.map((link) => (
               <Link
