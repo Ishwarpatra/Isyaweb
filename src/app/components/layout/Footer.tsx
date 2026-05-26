@@ -51,7 +51,7 @@ export function Footer() {
               {[
                 { label: "Home", path: "/" },
                 { label: "Blog", path: "/blog" },
-                { label: "Media Hub", path: "/media" },
+                { label: "Media", path: "/media" },
                 { label: "Community", path: "/community" },
               ].map((link) => (
                 <li key={link.path}>
@@ -92,8 +92,15 @@ export function Footer() {
           <p className="text-[#7A8894] text-[0.8rem]">
             © 2026 International Space Youth Association. All rights reserved.
           </p>
+          <div className="flex flex-wrap items-center gap-4 text-[#7A8894] text-xs font-mono">
+            <Link to="/guidelines" className="hover:text-white transition-colors">GUIDELINES</Link>
+            <span className="text-gray-700">//</span>
+            <Link to="/guidelines#terms" className="hover:text-white transition-colors">TERMS_OF_SERVICE</Link>
+            <span className="text-gray-700">//</span>
+            <Link to="/guidelines#privacy" className="hover:text-white transition-colors">PRIVACY_POLICY</Link>
+          </div>
           <div className="flex items-center gap-6">
-            <span className="text-[#374151] text-[0.8rem] font-mono">SECURE_NODE_v4.0</span>
+            <span className="text-gray-500 text-[0.8rem] font-mono">SECURE_NODE_v4.0</span>
           </div>
         </div>
       </div>
