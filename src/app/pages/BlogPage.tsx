@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { Link } from "react-router";
 import { ChevronLeft, ChevronRight, Search } from "lucide-react";
 import { ImageWithFallback } from "../components/figma/ImageWithFallback";
 import { useScrollReveal } from "../hooks/useScrollReveal";
@@ -70,7 +71,7 @@ export function BlogPage() {
                 role="tab"
                 aria-selected={activeCategory === cat}
                 onClick={() => { setActiveCategory(cat); setCurrentPage(1); }}
-                className={`px-3 py-1 rounded-md font-mono text-[0.6rem] tracking-widest transition-all ${
+                className={`px-3 py-1 rounded-md font-mono text-xs tracking-widest transition-all ${
                   activeCategory === cat 
                     ? "bg-pink-500/20 text-pink-500 border border-pink-500/40 font-bold" 
                     : "bg-white/5 text-gray-400 border border-white/5 hover:bg-white/10"
@@ -86,7 +87,7 @@ export function BlogPage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14">
         {/* Header */}
         <div className="mb-10 reveal">
-          <p className="font-mono text-pink-500 text-[0.65rem] tracking-[0.16em] mb-2">
+          <p className="font-mono text-pink-500 text-xs tracking-[0.16em] mb-2">
             // DATA_ARCHIVES :: SECTOR_7G :: {filtered.length}_RECORDS_FOUND
           </p>
           <h1 className="text-white text-[clamp(2rem,5vw,3rem)] font-bold leading-tight">
@@ -96,7 +97,10 @@ export function BlogPage() {
 
         {/* Featured article */}
         {featured && (
-          <article className="rounded-xl overflow-hidden mb-10 group glass-card hud-corners border border-pink-500/10">
+          <Link
+            to={`/blog/${featured.id}`}
+            className="block rounded-xl overflow-hidden mb-10 group glass-card hud-corners border border-pink-500/10"
+          >
             <div className="grid grid-cols-1 md:grid-cols-2">
               <div className="relative aspect-video md:aspect-auto min-h-[280px] overflow-hidden">
                 <ImageWithFallback
@@ -105,18 +109,18 @@ export function BlogPage() {
                   className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.05]"
                 />
                 <div className="absolute top-3 left-3">
-                  <span className="font-mono px-2 py-1 rounded bg-orange-500/90 text-black text-[0.6rem] font-bold tracking-wider">
+                  <span className="font-mono px-2 py-1 rounded bg-orange-500/90 text-black text-xs font-bold tracking-wider">
                     ★ FEATURED_TRANSMISSION
                   </span>
                 </div>
                 <div className="absolute bottom-0 left-0 right-0 px-4 py-2 translate-y-full group-hover:translate-y-0 transition-transform duration-300 bg-[#05080F]/90 backdrop-blur-md">
-                  <p className="font-mono text-pink-500 text-[0.6rem] tracking-wider">
+                  <p className="font-mono text-pink-500 text-xs tracking-wider">
                     // SECTOR_READ_TIME: {featured.readTime} | AUTH_LEVEL: PUBLIC
                   </p>
                 </div>
               </div>
               <div className="p-8 flex flex-col justify-center">
-                <span className="font-mono inline-block px-2 py-1 rounded mb-4 self-start text-orange-500 text-[0.6rem] tracking-wider bg-orange-500/10 border border-orange-500/20">
+                <span className="font-mono inline-block px-2 py-1 rounded mb-4 self-start text-orange-500 text-xs tracking-wider bg-orange-500/10 border border-orange-500/20">
                   {featured.tag}
                 </span>
                 <h2 className="text-white text-2xl font-bold leading-tight mb-4 group-hover:text-pink-500 transition-colors">
@@ -125,7 +129,7 @@ export function BlogPage() {
                 <p className="text-gray-400 text-sm leading-relaxed mb-6">
                   {featured.excerpt}
                 </p>
-                <div className="flex items-center gap-3 font-mono text-gray-500 text-[0.62rem] tracking-wider">
+                <div className="flex items-center gap-3 font-mono text-gray-500 text-xs tracking-wider">
                   <span>{featured.date}</span>
                   <span className="w-1 h-1 rounded-full bg-gray-700" />
                   <span>{featured.author}</span>
@@ -134,15 +138,16 @@ export function BlogPage() {
                 </div>
               </div>
             </div>
-          </article>
+          </Link>
         )}
 
         {/* Article grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
           {paginated.length > 0 ? (
             paginated.map((post, idx) => (
-              <article
+              <Link
                 key={post.id}
+                to={`/blog/${post.id}`}
                 className={`flex flex-col rounded-xl overflow-hidden group glass-card hud-corners border border-white/5 reveal reveal-delay-${Math.min(idx + 1, 6)}`}
               >
                 <div className="relative aspect-[16/10] overflow-hidden">
@@ -152,7 +157,7 @@ export function BlogPage() {
                     className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                   />
                   <div className="absolute top-3 left-3">
-                    <span className="font-mono px-2 py-0.5 rounded text-[0.58rem] tracking-wider backdrop-blur-md" style={{ background: `${post.tagColor}25`, color: post.tagColor, border: `1px solid ${post.tagColor}40` }}>
+                    <span className="font-mono px-2 py-0.5 rounded text-xs tracking-wider backdrop-blur-md" style={{ background: `${post.tagColor}25`, color: post.tagColor, border: `1px solid ${post.tagColor}40` }}>
                       {post.tag}
                     </span>
                   </div>
@@ -169,13 +174,13 @@ export function BlogPage() {
                   <p className="text-gray-400 text-[0.8rem] leading-relaxed mb-4 line-clamp-2">
                     {post.excerpt}
                   </p>
-                  <div className="mt-auto flex items-center gap-2 font-mono text-gray-500 text-[0.6rem] tracking-wider">
+                  <div className="mt-auto flex items-center gap-2 font-mono text-gray-500 text-xs tracking-wider">
                     <span>{post.date}</span>
                     <span className="w-1 h-1 rounded-full bg-gray-700" />
                     <span>{post.author}</span>
                   </div>
                 </div>
-              </article>
+              </Link>
             ))
           ) : (
             <div className="col-span-full py-20 text-center">
