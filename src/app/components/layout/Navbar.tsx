@@ -1,9 +1,10 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Link, useLocation } from "react-router";
-import { Menu, X, LogOut, Shield } from "lucide-react";
+import { Menu, X, LogOut, Shield, Bell } from "lucide-react";
 import logoImg from "../../../imports/Logo_ISYA__1_-2.jpeg";
 import { useAuth } from "../../hooks/useAuth";
 import { lockScroll, unlockScroll } from "../../hooks/useScrollLock";
+import { toast } from "sonner";
 
 const navLinks = [
   { label: "Home", path: "/" },
@@ -19,6 +20,33 @@ export function Navbar() {
   
   const menuButtonRef = useRef<HTMLButtonElement>(null);
   const overlayRef = useRef<HTMLDivElement>(null);
+
+  // Notifications State
+  const [notifications, setNotifications] = useState([
+    { id: 1, type: "ALERT", text: "Solar flare activity detected in Sector 4. Satellite links degraded.", time: "10m ago", color: "#F97316", read: false },
+    { id: 2, type: "SYSTEM", text: "Welcome Cadet! Enlistment credentials verified and synced with node.", time: "1h ago", color: "#10B981", read: false },
+    { id: 3, type: "MISSION", text: "New coordinated telescope search campaign initiated in Grid-9.", time: "4h ago", color: "#3B82F6", read: true }
+  ]);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const notificationPanelRef = useRef<HTMLDivElement>(null);
+
+  const unreadCount = notifications.filter(n => !n.read).length;
+  
+  const markAllAsRead = () => {
+    setNotifications(notifications.map(n => ({ ...n, read: true })));
+    toast.success("All alerts logged as read.");
+  };
+
+  useEffect(() => {
+    if (!notificationsOpen) return;
+    const handleOutsideClick = (e: MouseEvent) => {
+      if (notificationPanelRef.current && !notificationPanelRef.current.contains(e.target as Node)) {
+        setNotificationsOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleOutsideClick);
+    return () => document.removeEventListener("mousedown", handleOutsideClick);
+  }, [notificationsOpen]);
 
   const isActive = (path: string) => {
     if (path === "/") return location.pathname === "/";
@@ -116,6 +144,64 @@ export function Navbar() {
           </nav>
 
           <div className="hidden md:flex items-center gap-3">
+            {/* Notification Bell Dropdown */}
+            <div className="relative">
+              <button 
+                onClick={() => setNotificationsOpen(!notificationsOpen)}
+                className="p-2 rounded-xl text-gray-400 hover:text-white bg-white/5 border border-white/10 hover:border-pink-500/30 transition-all cursor-pointer relative flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-pink-500"
+                aria-label="Toggle notifications"
+                aria-expanded={notificationsOpen}
+              >
+                <Bell size={18} />
+                {unreadCount > 0 && (
+                  <span className="absolute -top-1 -right-1 w-4 h-4 bg-pink-500 text-white rounded-full flex items-center justify-center text-[8px] font-bold font-mono animate-pulse">
+                    {unreadCount}
+                  </span>
+                )}
+              </button>
+              
+              {notificationsOpen && (
+                <div 
+                  ref={notificationPanelRef}
+                  className="absolute right-0 mt-3 w-80 bg-[#0B0F19]/98 border border-pink-500/20 rounded-2xl shadow-[0_8px_32px_rgba(236,72,153,0.25)] overflow-hidden backdrop-blur-2xl animate-slide-up z-50 p-4 space-y-3"
+                >
+                  <div className="flex items-center justify-between pb-2 border-b border-white/5">
+                    <span className="font-mono text-xs text-pink-500 tracking-wider">// SYSTEM_NOTIFICATIONS</span>
+                    {unreadCount > 0 && (
+                      <button 
+                        onClick={markAllAsRead}
+                        className="text-[9px] font-mono text-blue-400 hover:text-blue-300 transition-colors cursor-pointer"
+                      >
+                        MARK_ALL_READ
+                      </button>
+                    )}
+                  </div>
+                  <div className="max-h-60 overflow-y-auto space-y-2">
+                    {notifications.length === 0 ? (
+                      <p className="text-center font-mono text-xs text-gray-500 py-6">[!] NO_NEW_ALERTS</p>
+                    ) : (
+                      notifications.map((n) => (
+                        <div 
+                          key={n.id} 
+                          className={`p-2.5 rounded-lg border text-left transition-all ${
+                            n.read 
+                              ? "bg-white/[0.01] border-white/5 text-gray-500" 
+                              : "bg-pink-500/5 border-pink-500/20 text-gray-300"
+                          }`}
+                        >
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="font-mono text-[9px] tracking-wider" style={{ color: n.color }}>[{n.type}]</span>
+                            <span className="text-[8px] text-gray-600 font-mono">{n.time}</span>
+                          </div>
+                          <p className="text-xs leading-relaxed font-sans">{n.text}</p>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+
             {user ? (
               <div className="flex items-center gap-3">
                 <span className="font-mono text-xs text-[#94A3B8] flex items-center gap-1.5 bg-white/5 border border-white/10 px-3 py-1.5 rounded-xl">
