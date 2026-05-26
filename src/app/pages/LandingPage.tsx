@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router";
 import { ImageWithFallback } from "../components/figma/ImageWithFallback";
 import { ArrowRight, Globe, ChevronRight } from "lucide-react";
@@ -42,10 +42,10 @@ const pillars = [
 ];
 
 const counters = [
-  { raw: 8400, label: "ACTIVE_MEMBERS", display: "8,400+" },
-  { raw: 60,   label: "NATIONS_REPRESENTED", display: "60+" },
-  { raw: 150,  label: "PROJECTS_IN_ORBIT", display: "150+" },
-  { raw: 12,    label: "YEARS_OF_IMPACT", display: "12" },
+  { raw: 8400, label: "ACTIVE_MEMBERS", suffix: "+" },
+  { raw: 60,   label: "NATIONS_REPRESENTED", suffix: "+" },
+  { raw: 150,  label: "PROJECTS_IN_ORBIT", suffix: "+" },
+  { raw: 12,    label: "YEARS_OF_IMPACT", suffix: "" },
 ];
 
 const latestPosts = [
@@ -83,6 +83,28 @@ const latestPosts = [
 
 export function LandingPage() {
   const sectionRef = useScrollReveal<HTMLDivElement>();
+  const [posts, setPosts] = useState<typeof latestPosts>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchTransmissions = () => {
+    setLoading(true);
+    setError(null);
+    setTimeout(() => {
+      // 10% chance of simulated error for demonstration, otherwise render standard logs
+      const shouldFail = Math.random() < 0.1;
+      if (shouldFail) {
+        setError("ERR_DATALINK_TIMEOUT: The ground station telemetry buffer has timing desync.");
+      } else {
+        setPosts(latestPosts);
+      }
+      setLoading(false);
+    }, 1000);
+  };
+
+  useEffect(() => {
+    fetchTransmissions();
+  }, []);
 
   return (
     <div ref={sectionRef} className="stardust bg-[#0B0F19]">
@@ -130,7 +152,7 @@ export function LandingPage() {
               <ArrowRight size={17} />
             </Link>
             <Link
-              to="/media"
+              to="/media#initiatives"
               className="flex items-center gap-2 px-8 py-4 rounded-xl font-mono text-sm font-semibold tracking-wide text-blue-500 bg-blue-500/10 border border-blue-500/30 hover:bg-blue-500/20 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500"
             >
               EXPLORE_INITIATIVES →
@@ -155,6 +177,7 @@ export function LandingPage() {
               <div key={c.label} className="text-center">
                 <AnimatedCounter
                   target={c.raw}
+                  suffix={c.suffix}
                   className="text-[clamp(2rem,4.5vw,3rem)] font-extrabold leading-none bg-gradient-to-br from-pink-500 to-orange-500 bg-clip-text text-transparent"
                 />
                 <p className="mt-2 font-mono text-gray-500 text-xs tracking-[0.14em]">
@@ -169,7 +192,7 @@ export function LandingPage() {
       {/* ── THREE PILLARS ── */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
         <div className="text-center mb-16 reveal">
-          <p className="font-mono text-pink-500 text-[0.68rem] tracking-[0.18em] mb-3">
+          <p className="font-mono text-pink-500 text-xs tracking-[0.18em] mb-3">
             // MISSION_BRIEFING :: CORE_DIRECTIVES
           </p>
           <h2 className="text-white text-[clamp(1.8rem,4vw,2.5rem)] font-bold leading-tight">
@@ -254,39 +277,72 @@ export function LandingPage() {
           </Link>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {latestPosts.map((post, i) => (
-            <Link
-              key={post.id}
-              to={`/blog/${post.id}`}
-              className={`group flex flex-col rounded-2xl overflow-hidden glass-card reveal reveal-delay-${i + 1}`}
-            >
-              <div className="relative aspect-[16/10] overflow-hidden">
-                <ImageWithFallback
-                  src={post.image}
-                  alt={post.title}
-                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                />
-                <div className="absolute top-4 left-4 px-3 py-1 rounded-md font-mono text-[0.6rem] font-bold tracking-wider text-white" style={{ background: post.tagColor }}>
-                  {post.tag}
+        <div>
+          {loading ? (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {[1, 2, 3].map((n) => (
+                <div key={n} className="flex flex-col rounded-2xl overflow-hidden glass-card border border-white/5 animate-pulse">
+                  <div className="aspect-[16/10] bg-white/5" />
+                  <div className="p-6 flex flex-col flex-1 space-y-4">
+                    <div className="h-4 bg-white/5 rounded w-1/3" />
+                    <div className="h-6 bg-white/10 rounded w-full" />
+                    <div className="h-4 bg-white/5 rounded w-2/3 mt-auto" />
+                  </div>
                 </div>
-              </div>
-              <div className="p-6 flex flex-col flex-1">
-                <div className="flex items-center gap-3 mb-3 font-mono text-[0.6rem] text-gray-500 tracking-wider">
-                  <span>{post.date}</span>
-                  <span className="w-1 h-1 rounded-full bg-gray-700" />
-                  <span>BY_{post.author}</span>
-                </div>
-                <h3 className="text-white font-bold leading-snug mb-4 group-hover:text-pink-500 transition-colors line-clamp-2">
-                  {post.title}
-                </h3>
-                <div className="mt-auto flex items-center justify-between">
-                  <span className="font-mono text-[0.6rem] text-gray-500">{post.readTime}_READ</span>
-                  <span className="text-blue-500 group-hover:translate-x-1 transition-transform">→</span>
-                </div>
-              </div>
-            </Link>
-          ))}
+              ))}
+            </div>
+          ) : error ? (
+            <div className="p-8 rounded-2xl border border-red-500/20 bg-red-500/5 text-center max-w-xl mx-auto">
+              <p className="font-mono text-red-500 text-xs mb-3">// ERR_TRANSMISSION_FAILURE</p>
+              <p className="text-gray-400 text-sm mb-6 leading-relaxed">{error}</p>
+              <button
+                onClick={fetchTransmissions}
+                className="px-5 py-2.5 rounded-xl font-mono text-xs font-bold text-white bg-red-500/20 border border-red-500/40 hover:bg-red-500/35 transition-colors cursor-pointer"
+              >
+                RETRY_CONNECTION_BUFFER
+              </button>
+            </div>
+          ) : posts.length === 0 ? (
+            <div className="p-8 rounded-2xl border border-white/5 bg-white/[0.02] text-center max-w-xl mx-auto">
+              <p className="font-mono text-gray-500 text-xs mb-2">// BUFFER_EMPTY</p>
+              <p className="text-gray-400 text-sm">No telemetry transmissions currently logged in this sector.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {posts.map((post, i) => (
+                <Link
+                  key={post.id}
+                  to={`/blog/${post.id}`}
+                  className={`group flex flex-col rounded-2xl overflow-hidden glass-card reveal reveal-delay-${i + 1}`}
+                >
+                  <div className="relative aspect-[16/10] overflow-hidden">
+                    <ImageWithFallback
+                      src={post.image}
+                      alt={post.title}
+                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                    />
+                    <div className="absolute top-4 left-4 px-3 py-1 rounded-md font-mono text-xs font-bold tracking-wider text-white" style={{ background: post.tagColor }}>
+                      {post.tag}
+                    </div>
+                  </div>
+                  <div className="p-6 flex flex-col flex-1">
+                    <div className="flex items-center gap-3 mb-3 font-mono text-xs text-gray-500 tracking-wider">
+                      <span>{post.date}</span>
+                      <span className="w-1 h-1 rounded-full bg-gray-700" />
+                      <span>BY_{post.author}</span>
+                    </div>
+                    <h3 className="text-white font-bold leading-snug mb-4 group-hover:text-pink-500 transition-colors line-clamp-2">
+                      {post.title}
+                    </h3>
+                    <div className="mt-auto flex items-center justify-between">
+                      <span className="font-mono text-xs text-gray-500">{post.readTime}_READ</span>
+                      <span className="text-blue-500 group-hover:translate-x-1 transition-transform">→</span>
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          )}
         </div>
       </section>
     </div>
