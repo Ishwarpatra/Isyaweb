@@ -2,11 +2,14 @@ import { createBrowserRouter, Navigate } from "react-router";
 import { Root } from "./components/layout/Root";
 import { LandingPage } from "./pages/LandingPage";
 import { BlogPage } from "./pages/BlogPage";
+import { BlogPostDetailPage } from "./pages/BlogPostDetailPage";
 import { MediaPage } from "./pages/MediaPage";
 import { LoginPage } from "./pages/LoginPage";
 import { RegisterPage } from "./pages/RegisterPage";
+import { ResetPasswordPage } from "./pages/ResetPasswordPage";
 import { CommunityPage } from "./pages/CommunityPage";
 import { AdminPage } from "./pages/AdminPage";
+import { GuidelinesPage } from "./pages/GuidelinesPage";
 import { NotFoundPage } from "./pages/NotFoundPage";
 
 export const router = createBrowserRouter([
@@ -16,15 +19,17 @@ export const router = createBrowserRouter([
     children: [
       { index: true, Component: LandingPage },
       { path: "blog", Component: BlogPage },
+      { path: "blog/:id", Component: BlogPostDetailPage },
       { path: "media", Component: MediaPage },
       { path: "login", Component: LoginPage },
       { path: "register", Component: RegisterPage },
+      { path: "reset-password", Component: ResetPasswordPage },
       { path: "community", Component: CommunityPage },
       { path: "admin", Component: AdminPage },
-      // Redirect utility routes to Home or NotFound for now to avoid broken links
-      { path: "reset-password", element: <Navigate to="/login" replace /> },
-      { path: "terms", element: <Navigate to="/" replace /> },
-      { path: "privacy", element: <Navigate to="/" replace /> },
+      { path: "guidelines", Component: GuidelinesPage },
+      // Redirect utility routes to new guidelines page hashes to avoid broken links
+      { path: "terms", element: <Navigate to="/guidelines#terms" replace /> },
+      { path: "privacy", element: <Navigate to="/guidelines#privacy" replace /> },
       { path: "*", Component: NotFoundPage },
     ],
   },
