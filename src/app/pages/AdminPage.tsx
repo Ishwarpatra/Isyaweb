@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { Link } from "react-router";
 import {
   Users,
   FileText,
@@ -18,6 +19,7 @@ import {
   Undo2,
   Trash2,
   Lock,
+  Home,
 } from "lucide-react";
 import {
   AreaChart,
@@ -689,6 +691,17 @@ export function AdminPage() {
                 </button>
               </li>
             ))}
+
+            {/* Exit to Main Portal */}
+            <li className="pt-3 mt-3 border-t border-pink-500/10">
+              <Link
+                to="/"
+                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl font-mono text-xs tracking-wider text-gray-400 hover:text-white hover:bg-white/5 transition-all"
+              >
+                <Home size={14} className="text-pink-500" />
+                EXIT_TERMINAL
+              </Link>
+            </li>
           </ul>
         </nav>
 
