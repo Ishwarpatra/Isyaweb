@@ -18,8 +18,14 @@ export function Root() {
         className="min-h-screen flex flex-col"
         style={{ background: "#0B0F19", color: "#FFFFFF" }}
       >
+        <a 
+          href="#main-content" 
+          className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[100] focus:px-4 focus:py-2 focus:bg-pink-500 focus:text-white focus:rounded-xl focus:font-mono focus:text-xs"
+        >
+          SKIP_TO_MAIN_CONTENT
+        </a>
         {showNavbar && <Navbar />}
-        <main className={`flex-1 ${showNavbar ? "pt-16" : ""}`}>
+        <main id="main-content" className={`flex-1 ${showNavbar ? "pt-16" : ""}`}>
           <ErrorBoundary>
             <Outlet />
           </ErrorBoundary>
