@@ -10,6 +10,7 @@ const HIDE_FOOTER_PATHS = ["/login", "/register", "/admin"];
 export function Root() {
   const location = useLocation();
   const showFooter = !HIDE_FOOTER_PATHS.some((p) => location.pathname.startsWith(p));
+  const showNavbar = !location.pathname.startsWith("/admin");
 
   return (
     <AuthProvider>
@@ -17,8 +18,8 @@ export function Root() {
         className="min-h-screen flex flex-col"
         style={{ background: "#0B0F19", color: "#FFFFFF" }}
       >
-        <Navbar />
-        <main className="flex-1 pt-16">
+        {showNavbar && <Navbar />}
+        <main className={`flex-1 ${showNavbar ? "pt-16" : ""}`}>
           <ErrorBoundary>
             <Outlet />
           </ErrorBoundary>
