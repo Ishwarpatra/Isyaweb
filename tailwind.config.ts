@@ -56,9 +56,9 @@ export default {
           '50%': { transform: 'translateY(-10px)' },
         },
         'gradient-shift': {
-          '0%': { backgroundPosition: '0% center' },
-          '50%': { backgroundPosition: '100% center' },
-          '100%': { backgroundPosition: '0% center' },
+          '0%': { backgroundPosition: '0% 50%' },
+          '50%': { backgroundPosition: '100% 50%' },
+          '100%': { backgroundPosition: '0% 50%' },
         },
         'live-pulse': {
           '0%, 100%': { opacity: '1' },
