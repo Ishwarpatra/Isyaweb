@@ -1,7 +1,8 @@
-import { useState, useEffect } from "react";
-import { Play, Pause, Clock, Headphones, Youtube, ExternalLink, Radio, X } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { Play, Pause, Clock, Headphones, Youtube, Radio, X } from "lucide-react";
 import { ImageWithFallback } from "../components/figma/ImageWithFallback";
 import { useScrollReveal } from "../hooks/useScrollReveal";
+import { toast } from "sonner";
 
 const OBS1 = "https://images.unsplash.com/photo-1727034394040-0377258a5791?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHx0ZWxlc2NvcGUlMjBvYnNlcnZhdG9yeSUyMG5pZ2h0JTIwc2t5JTIwc3RhcnN8ZW58MXx8fHwxNzc5MTIxMTY2fDA&ixlib=rb-4.1.0&q=80&w=1080";
 const NEBULA = "https://images.unsplash.com/photo-1706562018605-909733434781?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHw1fHxzcGFjZSUyMGdhbGF4eSUyMGNvc21vcyUyMGRhcmslMjBuZWJ1bGF8ZW58MXx8fHwxNzc5MTIxMTYwfDA&ixlib=rb-4.1.0&q=80&w=1080";
@@ -50,6 +51,13 @@ export function MediaPage() {
   const [activeTab, setActiveTab] = useState<"videos" | "podcasts" | "initiatives">("videos");
   const [lightboxVideo, setLightboxVideo] = useState<string | null>(null);
 
+  // Audio player state
+  const [playingPodcast, setPlayingPodcast] = useState<typeof PODCASTS[0] | null>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [progress, setProgress] = useState(0);
+
+  const lightboxCloseRef = useRef<HTMLButtonElement>(null);
+
   useEffect(() => {
     if (window.location.hash === "#initiatives") {
       setActiveTab("initiatives");
@@ -75,6 +83,8 @@ export function MediaPage() {
   useEffect(() => {
     if (lightboxVideo) {
       document.body.style.overflow = "hidden";
+      lightboxCloseRef.current?.focus();
+      
       const handleEscape = (e: KeyboardEvent) => {
         if (e.key === "Escape") setLightboxVideo(null);
       };
@@ -86,8 +96,25 @@ export function MediaPage() {
     }
   }, [lightboxVideo]);
 
+  // Simulate audio player progress updates
+  useEffect(() => {
+    let interval: ReturnType<typeof setInterval>;
+    if (isPlaying) {
+      interval = setInterval(() => {
+        setProgress((prev) => {
+          if (prev >= 100) {
+            setIsPlaying(false);
+            return 0;
+          }
+          return prev + 0.5;
+        });
+      }, 500);
+    }
+    return () => clearInterval(interval);
+  }, [isPlaying]);
+
   return (
-    <div ref={sectionRef} className="stardust bg-[#0B0F19] min-h-screen">
+    <div ref={sectionRef} className="stardust bg-[#0B0F19] min-h-screen pb-28">
       {/* Header */}
       <div className="pt-20 pb-14 text-center relative overflow-hidden bg-gradient-to-b from-[#05080F] to-[#0B0F19]">
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full pointer-events-none animate-pulse-glow bg-pink-500/10 blur-[120px]" />
@@ -117,7 +144,7 @@ export function MediaPage() {
                 role="tab"
                 aria-selected={activeTab === id}
                 onClick={() => setActiveTab(id)}
-                className={`flex items-center gap-2 px-5 py-4 transition-all duration-200 relative shrink-0 font-mono text-[0.7rem] tracking-widest ${
+                className={`flex items-center gap-2 px-5 py-4 transition-all duration-200 relative shrink-0 font-mono text-[0.7rem] tracking-widest cursor-pointer ${
                   activeTab === id ? "text-pink-500 font-bold" : "text-gray-500 hover:text-gray-300"
                 }`}
               >
@@ -145,7 +172,7 @@ export function MediaPage() {
                 <button
                   key={video.id}
                   onClick={() => setLightboxVideo(video.youtubeId)}
-                  className="text-left rounded-xl overflow-hidden group bg-gray-900/50 border border-pink-500/10 backdrop-blur-md transition-all hover:-translate-y-1 hover:border-pink-500/30 hover:shadow-[0_8px_32px_rgba(0,0,0,0.4)] relative"
+                  className="text-left rounded-xl overflow-hidden group bg-gray-900/50 border border-pink-500/10 backdrop-blur-md transition-all hover:-translate-y-1 hover:border-pink-500/30 hover:shadow-[0_8px_32px_rgba(0,0,0,0.4)] relative cursor-pointer w-full"
                 >
                   <div className="hud-corners absolute inset-0 pointer-events-none z-10" />
                   <div className="relative aspect-video overflow-hidden">
@@ -191,8 +218,28 @@ export function MediaPage() {
                 key={podcast.id}
                 className="p-6 rounded-xl bg-gray-900/50 border border-pink-500/10 backdrop-blur-md flex flex-col sm:flex-row items-start sm:items-center gap-6 group hover:border-pink-500/30 transition-colors"
               >
-                <button className="w-12 h-12 rounded-full bg-pink-500/10 flex items-center justify-center text-pink-500 hover:bg-pink-500 hover:text-white transition-all shrink-0">
-                  <Play size={20} className="ml-0.5" />
+                <button
+                  onClick={() => {
+                    if (playingPodcast?.id === podcast.id) {
+                      setIsPlaying(!isPlaying);
+                    } else {
+                      setPlayingPodcast(podcast);
+                      setIsPlaying(true);
+                      setProgress(0);
+                    }
+                  }}
+                  className={`w-12 h-12 rounded-full flex items-center justify-center transition-all shrink-0 cursor-pointer ${
+                    playingPodcast?.id === podcast.id && isPlaying
+                      ? "bg-pink-500 text-white shadow-[0_0_15px_rgba(236,72,153,0.4)]"
+                      : "bg-pink-500/10 text-pink-500 hover:bg-pink-500 hover:text-white"
+                  }`}
+                  aria-label={playingPodcast?.id === podcast.id && isPlaying ? "Pause episode" : "Play episode"}
+                >
+                  {playingPodcast?.id === podcast.id && isPlaying ? (
+                    <Pause size={20} />
+                  ) : (
+                    <Play size={20} className="ml-0.5" />
+                  )}
                 </button>
                 <div className="flex-1">
                   <div className="flex items-center gap-3 mb-1 font-mono text-xs text-pink-500 tracking-wider">
@@ -248,7 +295,12 @@ export function MediaPage() {
                   <div className="font-mono text-xs text-gray-500">
                     PARTICIPANTS: {init.participants}
                   </div>
-                  <button className="flex items-center gap-2 text-blue-500 font-mono text-xs font-bold tracking-widest hover:text-blue-400 transition-colors cursor-pointer">
+                  <button 
+                    onClick={() => {
+                      toast.success(`Successfully enlisted in ${init.title}! Space mission files synced.`);
+                    }}
+                    className="flex items-center gap-2 text-blue-500 font-mono text-xs font-bold tracking-widest hover:text-blue-400 transition-colors cursor-pointer"
+                  >
                     ENLIST_NOW →
                   </button>
                 </div>
@@ -262,8 +314,9 @@ export function MediaPage() {
       {lightboxVideo && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/95 backdrop-blur-sm">
           <button
+            ref={lightboxCloseRef}
             onClick={() => setLightboxVideo(null)}
-            className="absolute top-6 right-6 p-3 text-gray-400 hover:text-white transition-colors"
+            className="absolute top-6 right-6 p-3 text-gray-400 hover:text-white transition-colors cursor-pointer"
             aria-label="Close video"
           >
             <X size={32} />
@@ -277,6 +330,60 @@ export function MediaPage() {
               allowFullScreen
               className="w-full h-full"
             />
+          </div>
+        </div>
+      )}
+
+      {/* Bottom audio player dock */}
+      {playingPodcast && (
+        <div className="fixed bottom-0 left-0 right-0 z-50 bg-[#05080F]/95 backdrop-blur-md border-t border-pink-500/20 p-4 shadow-[0_-8px_32px_rgba(236,72,153,0.15)] transition-all">
+          <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-pink-500/10 flex items-center justify-center text-pink-500 shrink-0 font-mono text-xs font-bold border border-pink-500/20 animate-pulse">
+                📻
+              </div>
+              <div>
+                <p className="font-mono text-[10px] text-pink-500 tracking-wider">NOW_STREAMING // {playingPodcast.episode}</p>
+                <h4 className="text-white text-sm font-semibold truncate max-w-[200px] md:max-w-[300px]">{playingPodcast.title}</h4>
+              </div>
+            </div>
+            
+            <div className="flex flex-1 max-w-xl items-center gap-4 w-full">
+              <button 
+                onClick={() => setIsPlaying(!isPlaying)}
+                className="w-10 h-10 rounded-full bg-pink-500 text-white flex items-center justify-center hover:scale-105 active:scale-95 transition-all shrink-0 cursor-pointer shadow-[0_0_12px_rgba(236,72,153,0.4)]"
+                aria-label={isPlaying ? "Pause podcast" : "Play podcast"}
+              >
+                {isPlaying ? <Pause size={18} /> : <Play size={18} className="ml-0.5" />}
+              </button>
+              
+              <div className="flex-1 flex items-center gap-2">
+                <span className="font-mono text-[10px] text-gray-500">
+                  {Math.floor((progress / 100) * 45)}:00
+                </span>
+                <div 
+                  className="flex-1 h-1.5 rounded bg-white/10 overflow-hidden relative cursor-pointer"
+                  onClick={(e) => {
+                    const rect = e.currentTarget.getBoundingClientRect();
+                    const clickX = e.clientX - rect.left;
+                    setProgress(Math.round((clickX / rect.width) * 100));
+                  }}
+                >
+                  <div className="h-full bg-gradient-to-r from-pink-500 to-orange-500 transition-all duration-300" style={{ width: `${progress}%` }} />
+                </div>
+                <span className="font-mono text-[10px] text-gray-500">{playingPodcast.duration}</span>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <button 
+                onClick={() => { setPlayingPodcast(null); setIsPlaying(false); }}
+                className="text-gray-400 hover:text-white transition-colors cursor-pointer"
+                aria-label="Close audio player"
+              >
+                <X size={18} />
+              </button>
+            </div>
           </div>
         </div>
       )}
