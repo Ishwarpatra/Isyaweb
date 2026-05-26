@@ -16,10 +16,50 @@ export function TextDecode({ text, delay = 0, duration = 800, className = "" }: 
   const nodeRef = useRef<HTMLSpanElement>(null);
 
   useEffect(() => {
+    // Check if user prefers reduced motion
+    const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (prefersReducedMotion) {
+      setDisplayText(text);
+      setIsDecoding(false);
+      return;
+    }
+
+    const startDecode = () => {
+      // Use requestAnimationFrame to ensure the component is actually painted in the DOM
+      requestAnimationFrame(() => {
+        setIsDecoding(true);
+        let iteration = 0;
+        const totalIterations = Math.floor(duration / 40);
+
+        const interval = setInterval(() => {
+          setDisplayText((prev) =>
+            text
+              .split("")
+              .map((char, index) => {
+                if (index < (iteration / totalIterations) * text.length) {
+                  return text[index];
+                }
+                return CHARS[Math.floor(Math.random() * CHARS.length)];
+              })
+              .join("")
+          );
+
+          if (iteration >= totalIterations) {
+            clearInterval(interval);
+            setDisplayText(text);
+            setIsDecoding(false);
+          }
+
+          iteration += 1;
+        }, 40);
+      });
+    };
+
     const observer = new IntersectionObserver(
       (entries) => {
         if (entries[0].isIntersecting && !hasAnimated.current) {
           hasAnimated.current = true;
+          // Apply safety delay
           setTimeout(startDecode, delay);
         }
       },
@@ -30,44 +70,12 @@ export function TextDecode({ text, delay = 0, duration = 800, className = "" }: 
       observer.observe(nodeRef.current);
     }
 
-    const startDecode = () => {
-      setIsDecoding(true);
-      let iteration = 0;
-      const totalIterations = Math.floor(duration / 40);
-      
-      const interval = setInterval(() => {
-        setDisplayText((prev) =>
-          text
-            .split("")
-            .map((char, index) => {
-              if (index < (iteration / totalIterations) * text.length) {
-                return text[index];
-              }
-              return CHARS[Math.floor(Math.random() * CHARS.length)];
-            })
-            .join("")
-        );
-
-        if (iteration >= totalIterations) {
-          clearInterval(interval);
-          setDisplayText(text);
-          setIsDecoding(false);
-        }
-
-        iteration += 1;
-      }, 40);
-    };
-
     return () => observer.disconnect();
   }, [text, delay, duration]);
 
   return (
-    <span ref={nodeRef} className={className} aria-label={text}>
-      <span aria-hidden={isDecoding} className={isDecoding ? "font-mono opacity-80" : ""}>
-        {displayText}
-      </span>
-      {/* Hidden static text for SEO and Screen Readers during animation */}
-      {isDecoding && <span className="sr-only">{text}</span>}
+    <span ref={nodeRef} className={className} aria-live="off">
+      {displayText}
     </span>
   );
 }
