@@ -1,17 +1,25 @@
 import { useEffect, useState, useRef } from "react";
 
 interface AnimatedCounterProps {
-  target: string | number;
+  target: number;
+  suffix?: string;
   duration?: number;
   className?: string;
 }
 
-export function AnimatedCounter({ target, duration = 2000, className = "" }: AnimatedCounterProps) {
+export function AnimatedCounter({ target, suffix = "", duration = 2000, className = "" }: AnimatedCounterProps) {
   const [displayValue, setDisplayValue] = useState("0");
   const nodeRef = useRef<HTMLSpanElement>(null);
   const hasAnimated = useRef(false);
 
   useEffect(() => {
+    // Check if user prefers reduced motion
+    const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (prefersReducedMotion) {
+      setDisplayValue(target.toLocaleString() + suffix);
+      return;
+    }
+
     const observer = new IntersectionObserver(
       (entries) => {
         if (entries[0].isIntersecting && !hasAnimated.current) {
@@ -19,7 +27,7 @@ export function AnimatedCounter({ target, duration = 2000, className = "" }: Ani
           animate();
         }
       },
-      { threshold: 0.1 }
+      { threshold: 0.15 }
     );
 
     if (nodeRef.current) {
@@ -27,34 +35,36 @@ export function AnimatedCounter({ target, duration = 2000, className = "" }: Ani
     }
 
     const animate = () => {
-      const targetStr = String(target);
-      const targetNum = parseInt(targetStr.replace(/,/g, ""), 10);
-      const suffix = targetStr.replace(/[0-9,]/g, "");
-      
-      if (isNaN(targetNum)) {
-        setDisplayValue(targetStr);
-        return;
-      }
-
       let startTimestamp: number | null = null;
+
+      const easeOutQuad = (x: number): number => {
+        return 1 - (1 - x) * (1 - x);
+      };
+
       const step = (timestamp: number) => {
         if (!startTimestamp) startTimestamp = timestamp;
-        const progress = Math.min((timestamp - startTimestamp) / duration, 1);
-        const currentCount = Math.floor(progress * targetNum);
+        const elapsed = timestamp - startTimestamp;
+        const progressRaw = Math.min(elapsed / duration, 1);
+        const progress = easeOutQuad(progressRaw);
+        
+        const currentCount = Math.floor(progress * target);
         
         setDisplayValue(
           currentCount.toLocaleString() + suffix
         );
 
-        if (progress < 1) {
+        if (progressRaw < 1) {
           window.requestAnimationFrame(step);
+        } else {
+          setDisplayValue(target.toLocaleString() + suffix);
         }
       };
+
       window.requestAnimationFrame(step);
     };
 
     return () => observer.disconnect();
-  }, [target, duration]);
+  }, [target, suffix, duration]);
 
   return (
     <span ref={nodeRef} className={className} aria-live="polite">
