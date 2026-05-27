@@ -336,6 +336,8 @@
   .animate-twinkle,
   .animate-radar,
   .animate-live-pulse,
+  .animate-shake,
+  .eq-bar,
   .hud-scanline::after {
     animation: none !important;
   }
@@ -352,6 +354,13 @@
   }
   .animate-live-pulse::after {
     animation: none !important;
+  }
+  /* Broad catch-all: freeze any remaining decorative animations */
+  *:not(:focus-visible) {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }
 
@@ -444,3 +453,229 @@
     color: #334155 !important;
   }
 }
+
+/* ════════════════════════════════════════════════════════════
+   ── ADVANCED SPACE UI EFFECTS ──────────────────────────────
+   ════════════════════════════════════════════════════════════ */
+
+/* ── 1. Warp Drive Animated Border (spinning conic-gradient edge) ── */
+.warp-border {
+  position: relative;
+  isolation: isolate;
+  border-radius: 12px;
+  overflow: hidden;
+}
+/* Spinning conic-gradient behind the element */
+.warp-border::before {
+  content: '';
+  position: absolute;
+  inset: -50%;
+  background: conic-gradient(
+    from 0deg,
+    transparent 70%,
+    var(--color-brand-pink, #EC4899) 82%,
+    var(--color-brand-blue, #3B82F6) 100%
+  );
+  z-index: -2;
+  animation: radar-sweep 3s linear infinite;
+  will-change: transform;
+}
+/* Dark core to punch through the center, revealing only the edge border */
+.warp-border::after {
+  content: '';
+  position: absolute;
+  inset: 2px;
+  background: #0B0F19;
+  border-radius: 10px;
+  z-index: -1;
+  transition: background 300ms ease;
+}
+.warp-border:hover::after {
+  background: rgba(11, 15, 25, 0.75);
+}
+
+/* ── 2. Target Lock — Reactive HUD Corner Expansion ── */
+/* Replaces the static .hud-corners with a springy lock-on animation */
+.hud-corners::before,
+.hud-corners::after {
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); /* springy bounce */
+}
+.hud-corners:hover::before,
+.hud-corners:hover::after {
+  width: 22px;
+  height: 22px;
+  border-color: rgba(236, 72, 153, 1);
+  box-shadow: 0 0 10px rgba(236, 72, 153, 0.5);
+}
+.hud-corners:hover::before {
+  top: -7px;
+  left: -7px;
+}
+.hud-corners:hover::after {
+  bottom: -7px;
+  right: -7px;
+}
+
+/* ── 3. Cybernetic Data Glitch (for ERR states & telemetry labels) ── */
+@keyframes text-glitch {
+  0%   { transform: translate(0); }
+  20%  { transform: translate(-2px, 1px); }
+  40%  { transform: translate(-1px, -1px); }
+  60%  { transform: translate(2px, 1px); }
+  80%  { transform: translate(1px, -1px); }
+  100% { transform: translate(0); }
+}
+@keyframes text-glitch-clip {
+  0%   { clip-path: inset(10% 0 80% 0); }
+  20%  { clip-path: inset(80% 0 5%  0); }
+  40%  { clip-path: inset(40% 0 40% 0); }
+  60%  { clip-path: inset(15% 0 65% 0); }
+  80%  { clip-path: inset(60% 0 20% 0); }
+  100% { clip-path: inset(10% 0 80% 0); }
+}
+.text-glitch {
+  position: relative;
+}
+.text-glitch::before,
+.text-glitch::after {
+  content: attr(data-text);
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  opacity: 0.8;
+  pointer-events: none;
+}
+.text-glitch::before {
+  color: #0ff;
+  z-index: -1;
+  animation:
+    text-glitch 0.3s cubic-bezier(.25, .46, .45, .94) both infinite,
+    text-glitch-clip 2s linear infinite;
+  transform: translate(-2px, 0);
+}
+.text-glitch::after {
+  color: #f0f;
+  z-index: -2;
+  animation:
+    text-glitch 0.3s cubic-bezier(.25, .46, .45, .94) reverse both infinite,
+    text-glitch-clip 3s linear infinite alternate-reverse;
+  transform: translate(2px, 0);
+}
+
+/* ── 4. Ambient Nebula Glow inside glass-card ── */
+/* Adds a soft nebula radial-gradient inside every card that brightens on hover */
+.glass-card {
+  position: relative;
+  overflow: hidden;
+}
+.glass-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    circle at 50% 0%,
+    rgba(236, 72, 153, 0.07) 0%,
+    rgba(59, 130, 246, 0.04) 45%,
+    transparent 80%
+  );
+  opacity: 0.5;
+  transition: opacity 0.4s ease, transform 0.4s ease;
+  z-index: 0;
+  pointer-events: none;
+}
+.glass-card:hover::before {
+  opacity: 1;
+  transform: translateY(8px) scale(1.08);
+}
+/* Ensure card children render above the pseudo nebula */
+.glass-card > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* ── 5. Astronaut Visor Reflection Sweep ── */
+/* A glossy highlight that sweeps across on hover, simulating reflected starlight */
+.visor-reflect {
+  position: relative;
+  overflow: hidden;
+}
+.visor-reflect::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -150%;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(
+    to right,
+    rgba(255, 255, 255, 0)   0%,
+    rgba(255, 255, 255, 0.1) 50%,
+    rgba(255, 255, 255, 0)   100%
+  );
+  transform: skewX(-25deg);
+  transition: left 0.75s ease;
+  z-index: 10;
+  pointer-events: none;
+}
+.visor-reflect:hover::after {
+  left: 150%;
+}
+
+/* ── 6. Holographic Foil Text (for counters, stats, key numbers) ── */
+@keyframes hologram-shine {
+  to { background-position: 200% center; }
+}
+.text-hologram {
+  background: linear-gradient(
+    110deg,
+    #EC4899 0%,
+    #3B82F6 25%,
+    #0ff    50%,
+    #FFA500 75%,
+    #EC4899 100%
+  );
+  background-size: 200% auto;
+  color: transparent;
+  -webkit-background-clip: text;
+  background-clip: text;
+  animation: hologram-shine 4s linear infinite;
+  filter: drop-shadow(0 0 8px rgba(59, 130, 246, 0.3));
+}
+
+/* ── 7. Zero-G Microgravity Hover Drift ── */
+/* Cards drift up with subtle 3-D rotation, like floating in low orbit */
+.zero-g-hover {
+  transition: transform 0.6s cubic-bezier(0.33, 1, 0.68, 1),
+              box-shadow 0.6s ease;
+  will-change: transform;
+}
+@media (hover: hover) and (pointer: fine) {
+  .zero-g-hover:hover {
+    transform: translateY(-10px) scale(1.02) rotate3d(1, 1, 0, 1.5deg);
+    box-shadow:
+      -8px 20px 40px rgba(0, 0, 0, 0.55),
+      0 0 30px rgba(59, 130, 246, 0.12);
+    z-index: 10;
+  }
+}
+
+/* ── 8. Tactical Blueprint Grid (star-map background texture) ── */
+/* Apply to a full-cover <div> inside any section for a radar-grid overlay */
+.bg-tactical-grid {
+  background-size: 40px 40px;
+  background-image:
+    linear-gradient(to right,  rgba(236, 72, 153, 0.04) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(236, 72, 153, 0.04) 1px, transparent 1px);
+  mask-image: radial-gradient(ellipse at center, black 40%, transparent 80%);
+  -webkit-mask-image: radial-gradient(ellipse at center, black 40%, transparent 80%);
+}
+
+/* ── 9. Warp Speed Page Entrance Animation ── */
+@keyframes warp-in {
+  0%   { filter: blur(18px); transform: scale(1.08); opacity: 0; }
+  100% { filter: blur(0);    transform: scale(1);    opacity: 1; }
+}
+.animate-warp-in {
+  animation: warp-in 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+

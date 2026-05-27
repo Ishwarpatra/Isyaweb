@@ -194,7 +194,7 @@ export function LandingPage() {
             {user ? (
               <Link
                 to="/admin"
-                className="group flex items-center gap-3 px-8 py-4 rounded-xl font-mono text-[0.85rem] font-bold tracking-wider text-white shadow-[0_0_35px_rgba(236,72,153,0.45)] btn-gradient-shift hover:shadow-[0_0_50px_rgba(236,72,153,0.7)] active:scale-95 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#EC4899]"
+                className="warp-border group flex items-center gap-3 px-8 py-4 rounded-xl font-mono text-[0.85rem] font-bold tracking-wider text-white shadow-[0_0_35px_rgba(236,72,153,0.45)] btn-gradient-shift hover:shadow-[0_0_50px_rgba(236,72,153,0.7)] active:scale-95 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#EC4899]"
               >
                 GO_TO_COMMAND_CENTER
                 <ArrowRight className="w-4 h-4" />
@@ -202,7 +202,7 @@ export function LandingPage() {
             ) : (
               <Link
                 to="/register"
-                className="group flex items-center gap-3 px-8 py-4 rounded-xl font-mono text-[0.85rem] font-bold tracking-wider text-white shadow-[0_0_35px_rgba(236,72,153,0.45)] btn-gradient-shift hover:shadow-[0_0_50px_rgba(236,72,153,0.7)] active:scale-95 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#EC4899]"
+                className="warp-border group flex items-center gap-3 px-8 py-4 rounded-xl font-mono text-[0.85rem] font-bold tracking-wider text-white shadow-[0_0_35px_rgba(236,72,153,0.45)] btn-gradient-shift hover:shadow-[0_0_50px_rgba(236,72,153,0.7)] active:scale-95 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#EC4899]"
               >
                 INITIATE_LAUNCH // {CTA_LABELS.JOIN.toUpperCase().replace(/ /g, "_")}
                 <ArrowRight className="w-4 h-4" />
@@ -241,7 +241,7 @@ export function LandingPage() {
                   <AnimatedCounter
                     target={c.raw}
                     suffix={c.suffix}
-                    className="text-3xl md:text-5xl font-extrabold leading-none bg-gradient-to-br from-brand-orange to-brand-pink bg-clip-text text-transparent"
+                    className="text-3xl md:text-5xl font-extrabold leading-none bg-gradient-to-br from-brand-orange to-brand-pink bg-clip-text text-transparent text-hologram"
                   />
                   <p className="mt-2 font-mono text-gray-400 text-xs tracking-telemetry">
                     [{c.label}]
@@ -254,7 +254,10 @@ export function LandingPage() {
       </section>
 
       {/* ── THREE PILLARS ── */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 relative">
+        {/* Tactical star-map grid overlay */}
+        <div className="absolute inset-0 bg-tactical-grid pointer-events-none" aria-hidden="true" />
+
         <div className="text-center mb-16 reveal">
           <p className="font-mono text-brand-pink text-xs tracking-telemetry-wide mb-3">
             // MISSION_BRIEFING :: CORE_DIRECTIVES
@@ -270,7 +273,7 @@ export function LandingPage() {
             return (
               <li
                 key={p.title}
-                className={`p-8 rounded-2xl glass-card hud-corners reveal reveal-delay-${i + 1}`}
+                className={`p-8 rounded-2xl glass-card hud-corners zero-g-hover reveal reveal-delay-${i + 1}`}
               >
                 <div className="mb-4 text-brand-pink">
                   <IconComponent size={32} className="drop-shadow-[0_0_8px_rgba(236,72,153,0.4)]" />
@@ -379,7 +382,10 @@ export function LandingPage() {
             </div>
           ) : error ? (
             <div className="p-8 rounded-2xl border border-red-500/20 bg-red-500/5 text-center max-w-xl mx-auto">
-              <p className="font-mono text-red-500 text-xs mb-3">// ERR_TRANSMISSION_FAILURE</p>
+              <p
+                className="text-glitch font-mono text-red-500 text-xs mb-3"
+                data-text="// ERR_TRANSMISSION_FAILURE"
+              >// ERR_TRANSMISSION_FAILURE</p>
               <p className="text-gray-400 text-sm mb-6 leading-relaxed">{error}</p>
               <button
                 onClick={fetchTransmissions}

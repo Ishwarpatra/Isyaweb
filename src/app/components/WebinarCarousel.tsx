@@ -132,7 +132,7 @@ export function WebinarCarousel({ webinars }: WebinarCarouselProps) {
                 <div className="absolute top-0 right-0 w-3 h-3 border-t border-r border-pink-500/30 rounded-tr" />
                 
                 {/* Video Image Thumbnail */}
-                <div className="relative aspect-video overflow-hidden">
+                <div className="relative aspect-video overflow-hidden visor-reflect">
                   <ImageWithFallback 
                     src={webinar.image} 
                     alt={webinar.title} 
