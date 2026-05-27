@@ -117,7 +117,7 @@ export function MentorPage() {
           setMentors(mockDb.getMentors());
         }
         setBookingSuccess(true);
-        toast.success("Match request logged! Dispatching orbital confirmation receipt.");
+        toast.success("Session booked and logged in system. Check back for mentor confirmation.");
       } catch (err: any) {
         toast.error(err.message || "Failed to submit booking.");
       } finally {

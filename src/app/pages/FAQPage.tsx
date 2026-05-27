@@ -154,6 +154,7 @@ export function FAQPage() {
                     aria-selected={activeCategory === cat}
                     onClick={() => {
                       setActiveCategory(cat);
+                      setSearchQuery(""); // Clear search when switching categories
                       handleCollapseAll();
                       setVisibleCount(10); // Reset limits
                     }}

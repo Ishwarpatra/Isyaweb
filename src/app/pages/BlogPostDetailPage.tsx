@@ -4,9 +4,18 @@ import { ArrowLeft, MessageSquare, Clock, Calendar, Send, Heart, Loader2 } from 
 import { ImageWithFallback } from "../components/figma/ImageWithFallback";
 import { getInitials } from "./CommunityPage";
 import { toast } from "sonner";
-import { format, parseISO } from "date-fns";
+import { format, parseISO, formatDistanceToNow } from "date-fns";
 import { mockDb, BlogPost, BlogComment } from "../utils/mockDb";
 import { useAuth } from "../hooks/useAuth";
+
+/** Convert a Unix millisecond timestamp to a human-readable relative string. */
+function timeAgo(ms: number): string {
+  try {
+    return formatDistanceToNow(new Date(ms), { addSuffix: true });
+  } catch {
+    return "recently";
+  }
+}
 
 // Simple inline markdown compiler for bold, italic, code chunks, and external links
 function parseMarkdown(text: string): React.ReactNode {
@@ -96,7 +105,7 @@ export function BlogPostDetailPage() {
           postId,
           author: authorName,
           avatar: avatarInitials,
-          time: "Just now",
+          time: "", // unused — rendered dynamically from createdAt
           text: commentText.trim(),
         });
 
@@ -218,7 +227,7 @@ export function BlogPostDetailPage() {
                     {related.excerpt}
                   </p>
                   <div className="flex items-center gap-2 font-mono text-[9px] text-gray-500 mt-4">
-                    <span>{related.date}</span>
+                    <span>{format(parseISO(related.date), 'LLL dd, yyyy').toUpperCase()}</span>
                     <span>•</span>
                     <span>{related.readTime}</span>
                   </div>
@@ -272,7 +281,7 @@ export function BlogPostDetailPage() {
                 <div className="space-y-1">
                   <div className="flex items-center gap-2">
                     <span className="text-white font-semibold text-xs">{c.author}</span>
-                    <span className="text-gray-500 text-[10px] font-mono">{c.time}</span>
+                    <span className="text-gray-500 text-[10px] font-mono">{timeAgo(c.createdAt)}</span>
                   </div>
                   <p className="text-gray-400 text-xs">{c.text}</p>
                 </div>
