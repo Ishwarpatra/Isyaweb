@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router";
 import { Eye, EyeOff, ChevronRight, ShieldCheck, AlertCircle } from "lucide-react";
 import logoImg from "../../imports/Logo_ISYA__1_-2.jpeg";
 import { toast } from "sonner";
+import { useAuth } from "../hooks/useAuth";
 
 const INTERESTS = [
   "Astrophysics", 
@@ -40,6 +41,7 @@ function shieldStrength(pw: string): { score: number; label: string; color: stri
 
 export function RegisterPage() {
   const navigate = useNavigate();
+  const { register } = useAuth();
   const [step, setStep] = useState(1);
   const [showPassword, setShowPassword] = useState(false);
   const [agreed, setAgreed] = useState(false);
@@ -111,7 +113,7 @@ export function RegisterPage() {
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!validateStep(3)) {
@@ -120,19 +122,15 @@ export function RegisterPage() {
     }
 
     setLoading(true);
-    setTimeout(() => {
+    try {
+      await register(email, password, `${firstName} ${lastName}`);
       setLoading(false);
       toast.success("Enlistment successful! Welcome to the ISYA network.");
-      // Create user session details
-      const newUser = {
-        email: email.toLowerCase().trim(),
-        name: `${firstName} ${lastName}`,
-        role: "user",
-      };
-      sessionStorage.setItem("isya_user", JSON.stringify(newUser));
-      
       navigate("/");
-    }, 1800);
+    } catch (err: any) {
+      setLoading(false);
+      toast.error(err.message || "Registration failed. Please try again.");
+    }
   };
 
   return (

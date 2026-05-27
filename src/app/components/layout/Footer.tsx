@@ -1,6 +1,7 @@
 import { Link } from "react-router";
 import { Twitter, Youtube, Mail } from "lucide-react";
 import logoImg from "../../../imports/Logo_ISYA__1_-2.jpeg";
+import { CTA_LABELS } from "../../constants/copytext";
 
 export function Footer() {
   return (
@@ -72,7 +73,7 @@ export function Footer() {
             </h4>
             <ul className="flex flex-col gap-2.5">
               {[
-                { label: "Join ISYA", path: "/register" },
+                { label: CTA_LABELS.JOIN, path: "/register" },
                 { label: "Sign In", path: "/login" },
               ].map((link) => (
                 <li key={link.path}>

@@ -28,7 +28,7 @@ export function ResetPasswordPage() {
       setLoading(false);
       toast.success("Security reset token sent to your email coordinates!");
       navigate("/login");
-    }, 1200);
+    }, 200);
   };
 
   return (

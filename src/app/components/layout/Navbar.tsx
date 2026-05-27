@@ -6,12 +6,15 @@ import { useAuth } from "../../hooks/useAuth";
 import { lockScroll, unlockScroll } from "../../hooks/useScrollLock";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
+import { CTA_LABELS } from "../../constants/copytext";
 
 const navLinks = [
   { label: "Home", path: "/" },
   { label: "Blog", path: "/blog" },
   { label: "Media", path: "/media" },
   { label: "Community", path: "/community" },
+  { label: "Mentor Program", path: "/mentor" },
+  { label: "FAQs", path: "/faqs" },
 ];
 
 // Derive initial ISO timestamps from now - offsets
@@ -73,7 +76,7 @@ export function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const location = useLocation();
   const navigation = useNavigation();
-  const { user, logout, isAdmin } = useAuth();
+  const { user, logout, isAdmin, isModerator } = useAuth();
 
   const menuButtonRef = useRef<HTMLButtonElement>(null);
   const overlayRef = useRef<HTMLDivElement>(null);
@@ -273,8 +276,11 @@ export function Navbar() {
     return () => mq.removeEventListener("change", handleBreakpointChange);
   }, [mobileOpen]);
 
-  // Combine standard and admin links dynamically
+  // Combine standard, mod, and admin links dynamically
   const links = [...navLinks];
+  if (isModerator) {
+    links.push({ label: "Moderation Queue", path: "/moderation" });
+  }
   if (isAdmin) {
     links.push({ label: "Admin Panel", path: "/admin" });
   }
@@ -413,7 +419,7 @@ export function Navbar() {
                   to="/register"
                   className="px-5 py-2 rounded-xl transition-all duration-300 text-white text-sm font-semibold shadow-[0_0_18px_rgba(255,165,0,0.28)] bg-gradient-to-br from-[#FFA500] to-[#EC4899] bg-[length:200%_auto] hover:shadow-[0_0_28px_rgba(236,72,153,0.5)] active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#EC4899]"
                 >
-                  Join ISYA
+                  {CTA_LABELS.JOIN}
                 </Link>
               </>
             )}
@@ -488,7 +494,7 @@ export function Navbar() {
                     onClick={closeMenu}
                     className="px-4 py-3 rounded-xl text-center text-white text-[0.9rem] font-semibold bg-gradient-to-r from-[#FFA500] to-[#EC4899]"
                   >
-                    Join ISYA
+                    {CTA_LABELS.JOIN}
                   </Link>
                 </>
               )}

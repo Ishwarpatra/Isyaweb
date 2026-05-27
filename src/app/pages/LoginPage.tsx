@@ -48,6 +48,7 @@ export function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [activeSSO, setActiveSSO] = useState<string | null>(null);
 
   // Field validation states
   const [emailError, setEmailError] = useState("");
@@ -121,17 +122,19 @@ export function LoginPage() {
 
   const handleSSOLogin = async (provider: string) => {
     setLoading(true);
-    const promise = loginSSO(provider);
-    toast.promise(promise, {
-      loading: `Contacting ${provider} authentication node...`,
-      success: () => {
-        setLoading(false);
-        navigate("/");
-        return `SSO access granted via ${provider}!`;
-      },
-      error: `SSO handshake failed with ${provider}.`,
-    });
+    setActiveSSO(provider);
+    try {
+      await loginSSO(provider);
+      toast.success(`SSO access granted via ${provider}!`);
+      navigate("/");
+    } catch (err) {
+      toast.error(`SSO handshake failed with ${provider}.`);
+    } finally {
+      setLoading(false);
+      setActiveSSO(null);
+    }
   };
+
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4 py-20 relative overflow-hidden bg-[#0B0F19] stardust">
@@ -167,34 +170,6 @@ export function LoginPage() {
         {/* Card */}
         <div className="rounded-2xl p-8 bg-gray-900/70 backdrop-blur-2xl border border-pink-500/15 shadow-2xl relative hud-corners">
           
-          {/* SSO Providers */}
-          <div className="mb-6">
-            <p className="font-mono text-xs text-gray-400 tracking-widest mb-3">
-              // SSO_PROTOCOL_SELECT
-            </p>
-            <div className="flex gap-2">
-              {SSO_PROVIDERS.map(({ id, label, Icon }) => (
-                <button
-                  key={id}
-                  type="button"
-                  onClick={() => handleSSOLogin(id)}
-                  disabled={loading}
-                  aria-label={`Sign in with ${label}`}
-                  className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-white/5 border border-white/10 text-gray-300 hover:bg-pink-500/10 hover:border-pink-500/30 hover:text-white transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed group"
-                >
-                  <Icon />
-                  <span className="font-mono text-xs font-medium">{label}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="flex items-center gap-3 mb-6">
-            <div className="flex-1 h-px bg-white/5" />
-            <span className="text-gray-400 font-mono text-xs">OR</span>
-            <div className="flex-1 h-px bg-white/5" />
-          </div>
-
           <form onSubmit={handleSubmit} className="space-y-6" noValidate>
             <div>
               <label htmlFor="email" className="block font-mono text-xs text-gray-400 tracking-widest mb-2">
@@ -297,6 +272,43 @@ export function LoginPage() {
               )}
             </button>
           </form>
+
+          <div className="flex items-center gap-3 my-6">
+            <div className="flex-1 h-px bg-white/5" />
+            <span className="text-gray-400 font-mono text-xs">OR</span>
+            <div className="flex-1 h-px bg-white/5" />
+          </div>
+
+          {/* SSO Providers */}
+          <div className="mb-6">
+            <p className="font-mono text-xs text-gray-400 tracking-widest mb-3">
+              // SSO_PROTOCOL_SELECT
+            </p>
+            <div className="flex gap-2">
+              {SSO_PROVIDERS.map(({ id, label, Icon }) => {
+                const isThisLoading = activeSSO === id;
+                return (
+                  <button
+                    key={id}
+                    type="button"
+                    onClick={() => handleSSOLogin(id)}
+                    disabled={loading}
+                    aria-label={`Sign in with ${label}`}
+                    className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-white/5 border border-white/10 text-gray-300 hover:bg-pink-500/10 hover:border-pink-500/30 hover:text-white transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed group"
+                  >
+                    {isThisLoading ? (
+                      <span className="w-3.5 h-3.5 border-2 border-pink-500 border-t-transparent rounded-full animate-spin shrink-0" />
+                    ) : (
+                      <Icon className="shrink-0" />
+                    )}
+                    <span className="font-mono text-xs font-medium">
+                      {isThisLoading ? "CONNECTING..." : label}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
 
           <div className="mt-8 pt-6 border-t border-white/5 flex items-center justify-between">
             <p className="font-mono text-gray-500 text-xs">NO_CLEARANCE?</p>

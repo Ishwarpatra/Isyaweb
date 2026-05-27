@@ -31,6 +31,7 @@ export function AnimatedCounter({ target, suffix = "", duration = 2000, classNam
     );
 
     let timer: ReturnType<typeof setTimeout>;
+    let rafHandle: number | null = null;
     if (nodeRef.current) {
       timer = setTimeout(() => {
         if (nodeRef.current) {
@@ -59,18 +60,21 @@ export function AnimatedCounter({ target, suffix = "", duration = 2000, classNam
         );
 
         if (progressRaw < 1) {
-          window.requestAnimationFrame(step);
+          rafHandle = window.requestAnimationFrame(step);
         } else {
           setDisplayValue(target.toLocaleString() + suffix);
         }
       };
 
-      window.requestAnimationFrame(step);
+      rafHandle = window.requestAnimationFrame(step);
     };
 
     return () => {
       clearTimeout(timer);
       observer.disconnect();
+      if (rafHandle) {
+        window.cancelAnimationFrame(rafHandle);
+      }
     };
   }, [target, suffix, duration]);
 

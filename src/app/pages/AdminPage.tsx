@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Link } from "react-router";
 import {
   Users,
@@ -41,6 +41,7 @@ import { useAuth } from "../hooks/useAuth";
 import { useScrollLock } from "../hooks/useScrollLock";
 import { getInitials } from "./CommunityPage";
 import { toast } from "sonner";
+import { mockDb } from "../utils/mockDb";
 
 const NAV_ITEMS = [
   { id: "dashboard", label: "MISSION_CONTROL", icon: BarChart2 },
@@ -82,8 +83,18 @@ const SPECIALIZATION_DATA = [
   { subject: "ASTROBIO", A: 45 },
 ];
 
+interface Agent {
+  id: number;
+  name: string;
+  email: string;
+  role: string;
+  region: string;
+  status: string;
+  isDeleted?: boolean;
+}
+
 // Expanded Mock Active Agents Dossiers
-const REGISTERED_AGENTS = [
+const REGISTERED_AGENTS: Agent[] = [
   { id: 101, name: "Sarah Chen", email: "sarah@isya.space", role: "ASTROPHYSICIST", region: "US-EAST", status: "ACTIVE" },
   { id: 102, name: "David Osei", email: "david@isya.space", role: "RESEARCH_FELLOW", region: "AF-WEST", status: "ACTIVE" },
   { id: 103, name: "Yuki Tanaka", email: "yuki@isya.space", role: "RADIO_ASTRONOMER", region: "AS-EAST", status: "ACTIVE" },
@@ -108,10 +119,28 @@ function TelemetryTooltip({ active, payload, label }: any) {
 
 function AccessDenied({ onVerify }: { onVerify: (passcode: string) => void }) {
   const [passcode, setPasscode] = useState("");
+  const [errorMsg, setErrorMsg] = useState("");
+  const [isShaking, setIsShaking] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!passcode) {
+      setErrorMsg("CLEARANCE PASSCODE IS REQUIRED");
+      setIsShaking(true);
+      setTimeout(() => setIsShaking(false), 400);
+      inputRef.current?.focus();
+      return;
+    }
+
     onVerify(passcode);
+
+    if (passcode !== "ISYA-ADMIN-KEY-2026") {
+      setErrorMsg("DECRYPTION ERROR: SECURITY CLEARANCE BYPASS REJECTED.");
+      setIsShaking(true);
+      setTimeout(() => setIsShaking(false), 400);
+      inputRef.current?.focus();
+    }
   };
 
   return (
@@ -141,27 +170,43 @@ function AccessDenied({ onVerify }: { onVerify: (passcode: string) => void }) {
           </p>
 
           <form onSubmit={handleSubmit} className="w-full space-y-4">
-            <div className="relative">
+            <div className={`relative ${isShaking ? "animate-shake" : ""}`}>
               <Lock size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-red-500/60" />
               <input
+                ref={inputRef}
                 type="password"
                 placeholder="OVERRIDE_PASSCODE_KEY"
                 value={passcode}
-                onChange={(e) => setPasscode(e.target.value)}
-                className="w-full pl-9 pr-4 py-2.5 font-mono text-xs text-white bg-black/80 border border-red-500/30 rounded-lg outline-none focus:border-red-500 transition-colors text-center"
+                onChange={(e) => {
+                  setPasscode(e.target.value);
+                  if (errorMsg) setErrorMsg("");
+                }}
+                aria-invalid={!!errorMsg}
+                aria-describedby={errorMsg ? "passcode-error" : undefined}
+                className={`w-full pl-9 pr-4 py-2.5 font-mono text-xs text-white bg-black/80 border rounded-lg outline-none transition-colors text-center ${
+                  errorMsg ? "border-red-500 focus:border-red-500 focus:ring-1 focus:ring-red-500" : "border-red-500/30 focus:border-red-500"
+                }`}
               />
             </div>
+            {errorMsg && (
+              <p id="passcode-error" role="alert" className="text-red-500 font-mono text-[10px] tracking-wider text-center mt-1">
+                {errorMsg}
+              </p>
+            )}
             <button
               type="submit"
-              className="w-full px-8 py-3 rounded-xl font-mono text-xs font-bold tracking-widest text-red-500 bg-red-500/10 border border-red-500/25 hover:bg-red-500/20 transition-all cursor-pointer"
+              className="w-full px-8 py-3 rounded-xl font-mono text-xs font-bold tracking-widest text-red-500 bg-red-500/10 border border-red-500/25 hover:bg-red-500/20 transition-all cursor-pointer animate-live-pulse"
             >
               SUBMIT_CLEARANCE_CODE
             </button>
           </form>
 
-          <p className="mt-4 font-mono text-[10px] text-gray-600">
-            HINT: ISYA-ADMIN-KEY-2026
-          </p>
+          <Link
+            to="/"
+            className="block mt-6 font-mono text-xs text-gray-500 hover:text-white transition-colors cursor-pointer"
+          >
+            ← RETURN_TO_BASE_TERMINAL
+          </Link>
         </div>
       </div>
     </div>
@@ -171,44 +216,319 @@ function AccessDenied({ onVerify }: { onVerify: (passcode: string) => void }) {
 export function AdminPage() {
   const { user, isAdmin } = useAuth();
   
+  // Sub-tab state
+  const [contentSubTab, setContentSubTab] = useState<"log" | "webinar" | "faq" | "podcast" | "announcement">("log");
+
+  // Webinar Form States
+  const [webinarTitle, setWebinarTitle] = useState("");
+  const [webinarDate, setWebinarDate] = useState("");
+  const [webinarImage, setWebinarImage] = useState("");
+  const [webinarVideoUrl, setWebinarVideoUrl] = useState("");
+  const [webinarDesc, setWebinarDesc] = useState("");
+
+  // FAQ Form States
+  const [faqCategory, setFaqCategory] = useState<"GENERAL" | "MEMBERSHIP" | "COMMUNITY" | "ADMIN" | "MENTORSHIP">("GENERAL");
+  const [faqQuestion, setFaqQuestion] = useState("");
+  const [faqAnswer, setFaqAnswer] = useState("");
+
+  // Podcast Form States
+  const [podcastTitle, setPodcastTitle] = useState("");
+  const [podcastEpisode, setPodcastEpisode] = useState("");
+  const [podcastGuest, setPodcastGuest] = useState("");
+  const [podcastDuration, setPodcastDuration] = useState("");
+  const [podcastDate, setPodcastDate] = useState("");
+  const [podcastFreq, setPodcastFreq] = useState("98.6 MHz");
+
+  // Announcement Form States
+  const [annTitle, setAnnTitle] = useState("");
+  const [annContent, setAnnContent] = useState("");
+  const [annStatus, setAnnStatus] = useState<"DRAFT" | "PUBLISHED" | "ARCHIVED">("PUBLISHED");
+
+  const handleAddWebinar = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!webinarTitle || !webinarDate || !webinarVideoUrl || !webinarDesc) {
+      toast.error("Please fill in all required webinar details.");
+      return;
+    }
+    const defaultImg = "https://images.unsplash.com/photo-1476156863127-a8f1e9dba2b7?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080";
+    mockDb.addWebinar({
+      title: webinarTitle,
+      date: webinarDate,
+      image: webinarImage || defaultImg,
+      videoUrl: webinarVideoUrl,
+      description: webinarDesc,
+      createdBy: user?.email || "admin@isya.space",
+    });
+    addAuditLog(`NEW_WEBINAR_ADDED // TITLE: ${webinarTitle}`);
+    toast.success("Webinar added successfully!");
+    setWebinarTitle("");
+    setWebinarDate("");
+    setWebinarImage("");
+    setWebinarVideoUrl("");
+    setWebinarDesc("");
+  };
+
+  const handleAddFAQ = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!faqQuestion || !faqAnswer) {
+      toast.error("Please provide both a question and an answer.");
+      return;
+    }
+    mockDb.addFAQ({
+      category: faqCategory,
+      question: faqQuestion,
+      answer: faqAnswer,
+      createdBy: user?.email || "admin@isya.space",
+      updatedAt: new Date().toISOString().split("T")[0],
+    });
+    addAuditLog(`NEW_FAQ_ADDED // CATEGORY: ${faqCategory} // QUESTION: ${faqQuestion}`);
+    toast.success("FAQ added successfully!");
+    setFaqQuestion("");
+    setFaqAnswer("");
+  };
+
+  const handleAddPodcast = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!podcastTitle || !podcastEpisode || !podcastGuest || !podcastDuration || !podcastDate) {
+      toast.error("Please fill in all required podcast fields.");
+      return;
+    }
+    mockDb.addPodcast({
+      title: podcastTitle,
+      episode: podcastEpisode,
+      guest: podcastGuest,
+      duration: podcastDuration,
+      date: podcastDate,
+      freq: podcastFreq,
+    });
+    addAuditLog(`NEW_PODCAST_ADDED // EPISODE: ${podcastEpisode} // TITLE: ${podcastTitle}`);
+    toast.success("Podcast episode added successfully!");
+    setPodcastTitle("");
+    setPodcastEpisode("");
+    setPodcastGuest("");
+    setPodcastDuration("");
+    setPodcastDate("");
+  };
+
+  const handleAddAnnouncement = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!annTitle || !annContent) {
+      toast.error("Please complete the announcement title and body content.");
+      return;
+    }
+    mockDb.addAnnouncement({
+      title: annTitle,
+      content: annContent,
+      status: annStatus,
+      scheduledDate: new Date().toISOString().split("T")[0],
+      createdBy: user?.email || "admin@isya.space",
+    });
+    addAuditLog(`NEW_ANNOUNCEMENT_ADDED // STATUS: ${annStatus} // TITLE: ${annTitle}`);
+    toast.success("Announcement created successfully!");
+    setAnnTitle("");
+    setAnnContent("");
+  };
+  
   // States
-  const [accessGranted, setAccessGranted] = useState(false);
+  const [accessGranted, setAccessGranted] = useState(() => {
+    return sessionStorage.getItem("isya_admin_decrypted") === "true";
+  });
   const [activeSection, setActiveSection] = useState("dashboard");
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [pendingUsers, setPendingUsers] = useState(INITIAL_PENDING_USERS);
-  const [registeredAgents, setRegisteredAgents] = useState(REGISTERED_AGENTS);
+  const [registeredAgents, setRegisteredAgents] = useState<Agent[]>(REGISTERED_AGENTS);
   const [searchQuery, setSearchQuery] = useState("");
-  const [auditLogs, setAuditLogs] = useState<string[]>([
-    "System log initialized at epoch 2026-05-26T20:42:11.",
-    "Websocket telemetry client connected.",
-    "Security firewall running in ENFORCED mode.",
-  ]);
+  const [auditLogs, setAuditLogs] = useState<string[]>(() => {
+    const stored = sessionStorage.getItem("isya_audit_logs");
+    if (stored) {
+      try {
+        return JSON.parse(stored);
+      } catch (e) {}
+    }
+    return [
+      "System log initialized at epoch 2026-05-26T20:42:11.",
+      "Websocket telemetry client connected.",
+      "Security firewall running in ENFORCED mode.",
+    ];
+  });
+
+  const sidebarRef = useRef<HTMLElement>(null);
+  const menuButtonRef = useRef<HTMLButtonElement>(null);
+  const lastActiveElement = useRef<HTMLElement | null>(null);
 
   // Feature flag settings state
-  const [flags, setFlags] = useState({
-    VITE_ENABLE_ADMIN_PANEL: true,
-    VITE_ENABLE_COMMUNITY_FEATURES: true,
-    VITE_ENVIRONMENT: "development",
+  const [flags, setFlags] = useState(() => {
+    const stored = localStorage.getItem("isya_sys_flags");
+    if (stored) {
+      try {
+        return JSON.parse(stored);
+      } catch (e) {}
+    }
+    return {
+      VITE_ENABLE_ADMIN_PANEL: true,
+      VITE_ENABLE_COMMUNITY_FEATURES: true,
+      VITE_ENVIRONMENT: "development",
+    };
   });
 
   // Coordinate scroll locks
   useScrollLock(sidebarOpen);
 
-  // Automatically bypass if logged in as admin
   useEffect(() => {
-    if (isAdmin) {
-      setAccessGranted(true);
+    // Only apply focus trap on mobile screens where sidebar acts as modal overlay
+    if (window.innerWidth >= 768) return;
+
+    const mainEl = document.querySelector("main");
+    const headerEl = document.querySelector("header");
+
+    if (!sidebarOpen) {
+      mainEl?.removeAttribute("aria-hidden");
+      headerEl?.removeAttribute("aria-hidden");
+      if (lastActiveElement.current) {
+        lastActiveElement.current.focus();
+        lastActiveElement.current = null;
+      } else {
+        menuButtonRef.current?.focus();
+      }
+      return;
     }
-  }, [isAdmin]);
+
+    lastActiveElement.current = document.activeElement as HTMLElement;
+    mainEl?.setAttribute("aria-hidden", "true");
+    headerEl?.setAttribute("aria-hidden", "true");
+
+    const sidebar = sidebarRef.current;
+    if (!sidebar) return;
+
+    const getFocusable = () =>
+      sidebar.querySelectorAll<HTMLElement>(
+        'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+      );
+
+    const focusable = getFocusable();
+    if (focusable.length > 0) {
+      focusable[0].focus();
+    }
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setSidebarOpen(false);
+        return;
+      }
+
+      if (e.key === "Tab") {
+        const elements = getFocusable();
+        if (elements.length === 0) return;
+        const firstEl = elements[0];
+        const lastEl = elements[elements.length - 1];
+
+        if (e.shiftKey) {
+          if (document.activeElement === firstEl) {
+            lastEl.focus();
+            e.preventDefault();
+          }
+        } else {
+          if (document.activeElement === lastEl) {
+            firstEl.focus();
+            e.preventDefault();
+          }
+        }
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      mainEl?.removeAttribute("aria-hidden");
+      headerEl?.removeAttribute("aria-hidden");
+    };
+  }, [sidebarOpen]);
+
+  const storedFlags = localStorage.getItem("isya_sys_flags");
+  let adminEnabled = true;
+  if (storedFlags) {
+    try {
+      const parsed = JSON.parse(storedFlags);
+      if (parsed.VITE_ENABLE_ADMIN_PANEL === false) adminEnabled = false;
+    } catch (e) {}
+  }
+
+  if (!adminEnabled) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center text-center p-6 bg-[#0B0F19] stardust relative">
+        <div className="p-8 rounded-2xl border border-pink-500/20 bg-pink-500/5 max-w-xl mx-auto flex flex-col items-center gap-4 relative hud-corners">
+          <div className="absolute top-0 left-0 w-6 h-6 border-t-2 border-l-2 border-brand-pink rounded-tl-lg" />
+          <div className="absolute top-0 right-0 w-6 h-6 border-t-2 border-r-2 border-brand-pink rounded-tr-lg" />
+          <div className="absolute bottom-0 left-0 w-6 h-6 border-b-2 border-l-2 border-brand-pink rounded-bl-lg" />
+          <div className="absolute bottom-0 right-0 w-6 h-6 border-b-2 border-r-2 border-brand-pink rounded-br-lg" />
+          
+          <h2 className="text-white text-xl font-bold font-mono">// SECTOR_OFFLINE</h2>
+          <p className="text-gray-500 text-sm leading-relaxed">
+            The Admin command terminal has been disabled by system security flags.
+          </p>
+          <Link to="/" className="px-6 py-2.5 rounded-xl font-mono text-xs font-bold text-white bg-pink-500/20 border border-pink-500/40 hover:bg-pink-500/30 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#EC4899]">
+            ← RETURN_TO_BASE_TERMINAL
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user || !isAdmin) {
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#05080F] stardust">
+        <div className="absolute inset-0 pointer-events-none bg-[repeating-linear-gradient(0deg,transparent,transparent_3px,rgba(239,68,68,0.015)_3px,rgba(239,68,68,0.015)_6px)]" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full pointer-events-none animate-pulse-glow bg-red-500/5 blur-[150px]" />
+
+        <div className="relative z-10 text-center px-4 w-full max-w-sm">
+          <div className="inline-flex flex-col items-center p-8 rounded-2xl bg-gray-900/60 backdrop-blur-2xl border border-red-500/20 shadow-2xl relative w-full hud-corners">
+            <div className="absolute top-0 left-0 w-6 h-6 border-t-2 border-l-2 border-red-500 rounded-tl-lg" />
+            <div className="absolute top-0 right-0 w-6 h-6 border-t-2 border-r-2 border-red-500 rounded-tr-lg" />
+            <div className="absolute bottom-0 left-0 w-6 h-6 border-b-2 border-l-2 border-red-500 rounded-bl-lg" />
+            <div className="absolute bottom-0 right-0 w-6 h-6 border-b-2 border-r-2 border-red-500 rounded-br-lg" />
+
+            <ShieldAlert size={52} className="mb-5 text-red-500 animate-[bounce_2s_infinite]" />
+            <div className="font-mono text-xs text-red-500 tracking-[0.2em] mb-3">
+              UNAUTHORIZED_SECTOR // CLASSIFIED
+            </div>
+            <h1 className="font-mono text-xl font-bold text-red-500 tracking-wider mb-2">
+              ACCESS FORBIDDEN
+            </h1>
+            <p className="text-gray-400 text-xs leading-relaxed mb-6">
+              You must be authenticated with an Admin account to access this command sector.
+            </p>
+            <Link
+              to="/login"
+              className="w-full px-8 py-3 rounded-xl font-mono text-xs font-bold tracking-widest text-center text-red-500 bg-red-500/10 border border-red-500/25 hover:bg-red-500/20 transition-all cursor-pointer block"
+            >
+              AUTHENTICATE_CREW
+            </Link>
+            <Link
+              to="/"
+              className="block mt-4 font-mono text-xs text-gray-500 hover:text-white transition-colors cursor-pointer"
+            >
+              ← RETURN_TO_BASE_TERMINAL
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const addAuditLog = (msg: string) => {
     const timestamp = new Date().toISOString().replace("T", " ").substring(0, 19);
-    setAuditLogs((prev) => [`[${timestamp}] ${msg}`, ...prev]);
+    const newEntry = `[${timestamp}] ${msg}`;
+    setAuditLogs((prev) => {
+      const updated = [newEntry, ...prev];
+      sessionStorage.setItem("isya_audit_logs", JSON.stringify(updated));
+      return updated;
+    });
   };
 
   const handleVerifyPasscode = (code: string) => {
     if (code === "ISYA-ADMIN-KEY-2026") {
       setAccessGranted(true);
+      sessionStorage.setItem("isya_admin_decrypted", "true");
       addAuditLog("Manual Admin Bypass Override successfully validated.");
       toast.success("CLEARANCE OVERRIDE KEY CORRECT. DECRYPTING PANEL.");
     } else {
@@ -259,14 +579,25 @@ export function AdminPage() {
     const target = registeredAgents.find((a) => a.id === id);
     if (!target) return;
 
-    setRegisteredAgents((prev) => prev.filter((a) => a.id !== id));
+    // Mark as deleted visually
+    setRegisteredAgents((prev) =>
+      prev.map((a) => (a.id === id ? { ...a, isDeleted: true } : a))
+    );
     addAuditLog(`Active agent DELETED: ${target.name} (${target.email})`);
+
+    // Permanent deletion timeout after 5 seconds (matching toast duration)
+    const timerId = setTimeout(() => {
+      setRegisteredAgents((prev) => prev.filter((a) => !(a.id === id && a.isDeleted)));
+    }, 5000);
 
     toast.warning(`Agent ${name} deleted from databases.`, {
       action: {
         label: "Undo",
         onClick: () => {
-          setRegisteredAgents((prev) => [...prev, target].sort((a, b) => a.id - b.id));
+          clearTimeout(timerId);
+          setRegisteredAgents((prev) =>
+            prev.map((a) => (a.id === id ? { ...a, isDeleted: false } : a))
+          );
           addAuditLog(`Undo command: Agent deletion cancelled for ${name}`);
           toast.info(`Agent dossier restored for ${name}`);
         },
@@ -515,41 +846,52 @@ export function AdminPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/5 font-mono text-xs">
-                {filtered.map((agent) => (
-                  <tr key={agent.id} className="hover:bg-white/[0.01]">
-                    <td className="py-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-pink-500 flex items-center justify-center font-bold text-white">
-                          {getInitials(agent.name)}
+                {filtered.map((agent) => {
+                  if (agent.isDeleted) {
+                    return (
+                      <tr key={agent.id} className="bg-red-500/5 text-gray-500 text-center animate-pulse">
+                        <td colSpan={5} className="py-4 text-xs font-mono">
+                          [DOSSIER_DECOMMISSIONED] :: AGENT {agent.name.toUpperCase()} DELETED (UNDO AVAILABLE).
+                        </td>
+                      </tr>
+                    );
+                  }
+                  return (
+                    <tr key={agent.id} className="hover:bg-white/[0.01]">
+                      <td className="py-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-pink-500 flex items-center justify-center font-bold text-white">
+                            {getInitials(agent.name)}
+                          </div>
+                          <div>
+                            <p className="text-sm font-semibold text-white font-sans">{agent.name}</p>
+                            <p className="text-xs text-gray-500">{agent.email}</p>
+                          </div>
                         </div>
-                        <div>
-                          <p className="text-sm font-semibold text-white font-sans">{agent.name}</p>
-                          <p className="text-xs text-gray-500">{agent.email}</p>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="py-4 text-gray-300">{agent.role}</td>
-                    <td className="py-4 text-gray-400">{agent.region}</td>
-                    <td className="py-4">
-                      <span className={`px-2 py-0.5 rounded text-[10px] font-bold border ${
-                        agent.status === "ACTIVE" 
-                          ? "text-emerald-500 bg-emerald-500/10 border-emerald-500/20" 
-                          : "text-red-500 bg-red-500/10 border-red-500/20"
-                      }`}>
-                        {agent.status}
-                      </span>
-                    </td>
-                    <td className="py-4 text-right">
-                      <button
-                        onClick={() => handleDeleteAgent(agent.id, agent.name)}
-                        aria-label={`Decommission ${agent.name}`}
-                        className="p-1.5 text-red-500/60 hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-colors cursor-pointer"
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
+                      </td>
+                      <td className="py-4 text-gray-300">{agent.role}</td>
+                      <td className="py-4 text-gray-400">{agent.region}</td>
+                      <td className="py-4">
+                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold border ${
+                          agent.status === "ACTIVE" 
+                            ? "text-emerald-500 bg-emerald-500/10 border-emerald-500/20" 
+                            : "text-red-500 bg-red-500/10 border-red-500/20"
+                        }`}>
+                          {agent.status}
+                        </span>
+                      </td>
+                      <td className="py-4 text-right">
+                        <button
+                          onClick={() => handleDeleteAgent(agent.id, agent.name)}
+                          aria-label={`Decommission ${agent.name}`}
+                          className="p-1.5 text-red-500/60 hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-colors cursor-pointer"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -561,28 +903,323 @@ export function AdminPage() {
   // 4. Transmission Log View
   const renderContent = () => (
     <div className="space-y-6">
-      <div className="p-6 rounded-2xl bg-gray-900/40 border border-white/5 flex flex-col h-[500px]">
-        <div className="flex items-center justify-between border-b border-white/5 pb-4 mb-4">
-          <h4 className="font-mono text-xs text-pink-500 tracking-widest">// DECRYPTED_SIGNAL_STREAM</h4>
-          <button 
-            onClick={() => setAuditLogs([])} 
-            className="text-gray-500 hover:text-white font-mono text-xs transition-colors cursor-pointer"
+      {/* Sub-tab selection menu */}
+      <div className="flex gap-2 border-b border-white/5 pb-4 overflow-x-auto">
+        {(["log", "webinar", "faq", "podcast", "announcement"] as const).map((sub) => (
+          <button
+            key={sub}
+            onClick={() => setContentSubTab(sub)}
+            className={`px-4 py-2 rounded-xl text-xs font-mono font-bold tracking-wider transition-all duration-200 cursor-pointer ${
+              contentSubTab === sub
+                ? "bg-pink-500 text-white shadow-[0_0_12px_rgba(236,72,153,0.3)]"
+                : "bg-white/5 text-gray-400 hover:bg-white/10 hover:text-white"
+            }`}
           >
-            CLEAR_BUFFER_
+            {sub === "log" && "AUDIT_STREAM"}
+            {sub === "webinar" && "ADD_WEBINAR"}
+            {sub === "faq" && "ADD_FAQ"}
+            {sub === "podcast" && "ADD_PODCAST"}
+            {sub === "announcement" && "ADD_ANNOUNCEMENT"}
           </button>
-        </div>
-        <div className="flex-1 overflow-y-auto font-mono text-xs text-gray-300 space-y-2 select-text pr-2">
-          {auditLogs.length > 0 ? (
-            auditLogs.map((log, i) => (
-              <div key={i} className="hover:bg-white/5 p-1 rounded transition-colors whitespace-pre-wrap">
-                {log}
-              </div>
-            ))
-          ) : (
-            <div className="text-center text-gray-600 py-20">// NO_SIGNAL_PACKETS_IN_BUFFER</div>
-          )}
-        </div>
+        ))}
       </div>
+
+      {contentSubTab === "log" && (
+        <div className="p-6 rounded-2xl bg-gray-900/40 border border-white/5 flex flex-col h-[500px]">
+          <div className="flex items-center justify-between border-b border-white/5 pb-4 mb-4">
+            <h4 className="font-mono text-xs text-pink-500 tracking-widest">// DECRYPTED_SIGNAL_STREAM</h4>
+            <button 
+              onClick={() => {
+                setAuditLogs([]);
+                sessionStorage.setItem("isya_audit_logs", JSON.stringify([]));
+              }}
+              className="text-gray-500 hover:text-white font-mono text-xs transition-colors cursor-pointer"
+            >
+              CLEAR_BUFFER_
+            </button>
+          </div>
+          <div className="flex-1 overflow-y-auto font-mono text-xs text-gray-300 space-y-2 select-text pr-2">
+            {auditLogs.length > 0 ? (
+              auditLogs.map((log, i) => (
+                <div key={i} className="hover:bg-white/5 p-1 rounded transition-colors whitespace-pre-wrap">
+                  {log}
+                </div>
+              ))
+            ) : (
+              <div className="text-center text-gray-600 py-20">// NO_SIGNAL_PACKETS_IN_BUFFER</div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {contentSubTab === "webinar" && (
+        <div className="p-6 rounded-2xl bg-gray-900/40 border border-white/5 max-w-xl">
+          <h4 className="font-mono text-xs text-pink-500 tracking-widest border-b border-white/5 pb-4 mb-6">// ADD_WEBINAR_ENTRY</h4>
+          <form onSubmit={handleAddWebinar} className="space-y-4">
+            <div>
+              <label htmlFor="webinarTitle" className="block font-mono text-[10px] text-gray-400 tracking-wider mb-2">WEBINAR_TITLE</label>
+              <input
+                id="webinarTitle"
+                type="text"
+                required
+                placeholder="Deep Space Astronomy Symposium"
+                value={webinarTitle}
+                onChange={(e) => setWebinarTitle(e.target.value)}
+                className="w-full bg-[#05080F] border border-white/10 focus:border-pink-500/50 rounded-lg px-3 py-2 text-white text-xs outline-none"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label htmlFor="webinarDate" className="block font-mono text-[10px] text-gray-400 tracking-wider mb-2">BROADCAST_DATE</label>
+                <input
+                  id="webinarDate"
+                  type="date"
+                  required
+                  value={webinarDate}
+                  onChange={(e) => setWebinarDate(e.target.value)}
+                  className="w-full bg-[#05080F] border border-white/10 focus:border-pink-500/50 rounded-lg px-3 py-2 text-white text-xs outline-none"
+                />
+              </div>
+              <div>
+                <label htmlFor="webinarImg" className="block font-mono text-[10px] text-gray-400 tracking-wider mb-2">IMAGE_THUMBNAIL_URL (OPTIONAL)</label>
+                <input
+                  id="webinarImg"
+                  type="text"
+                  placeholder="https://unsplash.com/..."
+                  value={webinarImage}
+                  onChange={(e) => setWebinarImage(e.target.value)}
+                  className="w-full bg-[#05080F] border border-white/10 focus:border-pink-500/50 rounded-lg px-3 py-2 text-white text-xs outline-none"
+                />
+              </div>
+            </div>
+            <div>
+              <label htmlFor="webinarUrl" className="block font-mono text-[10px] text-gray-400 tracking-wider mb-2">YOUTUBE_VIDEO_URL (OR ID)</label>
+              <input
+                id="webinarUrl"
+                type="text"
+                required
+                placeholder="https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+                value={webinarVideoUrl}
+                onChange={(e) => setWebinarVideoUrl(e.target.value)}
+                className="w-full bg-[#05080F] border border-white/10 focus:border-pink-500/50 rounded-lg px-3 py-2 text-white text-xs outline-none"
+              />
+            </div>
+            <div>
+              <label htmlFor="webinarDesc" className="block font-mono text-[10px] text-gray-400 tracking-wider mb-2">BRIEFING_DESCRIPTION</label>
+              <textarea
+                id="webinarDesc"
+                required
+                rows={3}
+                placeholder="Detailed summary of the webinar session..."
+                value={webinarDesc}
+                onChange={(e) => setWebinarDesc(e.target.value)}
+                className="w-full bg-[#05080F] border border-white/10 focus:border-pink-500/50 rounded-lg px-3 py-2 text-white text-xs outline-none resize-none"
+              />
+            </div>
+            <button
+              type="submit"
+              className="px-6 py-2.5 rounded-lg bg-pink-500 text-white font-mono text-[10px] font-bold tracking-widest hover:bg-pink-500/90 cursor-pointer shadow-[0_0_10px_rgba(236,72,153,0.3)] transition-all"
+            >
+              SAVE_WEBINAR_ENTRY
+            </button>
+          </form>
+        </div>
+      )}
+
+      {contentSubTab === "faq" && (
+        <div className="p-6 rounded-2xl bg-gray-900/40 border border-white/5 max-w-xl">
+          <h4 className="font-mono text-xs text-pink-500 tracking-widest border-b border-white/5 pb-4 mb-6">// ADD_FAQ_ENTRY</h4>
+          <form onSubmit={handleAddFAQ} className="space-y-4">
+            <div>
+              <label htmlFor="faqCat" className="block font-mono text-[10px] text-gray-400 tracking-wider mb-2">FAQ_CATEGORY</label>
+              <select
+                id="faqCat"
+                value={faqCategory}
+                onChange={(e) => setFaqCategory(e.target.value as any)}
+                className="w-full bg-[#05080F] border border-white/10 focus:border-pink-500/50 rounded-lg px-3 py-2 text-white text-xs outline-none cursor-pointer text-gray-300"
+              >
+                <option value="GENERAL">GENERAL</option>
+                <option value="MEMBERSHIP">MEMBERSHIP</option>
+                <option value="COMMUNITY">COMMUNITY</option>
+                <option value="MENTORSHIP">MENTORSHIP</option>
+                <option value="ADMIN">ADMIN</option>
+              </select>
+            </div>
+            <div>
+              <label htmlFor="faqQ" className="block font-mono text-[10px] text-gray-400 tracking-wider mb-2">QUESTION_TEXT</label>
+              <input
+                id="faqQ"
+                type="text"
+                required
+                placeholder="What is the mission of ISYA?"
+                value={faqQuestion}
+                onChange={(e) => setFaqQuestion(e.target.value)}
+                className="w-full bg-[#05080F] border border-white/10 focus:border-pink-500/50 rounded-lg px-3 py-2 text-white text-xs outline-none"
+              />
+            </div>
+            <div>
+              <label htmlFor="faqA" className="block font-mono text-[10px] text-gray-400 tracking-wider mb-2">ANSWER_TEXT</label>
+              <textarea
+                id="faqA"
+                required
+                rows={4}
+                placeholder="Write the detailed explanation response..."
+                value={faqAnswer}
+                onChange={(e) => setFaqAnswer(e.target.value)}
+                className="w-full bg-[#05080F] border border-white/10 focus:border-pink-500/50 rounded-lg px-3 py-2 text-white text-xs outline-none resize-none"
+              />
+            </div>
+            <button
+              type="submit"
+              className="px-6 py-2.5 rounded-lg bg-pink-500 text-white font-mono text-[10px] font-bold tracking-widest hover:bg-pink-500/90 cursor-pointer shadow-[0_0_10px_rgba(236,72,153,0.3)] transition-all"
+            >
+              SAVE_FAQ_ENTRY
+            </button>
+          </form>
+        </div>
+      )}
+
+      {contentSubTab === "podcast" && (
+        <div className="p-6 rounded-2xl bg-gray-900/40 border border-white/5 max-w-xl">
+          <h4 className="font-mono text-xs text-pink-500 tracking-widest border-b border-white/5 pb-4 mb-6">// ADD_PODCAST_EPISODE</h4>
+          <form onSubmit={handleAddPodcast} className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label htmlFor="podEp" className="block font-mono text-[10px] text-gray-400 tracking-wider mb-2">EPISODE_NUMBER</label>
+                <input
+                  id="podEp"
+                  type="text"
+                  required
+                  placeholder="EP_043"
+                  value={podcastEpisode}
+                  onChange={(e) => setPodcastEpisode(e.target.value)}
+                  className="w-full bg-[#05080F] border border-white/10 focus:border-pink-500/50 rounded-lg px-3 py-2 text-white text-xs outline-none"
+                />
+              </div>
+              <div>
+                <label htmlFor="podFreq" className="block font-mono text-[10px] text-gray-400 tracking-wider mb-2">PODCAST_FREQ</label>
+                <input
+                  id="podFreq"
+                  type="text"
+                  required
+                  placeholder="98.6 MHz"
+                  value={podcastFreq}
+                  onChange={(e) => setPodcastFreq(e.target.value)}
+                  className="w-full bg-[#05080F] border border-white/10 focus:border-pink-500/50 rounded-lg px-3 py-2 text-white text-xs outline-none"
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label htmlFor="podTitle" className="block font-mono text-[10px] text-gray-400 tracking-wider mb-2">EPISODE_TITLE</label>
+                <input
+                  id="podTitle"
+                  type="text"
+                  required
+                  placeholder="Deep Space Radio Signals"
+                  value={podcastTitle}
+                  onChange={(e) => setPodcastTitle(e.target.value)}
+                  className="w-full bg-[#05080F] border border-white/10 focus:border-pink-500/50 rounded-lg px-3 py-2 text-white text-xs outline-none"
+                />
+              </div>
+              <div>
+                <label htmlFor="podGuest" className="block font-mono text-[10px] text-gray-400 tracking-wider mb-2">GUEST_SPEAKER</label>
+                <input
+                  id="podGuest"
+                  type="text"
+                  required
+                  placeholder="DR_ALEXIS_VANCE"
+                  value={podcastGuest}
+                  onChange={(e) => setPodcastGuest(e.target.value)}
+                  className="w-full bg-[#05080F] border border-white/10 focus:border-pink-500/50 rounded-lg px-3 py-2 text-white text-xs outline-none"
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label htmlFor="podDur" className="block font-mono text-[10px] text-gray-400 tracking-wider mb-2">EPISODE_DURATION</label>
+                <input
+                  id="podDur"
+                  type="text"
+                  required
+                  placeholder="42:15"
+                  value={podcastDuration}
+                  onChange={(e) => setPodcastDuration(e.target.value)}
+                  className="w-full bg-[#05080F] border border-white/10 focus:border-pink-500/50 rounded-lg px-3 py-2 text-white text-xs outline-none"
+                />
+              </div>
+              <div>
+                <label htmlFor="podDate" className="block font-mono text-[10px] text-gray-400 tracking-wider mb-2">RELEASE_DATE</label>
+                <input
+                  id="podDate"
+                  type="date"
+                  required
+                  value={podcastDate}
+                  onChange={(e) => setPodcastDate(e.target.value)}
+                  className="w-full bg-[#05080F] border border-white/10 focus:border-pink-500/50 rounded-lg px-3 py-2 text-white text-xs outline-none"
+                />
+              </div>
+            </div>
+            <button
+              type="submit"
+              className="px-6 py-2.5 rounded-lg bg-pink-500 text-white font-mono text-[10px] font-bold tracking-widest hover:bg-pink-500/90 cursor-pointer shadow-[0_0_10px_rgba(236,72,153,0.3)] transition-all"
+            >
+              SAVE_PODCAST_EPISODE
+            </button>
+          </form>
+        </div>
+      )}
+
+      {contentSubTab === "announcement" && (
+        <div className="p-6 rounded-2xl bg-gray-900/40 border border-white/5 max-w-xl">
+          <h4 className="font-mono text-xs text-pink-500 tracking-widest border-b border-white/5 pb-4 mb-6">// CREATE_ANNOUNCEMENT</h4>
+          <form onSubmit={handleAddAnnouncement} className="space-y-4">
+            <div>
+              <label htmlFor="annTitle" className="block font-mono text-[10px] text-gray-400 tracking-wider mb-2">ANNOUNCEMENT_TITLE</label>
+              <input
+                id="annTitle"
+                type="text"
+                required
+                placeholder="Nairobi 2026 Symposium Details"
+                value={annTitle}
+                onChange={(e) => setAnnTitle(e.target.value)}
+                className="w-full bg-[#05080F] border border-white/10 focus:border-pink-500/50 rounded-lg px-3 py-2 text-white text-xs outline-none"
+              />
+            </div>
+            <div>
+              <label htmlFor="annStatus" className="block font-mono text-[10px] text-gray-400 tracking-wider mb-2">STATUS</label>
+              <select
+                id="annStatus"
+                value={annStatus}
+                onChange={(e) => setAnnStatus(e.target.value as any)}
+                className="w-full bg-[#05080F] border border-white/10 focus:border-pink-500/50 rounded-lg px-3 py-2 text-white text-xs outline-none cursor-pointer text-gray-300"
+              >
+                <option value="PUBLISHED">PUBLISHED</option>
+                <option value="DRAFT">DRAFT</option>
+                <option value="ARCHIVED">ARCHIVED</option>
+              </select>
+            </div>
+            <div>
+              <label htmlFor="annContent" className="block font-mono text-[10px] text-gray-400 tracking-wider mb-2">ANNOUNCEMENT_BODY_CONTENT</label>
+              <textarea
+                id="annContent"
+                required
+                rows={4}
+                placeholder="Broadcast text details..."
+                value={annContent}
+                onChange={(e) => setAnnContent(e.target.value)}
+                className="w-full bg-[#05080F] border border-white/10 focus:border-pink-500/50 rounded-lg px-3 py-2 text-white text-xs outline-none resize-none"
+              />
+            </div>
+            <button
+              type="submit"
+              className="px-6 py-2.5 rounded-lg bg-pink-500 text-white font-mono text-[10px] font-bold tracking-widest hover:bg-pink-500/90 cursor-pointer shadow-[0_0_10px_rgba(236,72,153,0.3)] transition-all"
+            >
+              BROADCAST_ANNOUNCEMENT
+            </button>
+          </form>
+        </div>
+      )}
     </div>
   );
 
@@ -656,6 +1293,7 @@ export function AdminPage() {
     <div className="flex h-screen overflow-hidden bg-[#05080F]">
       {/* Sidebar */}
       <aside
+        ref={sidebarRef}
         className={`fixed inset-y-0 left-0 z-50 w-[220px] bg-[#05080F]/98 backdrop-blur-2xl border-r border-pink-500/10 transition-transform duration-300 md:relative md:translate-x-0 ${
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
         }`}
@@ -732,7 +1370,11 @@ export function AdminPage() {
       <div className="flex-1 flex flex-col min-w-0">
         <header className="flex items-center justify-between px-6 h-16 bg-[#05080F]/95 backdrop-blur-xl border-b border-pink-500/10">
           <div className="flex items-center gap-4">
-            <button onClick={() => setSidebarOpen(true)} className="md:hidden text-gray-400 cursor-pointer">
+            <button 
+              ref={menuButtonRef}
+              onClick={() => setSidebarOpen(true)} 
+              className="md:hidden text-gray-400 cursor-pointer"
+            >
               <Menu size={20} />
             </button>
             <h2 className="font-mono text-xs text-gray-400 tracking-[0.2em]">

@@ -12,6 +12,12 @@ import { lockScroll, unlockScroll } from "../hooks/useScrollLock";
 import { useAuth } from "../hooks/useAuth";
 import logoImg from "../../imports/Logo_ISYA__1_-2.jpeg";
 import { format, parseISO } from "date-fns";
+import { mockDb } from "../utils/mockDb";
+import { CTA_LABELS } from "../constants/copytext";
+import { WebinarCarousel } from "../components/WebinarCarousel";
+import { CollaborationSection } from "../components/CollaborationSection";
+import { FAQPreview } from "../components/FAQPreview";
+import { ThemeAudioPlayer } from "../components/ThemeAudioPlayer";
 
 
 const ROCKET_IMG =
@@ -99,9 +105,12 @@ export function LandingPage() {
   const [error, setError] = useState<string | null>(null);
   const [onboardingStep, setOnboardingStep] = useState<number | null>(null);
   const [isRetrying, setIsRetrying] = useState(false);
+  const [webinars, setWebinars] = useState<any[]>([]);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
+    setWebinars(mockDb.getWebinars());
+    
     // Show onboarding walkthrough to logged-in users who haven't completed it yet
     const userSession = sessionStorage.getItem("isya_user");
     const onboardingDone = localStorage.getItem("isya_onboarding_done");
@@ -195,7 +204,7 @@ export function LandingPage() {
                 to="/register"
                 className="group flex items-center gap-3 px-8 py-4 rounded-xl font-mono text-[0.85rem] font-bold tracking-wider text-white shadow-[0_0_35px_rgba(236,72,153,0.45)] btn-gradient-shift hover:shadow-[0_0_50px_rgba(236,72,153,0.7)] active:scale-95 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#EC4899]"
               >
-                INITIATE_LAUNCH // JOIN_COMMUNITY
+                INITIATE_LAUNCH // {CTA_LABELS.JOIN.toUpperCase().replace(/ /g, "_")}
                 <ArrowRight className="w-4 h-4" />
               </Link>
             )}
@@ -281,6 +290,12 @@ export function LandingPage() {
         </ul>
       </section>
 
+      {/* Webinar Carousel component */}
+      <WebinarCarousel webinars={webinars} />
+
+      {/* Collaboration Section component */}
+      <CollaborationSection />
+
       {/* ── FEATURE BANNER ── */}
       <section className="relative overflow-hidden min-h-[500px] flex items-center">
         <div className="absolute inset-0">
@@ -311,7 +326,7 @@ export function LandingPage() {
               to="/register"
               className="inline-flex items-center gap-2 px-7 py-3.5 rounded-xl font-mono text-xs font-bold tracking-widest text-white shadow-glow-pink btn-gradient-shift focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#EC4899]"
             >
-              BEGIN_MISSION
+              {CTA_LABELS.JOIN.toUpperCase().replace(/ /g, "_")}
               <ChevronRight className="w-4 h-4" />
             </Link>
           </div>
@@ -446,6 +461,12 @@ export function LandingPage() {
           )}
         </div>
       </section>
+
+      {/* FAQ Accordion preview component */}
+      <FAQPreview />
+
+      {/* Floating Theme music video audio player */}
+      <ThemeAudioPlayer />
 
       {/* Immersive Walkthrough Onboarding Modal */}
       <OnboardingModalWrapper 

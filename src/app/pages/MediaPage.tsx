@@ -1,8 +1,10 @@
 import { useState, useEffect, useRef } from "react";
+import { useLocation, useNavigate } from "react-router";
 import { Play, Pause, Clock, Headphones, Youtube, Radio, X } from "lucide-react";
 import { ImageWithFallback } from "../components/figma/ImageWithFallback";
 import { useScrollReveal } from "../hooks/useScrollReveal";
 import { toast } from "sonner";
+import { mockDb } from "../utils/mockDb";
 
 const OBS1 = "https://images.unsplash.com/photo-1727034394040-0377258a5791?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHx0ZWxlc2NvcGUlMjBvYnNlcnZhdG9yeSUyMG5pZ2h0JTIwc2t5JTIwc3RhcnN8ZW58MXx8fHwxNzc5MTIxMTY2fDA&ixlib=rb-4.1.0&q=80&w=1080";
 const NEBULA = "https://images.unsplash.com/photo-1706562018605-909733434781?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHw1fHxzcGFjZSUyMGdhbGF4eSUyMGNvc21vcyUyMGRhcmslMjBuZWJ1bGF8ZW58MXx8fHwxNzc5MTIxMTYwfDA&ixlib=rb-4.1.0&q=80&w=1080";
@@ -11,22 +13,7 @@ const MILKY = "https://images.unsplash.com/photo-1476156863127-a8f1e9dba2b7?crop
 const ROCKET = "https://images.unsplash.com/photo-1517976487492-5750f3195933?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxyb2NrZXQlMjBsYXVuY2glMjBzcGFjZSUyMGV4cGxvcmF0aW9ufGVufDF8fHx8MTc3OTEyMTE2MHww&ixlib=rb-4.1.0&q=80&w=1080";
 const OBS2 = "https://images.unsplash.com/photo-1727034393564-dc7b0275686d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwyfHx0ZWxlc2NvcGUlMjBvYnNlcnZhdG9yeSUyMG5pZ2h0JTIwc2t5JTIwc3RhcnN8ZW58MXx8fHwxNzc5MTIxMTY2fDA&ixlib=rb-4.1.0&q=80&w=1080";
 
-const VIDEOS = [
-  { id: 1, title: "ISYA 2026 Symposium Opening Ceremony", duration: "18:42", views: "12.4K", image: OBS1, youtubeId: "dQw4w9WgXcQ", isLive: true },
-  { id: 2, title: "Introduction to Gravitational Wave Astronomy", duration: "34:15", views: "9.8K", image: NEBULA, youtubeId: "dQw4w9WgXcQ", isLive: false },
-  { id: 3, title: "How to Build a CubeSat — Student Guide", duration: "45:30", views: "22.1K", image: GALAXY, youtubeId: "dQw4w9WgXcQ", isLive: false },
-  { id: 4, title: "Live Q&A with an ESA Mission Specialist", duration: "58:00", views: "7.6K", image: MILKY, youtubeId: "dQw4w9WgXcQ", isLive: false },
-  { id: 5, title: "Radio Telescope Assembly Workshop", duration: "27:44", views: "15.3K", image: ROCKET, youtubeId: "dQw4w9WgXcQ", isLive: false },
-  { id: 6, title: "ISYA Member Showcase: Best Projects of 2025", duration: "41:10", views: "18.9K", image: OBS2, youtubeId: "dQw4w9WgXcQ", isLive: false },
-];
-
-const PODCASTS = [
-  { id: 1, title: "The Next Space Race: Youth Perspectives", episode: "EP_042", guest: "DR_AMARA_OSEI", duration: "58:24", date: "2026-05-12", freq: "98.6 MHz" },
-  { id: 2, title: "From Classroom to Control Room", episode: "EP_041", guest: "CARLOS_MENDEZ", duration: "44:11", date: "2026-05-05", freq: "98.6 MHz" },
-  { id: 3, title: "Women Who Are Changing Space Science", episode: "EP_040", guest: "DR_YUKI_NAKAMURA", duration: "51:37", date: "2026-04-28", freq: "98.6 MHz" },
-  { id: 4, title: "Astrobiology & the Search for Life", episode: "EP_039", guest: "PROF_LIAM_OBRIEN", duration: "62:08", date: "2026-04-21", freq: "98.6 MHz" },
-  { id: 5, title: "Space Policy Explained for Young Scientists", episode: "EP_038", guest: "FATIMA_AL-RASHID", duration: "39:55", date: "2026-04-14", freq: "98.6 MHz" },
-];
+// Initial data lists replaced with mockDb reads dynamically to allow admin updates
 
 const INITIATIVES = [
   { id: 1, icon: "🛰️", title: "CubeSat Challenge", code: "INIT_CUBESAT", description: "Design and launch a student-built satellite with the support of ESA mentors.", participants: 124, status: "ACTIVE" },
@@ -48,25 +35,36 @@ function LiveBeacon() {
 
 export function MediaPage() {
   const sectionRef = useScrollReveal<HTMLDivElement>();
+  const navigate = useNavigate();
+  const location = useLocation();
   const [activeTab, setActiveTab] = useState<"videos" | "podcasts" | "initiatives">("videos");
   const [lightboxVideo, setLightboxVideo] = useState<string | null>(null);
 
+  // Load dynamic collections
+  const [webinars, setWebinars] = useState(() => mockDb.getWebinars());
+  const [podcasts, setPodcasts] = useState(() => mockDb.getPodcasts());
+
+  useEffect(() => {
+    setWebinars(mockDb.getWebinars());
+    setPodcasts(mockDb.getPodcasts());
+  }, []);
+
   // Audio player state
-  const [playingPodcast, setPlayingPodcast] = useState<typeof PODCASTS[0] | null>(null);
+  const [playingPodcast, setPlayingPodcast] = useState<any>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
 
   const lightboxCloseRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
-    if (window.location.hash === "#initiatives") {
+    if (location.hash === "#initiatives") {
       setActiveTab("initiatives");
-    } else if (window.location.hash === "#podcasts") {
+    } else if (location.hash === "#podcasts") {
       setActiveTab("podcasts");
-    } else if (window.location.hash === "#videos") {
+    } else if (location.hash === "#videos") {
       setActiveTab("videos");
     }
-  }, []);
+  }, [location.hash]);
 
   const tabs = [
     { id: "videos" as const, label: "VIDEO_ARCHIVE", icon: Youtube },
@@ -141,9 +139,13 @@ export function MediaPage() {
             {tabs.map(({ id, label, icon: Icon }) => (
               <button
                 key={id}
+                id={id}
                 role="tab"
                 aria-selected={activeTab === id}
-                onClick={() => setActiveTab(id)}
+                onClick={() => {
+                  setActiveTab(id);
+                  navigate(`#${id}`, { replace: true });
+                }}
                 className={`flex items-center gap-2 px-5 py-4 transition-all duration-200 relative shrink-0 font-mono text-[0.7rem] tracking-widest cursor-pointer ${
                   activeTab === id ? "text-pink-500 font-bold" : "text-gray-500 hover:text-gray-300"
                 }`}
@@ -165,15 +167,22 @@ export function MediaPage() {
           <div role="tabpanel">
             <div className="flex items-center gap-3 mb-8 font-mono text-xs text-gray-400 tracking-wider">
               <span className="text-pink-500">▶</span>
-              SECTOR_ARCHIVE :: VIDEO_FEEDS // {VIDEOS.length}_RECORDINGS_INDEXED
+              SECTOR_ARCHIVE :: VIDEO_FEEDS // {webinars.length}_RECORDINGS_INDEXED
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {VIDEOS.map((video, idx) => (
-                <button
-                  key={video.id}
-                  onClick={() => setLightboxVideo(video.youtubeId)}
-                  className="text-left rounded-xl overflow-hidden group bg-gray-900/50 border border-pink-500/10 backdrop-blur-md transition-all hover:-translate-y-1 hover:border-pink-500/30 hover:shadow-[0_8px_32px_rgba(0,0,0,0.4)] relative cursor-pointer w-full"
-                >
+              {webinars.map((video, idx) => {
+                const getYouTubeId = (url: string) => {
+                  const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+                  const match = url.match(regExp);
+                  return (match && match[2].length === 11) ? match[2] : url;
+                };
+                const youtubeId = getYouTubeId(video.videoUrl);
+                return (
+                  <button
+                    key={video.id}
+                    onClick={() => setLightboxVideo(youtubeId)}
+                    className="text-left rounded-xl overflow-hidden group bg-gray-900/50 border border-pink-500/10 backdrop-blur-md transition-all hover:-translate-y-1 hover:border-pink-500/30 hover:shadow-[0_8px_32px_rgba(0,0,0,0.4)] relative cursor-pointer w-full"
+                  >
                   <div className="hud-corners absolute inset-0 pointer-events-none z-10" />
                   <div className="relative aspect-video overflow-hidden">
                     <ImageWithFallback
@@ -192,7 +201,7 @@ export function MediaPage() {
                       </div>
                     )}
                     <div className="absolute bottom-2 right-2 px-2 py-0.5 rounded bg-black/90 text-gray-200 font-mono text-[0.7rem] border border-white/10">
-                      {video.duration}
+                      35:00
                     </div>
                   </div>
                   <div className="p-4">
@@ -200,12 +209,12 @@ export function MediaPage() {
                       {video.title}
                     </h3>
                     <div className="flex items-center justify-between font-mono text-xs text-gray-500">
-                      <span>{video.views} VIEWS</span>
+                      <span>1.2K VIEWS</span>
                       <span>IDX_{String(idx + 1).padStart(2, "0")}</span>
                     </div>
                   </div>
                 </button>
-              ))}
+              )})}
             </div>
           </div>
         )}
@@ -213,7 +222,7 @@ export function MediaPage() {
         {/* Podcasts */}
         {activeTab === "podcasts" && (
           <div role="tabpanel" className="max-w-4xl mx-auto space-y-4">
-            {PODCASTS.map((podcast) => (
+            {podcasts.map((podcast) => (
               <div
                 key={podcast.id}
                 className="p-6 rounded-xl bg-gray-900/50 border border-pink-500/10 backdrop-blur-md flex flex-col sm:flex-row items-start sm:items-center gap-6 group hover:border-pink-500/30 transition-colors"

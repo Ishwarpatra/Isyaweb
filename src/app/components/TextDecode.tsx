@@ -15,6 +15,8 @@ export function TextDecode({ text, delay = 0, duration = 800, className = "" }: 
   const [isDecoding, setIsDecoding] = useState(false);
   const hasAnimated = useRef(false);
   const nodeRef = useRef<HTMLSpanElement>(null);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const rafRef = useRef<number | null>(null);
 
   useEffect(() => {
     setMounted(true);
@@ -33,12 +35,12 @@ export function TextDecode({ text, delay = 0, duration = 800, className = "" }: 
 
     const startDecode = () => {
       // Use requestAnimationFrame to ensure the component is actually painted in the DOM
-      requestAnimationFrame(() => {
+      rafRef.current = requestAnimationFrame(() => {
         setIsDecoding(true);
         let iteration = 0;
         const totalIterations = Math.floor(duration / 40);
 
-        const interval = setInterval(() => {
+        intervalRef.current = setInterval(() => {
           setDisplayText((prev) =>
             text
               .split("")
@@ -52,7 +54,10 @@ export function TextDecode({ text, delay = 0, duration = 800, className = "" }: 
           );
 
           if (iteration >= totalIterations) {
-            clearInterval(interval);
+            if (intervalRef.current) {
+              clearInterval(intervalRef.current);
+              intervalRef.current = null;
+            }
             setDisplayText(text);
             setIsDecoding(false);
           }
@@ -77,7 +82,15 @@ export function TextDecode({ text, delay = 0, duration = 800, className = "" }: 
       observer.observe(nodeRef.current);
     }
 
-    return () => observer.disconnect();
+    return () => {
+      observer.disconnect();
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+      if (rafRef.current) {
+        cancelAnimationFrame(rafRef.current);
+      }
+    };
   }, [mounted, text, delay, duration]);
 
   return (

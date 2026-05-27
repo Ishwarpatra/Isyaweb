@@ -1,8 +1,11 @@
-import React, { useState } from "react";
-import { Search, MapPin, MessageCircle, Heart, Share2, Plus, X, AlertCircle } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { Link } from "react-router";
+import { Search, MapPin, MessageCircle, Heart, Share2, Plus, X, AlertCircle, Flag } from "lucide-react";
+import { formatDistanceToNow } from "date-fns";
 import { useScrollReveal } from "../hooks/useScrollReveal";
 import { useAuth } from "../hooks/useAuth";
 import { toast } from "sonner";
+import { mockDb } from "../utils/mockDb";
 
 export interface Member {
   id: number;
@@ -21,10 +24,12 @@ export interface Post {
   avatar: string;
   color: string;
   time: string;
+  createdAt?: number;
   content: string;
   likes: number;
   comments: number;
   liked: boolean;
+  status?: "DRAFT" | "PUBLISHED" | "FLAGGED";
 }
 
 const MEMBERS: Member[] = [
@@ -45,6 +50,7 @@ const INITIAL_POSTS: Post[] = [
     avatar: "DO",
     color: "#EC4899",
     time: "2 hours ago",
+    createdAt: Date.now() - 2 * 60 * 60 * 1000,
     content: "Just submitted our CubeSat proposal to the IAF review board! 🛰️ Six months of hard work finally coming together. Fingers crossed for the funding decision in June. Anyone else here competing this cycle?",
     likes: 47,
     comments: 12,
@@ -56,6 +62,7 @@ const INITIAL_POSTS: Post[] = [
     avatar: "YT",
     color: "#4A90E2",
     time: "5 hours ago",
+    createdAt: Date.now() - 5 * 60 * 60 * 1000,
     content: "Our observatory team just completed our first joint observation session with the team in Chile! Coordinating across time zones was tricky but totally worth it — we captured some incredible data on the Eta Carinae nebula.",
     likes: 83,
     comments: 24,
@@ -67,6 +74,7 @@ const INITIAL_POSTS: Post[] = [
     avatar: "SC",
     color: "#FFA500",
     time: "1 day ago",
+    createdAt: Date.now() - 24 * 60 * 60 * 1000,
     content: "Sharing a resource: I compiled a list of free online courses for young astronomers — from basic celestial mechanics to intro to radio astronomy. DM me if you'd like the full list! 📚 Happy to help anyone who's just starting out.",
     likes: 129,
     comments: 38,
@@ -78,6 +86,7 @@ const INITIAL_POSTS: Post[] = [
     avatar: "LR",
     color: "#10B981",
     time: "2 days ago",
+    createdAt: Date.now() - 2 * 24 * 60 * 60 * 1000,
     content: "Quick update: our team's Mars habitat pressure vessel passed all simulated stress tests this week 🎉 On to thermal-vacuum testing next month. Science is slow but progress is progress!",
     likes: 64,
     comments: 15,
@@ -85,18 +94,22 @@ const INITIAL_POSTS: Post[] = [
   },
 ];
 
-const UPCOMING = [
-  { id: 1, title: "Webinar: Life on Europa?", date: "May 22", type: "Webinar" },
-  { id: 2, title: "CubeSat Workshop — Module 3", date: "May 25", type: "Workshop" },
-  { id: 3, title: "Annual Symposium 2026", date: "Jun 15", type: "Event" },
-  { id: 4, title: "Space Hackathon Registration Closes", date: "Jun 30", type: "Deadline" },
+const ALL_EVENTS = [
+  { id: 1, title: "Webinar: Life on Europa?", date: "May 22", type: "Webinar", desc: "A deep dive into the biosignatures and sub-surface ocean conditions of Jupiter's moon Europa." },
+  { id: 2, title: "CubeSat Workshop — Module 3", date: "May 25", type: "Workshop", desc: "Hands-on guidance on electrical power systems and orbital determination controls." },
+  { id: 3, title: "Annual Symposium 2026", date: "Jun 15", type: "Event", desc: "The flagship virtual meeting connecting space cadets with lead agency researchers." },
+  { id: 4, title: "Space Hackathon Registration Closes", date: "Jun 30", type: "Deadline", desc: "Final cutoff to enlist team members and submit initial design parameters." },
+  { id: 5, title: "ESA Mission Spotlight Q&A", date: "Jul 10", type: "Webinar", desc: "Interactive session detailing upcoming planetary defence and asteroid mapping targets." },
+  { id: 6, title: "Deep Space Telemetry Bootcamp", date: "Jul 18", type: "Workshop", desc: "Learn to process raw radio frequency arrays using open source telemetry tools." },
 ];
 
+const UPCOMING = ALL_EVENTS.slice(0, 4);
+
 const EVENT_COLORS: Record<string, string> = {
-  Webinar: "text-blue-400 bg-blue-400/10",
-  Workshop: "text-orange-400 bg-orange-400/10",
-  Event: "text-pink-400 bg-pink-400/10",
-  Deadline: "text-red-400 bg-red-400/10",
+  Webinar: "text-blue-400 bg-blue-400/10 border border-blue-500/10",
+  Workshop: "text-orange-400 bg-orange-400/10 border border-orange-500/10",
+  Event: "text-pink-400 bg-pink-400/10 border border-pink-500/10",
+  Deadline: "text-red-400 bg-red-400/10 border border-red-500/10",
 };
 
 export function getInitials(name: string): string {
@@ -109,16 +122,106 @@ export function getInitials(name: string): string {
 export function CommunityPage() {
   const sectionRef = useScrollReveal<HTMLDivElement>();
   const { user } = useAuth();
+
+  const storedFlags = localStorage.getItem("isya_sys_flags");
+  let communityEnabled = true;
+  if (storedFlags) {
+    try {
+      const parsed = JSON.parse(storedFlags);
+      if (parsed.VITE_ENABLE_COMMUNITY_FEATURES === false) communityEnabled = false;
+    } catch (e) {}
+  }
+
   const [activeView, setActiveView] = useState<"feed" | "members">("feed");
   const [search, setSearch] = useState("");
 
-  // Stateful posts & members
-  const [posts, setPosts] = useState<Post[]>(INITIAL_POSTS);
-  const [members, setMembers] = useState<Member[]>(MEMBERS);
+  // Stateful posts & members with persistence
+  const [posts, setPosts] = useState<Post[]>(() => {
+    const stored = localStorage.getItem("isya_community_posts");
+    if (stored) {
+      try {
+        return JSON.parse(stored);
+      } catch (e) {}
+    }
+    return INITIAL_POSTS;
+  });
 
-  // Modal State
+  const [members, setMembers] = useState<Member[]>(() => {
+    const stored = localStorage.getItem("isya_community_members");
+    if (stored) {
+      try {
+        return JSON.parse(stored);
+      } catch (e) {}
+    }
+    return MEMBERS;
+  });
+
+  // Modal States
   const [isComposeOpen, setIsComposeOpen] = useState(false);
+  const [isEventsOpen, setIsEventsOpen] = useState(false);
   const [newPostContent, setNewPostContent] = useState("");
+
+  // Flag/Report States
+  const [reportingPost, setReportingPost] = useState<Post | null>(null);
+  const [reportReason, setReportReason] = useState("Spam");
+  const [reportDetails, setReportDetails] = useState("");
+
+  // clock tick state to trigger automatic relative timestamps update every 60s
+  const [tick, setTick] = useState(0);
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setTick((t) => t + 1);
+    }, 60000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const handleFlagPost = (post: Post) => {
+    setReportingPost(post);
+  };
+
+  const handleSubmitReport = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!reportingPost) return;
+    
+    mockDb.addToModerationQueue({
+      contentType: "post",
+      contentId: reportingPost.id,
+      content: reportingPost.content,
+      flaggedBy: user?.email || "anonymous@isya.space",
+      reason: `${reportReason}: ${reportDetails}`.trim(),
+    });
+    
+    // Set post status to FLAGGED in local state and localStorage
+    const updated = posts.map(p => p.id === reportingPost.id ? { ...p, status: "FLAGGED" as const } : p);
+    setPosts(updated);
+    localStorage.setItem("isya_community_posts", JSON.stringify(updated));
+    
+    setReportingPost(null);
+    setReportDetails("");
+  };
+
+  const visiblePosts = posts.filter(p => p.status !== "FLAGGED");
+
+  if (!communityEnabled) {
+    return (
+      <div className="min-h-[60vh] flex flex-col items-center justify-center text-center p-6 bg-[#0B0F19] stardust">
+        <div className="p-8 rounded-2xl border border-pink-500/20 bg-pink-500/5 max-w-xl mx-auto flex flex-col items-center gap-4 relative hud-corners">
+          <div className="absolute top-0 left-0 w-6 h-6 border-t-2 border-l-2 border-brand-pink rounded-tl-lg" />
+          <div className="absolute top-0 right-0 w-6 h-6 border-t-2 border-r-2 border-brand-pink rounded-tr-lg" />
+          <div className="absolute bottom-0 left-0 w-6 h-6 border-b-2 border-l-2 border-brand-pink rounded-bl-lg" />
+          <div className="absolute bottom-0 right-0 w-6 h-6 border-b-2 border-r-2 border-brand-pink rounded-br-lg" />
+          
+          <h2 className="text-white text-xl font-bold font-mono">// SECTOR_OFFLINE</h2>
+          <p className="text-gray-500 text-sm leading-relaxed">
+            The community broadcast network terminal is currently offline due to a command override lock.
+          </p>
+          <Link to="/" className="mt-2 px-6 py-2.5 rounded-xl font-mono text-xs font-bold text-white bg-brand-pink/20 border border-brand-pink/40 hover:bg-brand-pink/30 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#EC4899]">
+            ← RETURN_TO_BASE_TERMINAL
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   const filteredMembers = members.filter((m) =>
     search === "" ||
@@ -127,8 +230,8 @@ export function CommunityPage() {
   );
 
   const toggleLike = (id: number) => {
-    setPosts((prev) =>
-      prev.map((post) => {
+    setPosts((prev) => {
+      const nextPosts = prev.map((post) => {
         if (post.id === id) {
           const liked = !post.liked;
           return {
@@ -138,13 +241,15 @@ export function CommunityPage() {
           };
         }
         return post;
-      })
-    );
+      });
+      localStorage.setItem("isya_community_posts", JSON.stringify(nextPosts));
+      return nextPosts;
+    });
   };
 
   const handleConnect = (id: number) => {
-    setMembers((prev) =>
-      prev.map((m) => {
+    setMembers((prev) => {
+      const nextMembers = prev.map((m) => {
         if (m.id === id) {
           const nextState = !m.connected;
           if (nextState) {
@@ -155,14 +260,21 @@ export function CommunityPage() {
           return { ...m, connected: nextState };
         }
         return m;
-      })
-    );
+      });
+      localStorage.setItem("isya_community_members", JSON.stringify(nextMembers));
+      return nextMembers;
+    });
   };
 
   const handleCreatePost = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newPostContent.trim()) {
+    const content = newPostContent.trim();
+    if (!content) {
       toast.error("Cannot broadcast empty signal transmission.");
+      return;
+    }
+    if (content.length > 280) {
+      toast.error("Transmission exceeds maximum bandwidth of 280 characters.");
       return;
     }
 
@@ -175,13 +287,18 @@ export function CommunityPage() {
       avatar: getInitials(postAuthorName),
       color: postColor,
       time: "Just now",
-      content: newPostContent.trim(),
+      createdAt: Date.now(),
+      content: content,
       likes: 0,
       comments: 0,
       liked: false,
     };
 
-    setPosts([newPost, ...posts]);
+    setPosts((prev) => {
+      const nextPosts = [newPost, ...prev];
+      localStorage.setItem("isya_community_posts", JSON.stringify(nextPosts));
+      return nextPosts;
+    });
     setNewPostContent("");
     setIsComposeOpen(false);
     toast.success("Broadcast packet sent successfully!");
@@ -248,7 +365,7 @@ export function CommunityPage() {
 
                 {/* Feed */}
                 <div className="space-y-4">
-                  {posts.map((post) => (
+                  {visiblePosts.map((post) => (
                     <article
                       key={post.id}
                       className="p-6 rounded-2xl bg-[#0F1629] border border-white/5"
@@ -264,10 +381,12 @@ export function CommunityPage() {
                           <p className="text-white font-semibold text-xs">
                             {post.author}
                           </p>
-                          <p className="text-gray-400 text-xs font-mono">{post.time}</p>
+                          <p className="text-gray-400 text-xs font-mono">
+                            {post.createdAt ? formatDistanceToNow(post.createdAt, { addSuffix: true }).toUpperCase() : post.time.toUpperCase()}
+                          </p>
                         </div>
                       </div>
-                      <p className="text-gray-300 leading-relaxed text-xs mb-5">
+                      <p className="text-gray-300 leading-relaxed text-xs mb-5 line-clamp-4 break-words overflow-hidden">
                         {post.content}
                       </p>
                       <div className="flex items-center gap-6 pt-4 border-t border-white/5">
@@ -293,6 +412,14 @@ export function CommunityPage() {
                         >
                           <Share2 size={16} />
                           Share
+                        </button>
+                        <button 
+                          onClick={() => handleFlagPost(post)}
+                          className="flex items-center gap-1.5 text-gray-400 text-xs hover:text-red-400 cursor-pointer"
+                          title="Report transmission to moderators"
+                        >
+                          <Flag size={14} />
+                          Report
                         </button>
                       </div>
                     </article>
@@ -404,7 +531,7 @@ export function CommunityPage() {
                 ))}
               </div>
               <button 
-                onClick={() => toast.info("Full event archives coming soon!")}
+                onClick={() => setIsEventsOpen(true)}
                 className="w-full mt-6 py-2.5 rounded-xl text-xs font-bold text-gray-400 bg-white/5 hover:bg-white/10 transition-colors cursor-pointer"
               >
                 VIEW_ALL_EVENTS_
@@ -462,6 +589,133 @@ export function CommunityPage() {
                   className="px-5 py-2 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-orange-500 to-pink-500 hover:shadow-lg hover:shadow-pink-500/20 hover:-translate-y-0.5 active:translate-y-0 transition-all cursor-pointer"
                 >
                   TRANSMIT_SIGNAL →
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Events Archive Modal (Accessible custom Dialog) */}
+      {isEventsOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm">
+          <div className="bg-[#0F1629] border border-white/10 rounded-2xl p-6 w-full max-w-xl shadow-2xl relative hud-corners animate-fade-up">
+            <button
+              onClick={() => setIsEventsOpen(false)}
+              className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors cursor-pointer"
+              aria-label="Close modal"
+            >
+              <X size={20} />
+            </button>
+            
+            <div className="mb-6">
+              <h2 className="text-white text-lg font-bold font-mono">// COMMUNITY_EVENTS_ARCHIVE</h2>
+              <p className="text-gray-400 text-xs">Full directory of webinars, workshops, and deadlines.</p>
+            </div>
+
+            <div className="space-y-4 max-h-[350px] overflow-y-auto pr-2">
+              {ALL_EVENTS.map((ev) => (
+                <div key={ev.id} className="p-4 rounded-xl bg-white/5 border border-white/5 flex gap-4 items-start hover:border-orange-500/25 transition-all">
+                  <div className={`shrink-0 w-12 h-12 rounded-lg flex flex-col items-center justify-center text-center ${EVENT_COLORS[ev.type]}`}>
+                    <span className="font-mono text-xs font-bold leading-tight">
+                      {ev.date.split(" ")[0]}
+                      <br />
+                      {ev.date.split(" ")[1]}
+                    </span>
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2 mb-1">
+                      <h4 className="text-white text-sm font-semibold leading-tight">{ev.title}</h4>
+                      <span className={`px-2 py-0.5 rounded text-[8px] font-bold uppercase tracking-wider ${EVENT_COLORS[ev.type].split(" ")[0]}`}>
+                        {ev.type}
+                      </span>
+                    </div>
+                    <p className="text-gray-400 text-xs leading-relaxed">{ev.desc}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+            
+            <div className="mt-6 flex justify-end">
+              <button
+                onClick={() => setIsEventsOpen(false)}
+                className="px-5 py-2.5 rounded-xl font-mono text-xs font-bold text-gray-400 bg-white/5 hover:bg-white/10 transition-colors cursor-pointer"
+              >
+                DISMISS_ARCHIVE
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Flag Report Modal Overlay */}
+      {reportingPost && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/95 backdrop-blur-sm">
+          <div 
+            className="relative w-full max-w-md bg-gray-900 border border-red-500/20 rounded-2xl p-6 shadow-2xl text-left flex flex-col max-h-[85dvh] overflow-y-auto overscroll-contain hud-corners"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="absolute top-0 left-0 w-4 h-4 border-t-2 border-l-2 border-red-500/30 rounded-tl-lg" />
+            <div className="absolute bottom-0 right-0 w-4 h-4 border-b-2 border-r-2 border-red-500/30 rounded-br-lg" />
+
+            <div className="flex items-center justify-between pb-4 border-b border-white/5 mb-6">
+              <div>
+                <h3 className="text-white text-lg font-bold">Report Post</h3>
+                <p className="font-mono text-[9px] text-red-500 tracking-wider">
+                  REPORT_SECTOR // ID_{reportingPost.id}
+                </p>
+              </div>
+              <button
+                onClick={() => setReportingPost(null)}
+                className="text-gray-500 hover:text-white p-1 cursor-pointer"
+                aria-label="Close report overlay"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <form onSubmit={handleSubmitReport} className="space-y-4">
+              <div>
+                <label htmlFor="reportReason" className="block font-mono text-[10px] text-gray-400 tracking-wider mb-2">FLAG_REASON</label>
+                <select
+                  id="reportReason"
+                  value={reportReason}
+                  onChange={(e) => setReportReason(e.target.value)}
+                  className="w-full bg-gray-950/60 border border-white/10 rounded-lg px-3 py-2.5 text-white text-xs outline-none focus:border-red-500/40 text-gray-300 cursor-pointer"
+                >
+                  <option value="Spam">Spam & Unauthorized Ads</option>
+                  <option value="Hateful content">Hateful or Off-topic Content</option>
+                  <option value="Misinformation">Misinformation / Fake Science</option>
+                  <option value="Other">Other Violations</option>
+                </select>
+              </div>
+
+              <div>
+                <label htmlFor="reportDetails" className="block font-mono text-[10px] text-gray-400 tracking-wider mb-2">SPECIFIC_VIOLATION_DETAILS</label>
+                <textarea
+                  id="reportDetails"
+                  rows={4}
+                  required
+                  placeholder="Describe why this post violates ISYA science transmission protocol guidelines..."
+                  value={reportDetails}
+                  onChange={(e) => setReportDetails(e.target.value)}
+                  className="w-full bg-gray-950/60 border border-white/10 rounded-lg px-3 py-2.5 text-white text-xs outline-none focus:border-red-500/40 resize-none"
+                />
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setReportingPost(null)}
+                  className="flex-1 py-3 rounded-xl font-mono text-xs font-bold text-gray-400 bg-white/5 hover:bg-white/10 transition-colors cursor-pointer"
+                >
+                  CANCEL
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 py-3 rounded-xl font-mono text-xs font-bold text-white bg-red-500 hover:bg-red-500/90 shadow-[0_0_12px_rgba(239,68,68,0.3)] transition-all cursor-pointer"
+                >
+                  SUBMIT_REPORT
                 </button>
               </div>
             </form>
