@@ -1,9 +1,17 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "react-router";
-import { Search, ChevronDown, HelpCircle, ArrowRight, BookOpen, Layers } from "lucide-react";
+import { Search, ChevronDown, HelpCircle, Layers, Copy } from "lucide-react";
 import { mockDb, FAQ } from "../utils/mockDb";
+import { toast } from "sonner";
 
 const CATEGORIES = ["ALL", "GENERAL", "MEMBERSHIP", "COMMUNITY", "MENTORSHIP", "ADMIN"];
+
+// Normalize helper to strip diacritics/accents and convert to lowercase for locale-insensitive matching
+const normalizeText = (text: string) =>
+  text
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
 
 export function FAQPage() {
   const location = useLocation();
@@ -11,6 +19,7 @@ export function FAQPage() {
   const [activeCategory, setActiveCategory] = useState("ALL");
   const [expandedIds, setExpandedIds] = useState<Record<number, boolean>>({});
   const [faqs, setFaqs] = useState<FAQ[]>([]);
+  const [visibleCount, setVisibleCount] = useState(10); // Load-more pagination limit
 
   // Load from local database on mount
   useEffect(() => {
@@ -24,28 +33,38 @@ export function FAQPage() {
       setSearchQuery("collaborate");
       // Expand matching questions
       const matching = mockDb.getFAQs().filter(
-        f => f.question.toLowerCase().includes("collaborate") || 
-             f.answer.toLowerCase().includes("collaborate")
+        f =>
+          normalizeText(f.question).includes("collaborate") ||
+          normalizeText(f.answer).includes("collaborate")
       );
       const newExpanded: Record<number, boolean> = {};
       matching.forEach(m => {
         newExpanded[m.id] = true;
+        mockDb.logFAQView(m.id); // Log view for analytics
       });
       setExpandedIds(newExpanded);
+      setVisibleCount(10);
     }
   }, [location.hash, faqs]);
 
   const toggleExpand = (id: number) => {
-    setExpandedIds((prev) => ({
-      ...prev,
-      [id]: !prev[id],
-    }));
+    setExpandedIds((prev) => {
+      const isExpanding = !prev[id];
+      if (isExpanding) {
+        mockDb.logFAQView(id); // Record dynamic telemetry
+      }
+      return {
+        ...prev,
+        [id]: isExpanding,
+      };
+    });
   };
 
   const handleExpandAll = () => {
     const allExpanded: Record<number, boolean> = {};
     filteredFAQs.forEach((faq) => {
       allExpanded[faq.id] = true;
+      mockDb.logFAQView(faq.id);
     });
     setExpandedIds(allExpanded);
   };
@@ -57,11 +76,17 @@ export function FAQPage() {
   // Filter FAQs based on search and active category
   const filteredFAQs = faqs.filter((faq) => {
     const categoryMatches = activeCategory === "ALL" || faq.category === activeCategory;
+    const query = normalizeText(searchQuery);
     const searchMatches =
-      faq.question.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      faq.answer.toLowerCase().includes(searchQuery.toLowerCase());
+      normalizeText(faq.question).includes(query) ||
+      normalizeText(faq.answer).includes(query);
     return categoryMatches && searchMatches;
   });
+
+  const copyAnswer = (faq: FAQ) => {
+    navigator.clipboard.writeText(faq.answer);
+    toast.success(`FAQ #${faq.id} answer copied to clipboard!`);
+  };
 
   return (
     <main className="min-h-screen bg-[#070B14] stardust pb-24 pt-28 relative overflow-hidden">
@@ -85,7 +110,7 @@ export function FAQPage() {
         </div>
 
         {/* Controls Layout */}
-        <div className="space-y-6 mb-10">
+        <div className="space-y-6 mb-8">
           
           {/* Search bar */}
           <div className="relative">
@@ -96,38 +121,58 @@ export function FAQPage() {
               type="text"
               placeholder="Query FAQ database (e.g. 'membership', 'mentor')..."
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                setVisibleCount(10); // Reset page limit when typing query
+              }}
               className="w-full pl-12 pr-4 py-4 rounded-2xl bg-gray-950/70 border border-white/5 text-white placeholder-gray-500 text-sm focus:border-pink-500/50 focus:shadow-[0_0_20px_rgba(236,72,153,0.15)] outline-none transition-all duration-300"
             />
           </div>
 
+          {/* Real-time Search results telemetry count */}
+          <div className="flex items-center justify-between font-mono text-[9px] text-gray-500 px-1">
+            <span>INDEXED_COORDINATES: {faqs.length}</span>
+            <span>
+              MATCHED_RECORDS: {filteredFAQs.length} {searchQuery && "// REALTIME_QUERY"}
+            </span>
+          </div>
+
           {/* Categories Tab and Global Toggles */}
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pt-2">
             
-            {/* Category tabs */}
-            <div className="flex flex-wrap gap-2" role="tablist" aria-label="FAQ Categories">
-              {CATEGORIES.map((cat) => (
-                <button
-                  key={cat}
-                  role="tab"
-                  aria-selected={activeCategory === cat}
-                  onClick={() => {
-                    setActiveCategory(cat);
-                    handleCollapseAll();
-                  }}
-                  className={`px-4 py-2 rounded-xl text-xs font-mono font-bold tracking-wider transition-all duration-200 cursor-pointer ${
-                    activeCategory === cat
-                      ? "bg-pink-500 text-white shadow-[0_0_15px_rgba(236,72,153,0.3)]"
-                      : "bg-white/5 text-gray-400 border border-white/5 hover:bg-white/10 hover:text-white"
-                  }`}
-                >
-                  {cat}
-                </button>
-              ))}
+            {/* Category tabs container with mobile horizontal scrolling indicators */}
+            <div className="relative flex-1 max-w-full overflow-hidden">
+              <div 
+                className="flex gap-2 overflow-x-auto pb-3 scrollbar-none sm:flex-wrap" 
+                role="tablist" 
+                aria-label="FAQ Categories"
+              >
+                {CATEGORIES.map((cat) => (
+                  <button
+                    key={cat}
+                    role="tab"
+                    aria-selected={activeCategory === cat}
+                    onClick={() => {
+                      setActiveCategory(cat);
+                      handleCollapseAll();
+                      setVisibleCount(10); // Reset limits
+                    }}
+                    className={`px-4 py-2 rounded-xl text-xs font-mono font-bold tracking-wider transition-all duration-200 cursor-pointer shrink-0 ${
+                      activeCategory === cat
+                        ? "bg-pink-500 text-white shadow-[0_0_15px_rgba(236,72,153,0.3)]"
+                        : "bg-white/5 text-gray-400 border border-white/5 hover:bg-white/10 hover:text-white"
+                    }`}
+                  >
+                    {cat}
+                  </button>
+                ))}
+              </div>
+              {/* Fade out indicator showing more category cards are available off-screen */}
+              <div className="absolute right-0 top-0 bottom-3 w-10 bg-gradient-to-l from-[#070B14] to-transparent pointer-events-none sm:hidden" />
             </div>
 
             {/* Global Expand/Collapse buttons */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 shrink-0 self-end sm:self-auto">
               <button
                 onClick={handleExpandAll}
                 className="px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-gray-300 hover:text-white font-mono text-[10px] font-bold tracking-widest cursor-pointer transition-colors"
@@ -147,7 +192,7 @@ export function FAQPage() {
         {/* Accordions List */}
         {filteredFAQs.length > 0 ? (
           <div className="space-y-4">
-            {filteredFAQs.map((faq) => {
+            {filteredFAQs.slice(0, visibleCount).map((faq) => {
               const isExpanded = !!expandedIds[faq.id];
               return (
                 <div 
@@ -158,7 +203,7 @@ export function FAQPage() {
                 >
                   <button
                     onClick={() => toggleExpand(faq.id)}
-                    className="w-full px-6 py-5 flex items-center justify-between text-left cursor-pointer focus:outline-none"
+                    className="w-full px-6 py-5 flex items-center justify-between text-left cursor-pointer focus:outline-none focus-visible:ring-1 focus-visible:ring-[#EC4899] rounded-2xl"
                     aria-expanded={isExpanded}
                   >
                     <div className="flex items-center gap-3">
@@ -190,13 +235,38 @@ export function FAQPage() {
                       </p>
                       <div className="flex items-center justify-between pt-4 border-t border-white/5 font-mono text-[9px] text-gray-500">
                         <span>POSTED_BY // {faq.createdBy}</span>
-                        <span>LAST_UPDATE // {faq.updatedAt}</span>
+                        <div className="flex items-center gap-4">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              copyAnswer(faq);
+                            }}
+                            className="flex items-center gap-1 px-2 py-0.5 rounded bg-white/5 hover:bg-white/10 hover:text-white transition-colors cursor-pointer"
+                            title="Copy Answer"
+                          >
+                            <Copy size={10} />
+                            <span className="ml-1">COPY_ANSWER</span>
+                          </button>
+                          <span>LAST_UPDATE // {faq.updatedAt}</span>
+                        </div>
                       </div>
                     </div>
                   </div>
                 </div>
               );
             })}
+
+            {/* Pagination Load More trigger */}
+            {filteredFAQs.length > visibleCount && (
+              <div className="text-center pt-6">
+                <button
+                  onClick={() => setVisibleCount(prev => prev + 10)}
+                  className="px-6 py-3 rounded-xl border border-pink-500/25 bg-pink-500/5 hover:bg-pink-500/10 text-pink-500 hover:text-pink-400 font-mono text-[10px] font-bold tracking-widest cursor-pointer transition-all active:scale-95 shadow-[0_0_15px_rgba(236,72,153,0.05)] hover:shadow-[0_0_20px_rgba(236,72,153,0.15)]"
+                >
+                  LOAD_MORE_RECORDS // +10_ENTRIES
+                </button>
+              </div>
+            )}
           </div>
         ) : (
           <div className="text-center py-20 rounded-2xl bg-white/2 border border-white/5">

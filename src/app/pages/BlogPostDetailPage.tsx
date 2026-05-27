@@ -1,78 +1,123 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router";
-import { ArrowLeft, MessageSquare, Clock, Calendar, Send, Heart } from "lucide-react";
+import { ArrowLeft, MessageSquare, Clock, Calendar, Send, Heart, Loader2 } from "lucide-react";
 import { ImageWithFallback } from "../components/figma/ImageWithFallback";
 import { getInitials } from "./CommunityPage";
 import { toast } from "sonner";
 import { format, parseISO } from "date-fns";
+import { mockDb, BlogPost, BlogComment } from "../utils/mockDb";
+import { useAuth } from "../hooks/useAuth";
 
-
-interface Comment {
-  id: number;
-  author: string;
-  avatar: string;
-  time: string;
-  text: string;
+// Simple inline markdown compiler for bold, italic, code chunks, and external links
+function parseMarkdown(text: string): React.ReactNode {
+  const parts = text.split(/(\*\*.*?\*\*|\*.*?\*|`.*?`|\[.*?\]\(.*?\))/g);
+  return parts.map((part, index) => {
+    if (part.startsWith("**") && part.endsWith("**")) {
+      return <strong key={index} className="text-white font-bold">{part.slice(2, -2)}</strong>;
+    }
+    if (part.startsWith("*") && part.endsWith("*")) {
+      return <em key={index} className="italic text-gray-200">{part.slice(1, -1)}</em>;
+    }
+    if (part.startsWith("`") && part.endsWith("`")) {
+      return (
+        <code key={index} className="font-mono bg-white/5 border border-white/10 px-1.5 py-0.5 rounded text-pink-400 text-xs">
+          {part.slice(1, -1)}
+        </code>
+      );
+    }
+    if (part.startsWith("[") && part.includes("](")) {
+      const match = part.match(/\[(.*?)\]\((.*?)\)/);
+      if (match) {
+        return (
+          <a key={index} href={match[2]} target="_blank" rel="noopener noreferrer" className="text-pink-500 hover:text-pink-400 underline transition-colors">
+            {match[1]}
+          </a>
+        );
+      }
+    }
+    return part;
+  });
 }
-
-const POST_CONTENTS: Record<number, { title: string, date: string, author: string, tag: string, tagColor: string, readTime: string, image: string, body: string[] }> = {
-  1: {
-    title: "ISYA Members Join ESA's Young Graduate Traineeship Program",
-    date: "2026-05-14",
-    author: "CADET_CHEN_S",
-    tag: "MISSION_UPDATE",
-    tagColor: "#F97316",
-    readTime: "4 MIN",
-    image: "https://images.unsplash.com/photo-1727034394040-0377258a5791?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHx0ZWxlc2NvcGUlMjBvYnNlcnZhdG9yeSUyMG5pZ2h0JTIwc2t5JTIwc3RhcnN8ZW58MXx8fHwxNzc5MTIxMTY2fDA&ixlib=rb-4.1.0&q=80&w=1080",
-    body: [
-      "Fifteen cadets from the International Space Youth Association (ISYA) have officially been selected to join the European Space Agency's (ESA) Young Graduate Traineeship (YGT) program. This prestigious initiative offers high-caliber university graduates a unique, hands-on experience in space science and engineering.",
-      "The trainees will be stationed across key European Space Research and Technology Centre (ESTEC) facilities in the Netherlands, Darmstadt, and Frascati. Their research will span a diverse collection of projects, including CubeSat communications networks, orbital decay simulation models, and next-generation spectral imaging technologies.",
-      "This announcement represents a significant milestone in ISYA's mission to bridge the gap between academic space enthusiast clubs and professional space operations agencies. Congratulations to all selected trainees! Their hard work in near-space telemetry during our annual workshops has prepared them to make a tangible contribution to the global scientific community.",
-    ]
-  },
-  2: {
-    title: "Exoplanet Discovery Methods: A Youth Astronomer's Complete Guide",
-    date: "2026-05-10",
-    author: "CADET_OSEI_D",
-    tag: "RESEARCH",
-    tagColor: "#3B82F6",
-    readTime: "8 MIN",
-    image: "https://images.unsplash.com/photo-1706562018605-909733434781?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHw1fHxzcGFjZSUyMGdhbGF4eSUyMGNvc21vcyUyMGRhcmslMjBuZWJ1bGF8ZW58MXx8fHwxNzc5MTIxMTYwfDA&ixlib=rb-4.1.0&q=80&w=1080",
-    body: [
-      "How do we detect alien worlds orbiting stars trillions of miles away? While exoplanets are too distant to be resolved directly by standard telescopes, astronomers use several indirect observation techniques to discover thousands of planetary bodies.",
-      "The most successful detection method to date is Transit Photometry. By measuring the dimming of a star as a planet crosses in front of its disk, telescopes like Kepler and TESS can estimate a planet's size, orbital period, and distance from its host star.",
-      "Another fundamental method is Radial Velocity, which measures small wobbles in a star's spectral signatures caused by the gravitational pull of an orbiting exoplanet. By combining transit and radial velocity datasets, astrophysicists can calculate both the mass and radius of the planet, revealing its density and chemical composition.",
-    ]
-  },
-  3: {
-    title: "Annual Space Symposium 2026 — Registration Now Open",
-    date: "2026-05-06",
-    author: "ISYA_COMMAND",
-    tag: "EVENT",
-    tagColor: "#EC4899",
-    readTime: "3 MIN",
-    image: "https://images.unsplash.com/photo-1502134249126-9f3755a50d78?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxzcGFjZSUyMGdhbGF4eSUyMGNvc21vcyUyMGRhcmslMjBuZWJ1bGF8ZW58MXx8fHwxNzc5MTIxMTYwfDA&ixlib=rb-4.1.0&q=80&w=1080",
-    body: [
-      "We are thrilled to announce that registration is officially open for the Annual ISYA Space Symposium 2026, set to take place in Nairobi, Kenya, from August 12th to August 16th. The event will bring together over 500 young space advocates, researchers, and professional astronauts.",
-      "This year's theme, 'Decentralizing the Cosmos,' focuses on empowering global South space starts and student-led CubeSat operations. Keynote speakers include flight directors from major international agencies, astrobiology researchers, and CubeSat mission managers.",
-      "Priority registration closes on June 30th. Funding grants are available to cover travel expenses for cadets presenting research papers. Submit your abstracts via our mission portal as soon as possible!",
-    ]
-  }
-};
-
-const DEFAULT_COMMENTS: Comment[] = [
-  { id: 1, author: "Sarah Chen", avatar: "SC", time: "3 days ago", text: "This is a huge opportunity! Congrats to everyone selected for YGT. See you all in ESTEC!" },
-  { id: 2, author: "Yuki Tanaka", avatar: "YT", time: "2 days ago", text: "Excellent write-up! I've been testing the budget radio receivers for solar cycle updates, very relevant." },
-];
 
 export function BlogPostDetailPage() {
   const { id } = useParams<{ id: string }>();
   const postId = Number(id);
-  const post = POST_CONTENTS[postId];
+  const { user } = useAuth();
 
-  const [comments, setComments] = useState<Comment[]>(DEFAULT_COMMENTS);
+  const [post, setPost] = useState<BlogPost | null>(null);
+  const [comments, setComments] = useState<BlogComment[]>([]);
   const [commentText, setCommentText] = useState("");
   const [liked, setLiked] = useState(false);
+  const [loading, setLoading] = useState(true);
+  
+  // Visual posting feedback states
+  const [submittingComment, setSubmittingComment] = useState(false);
+  const [relatedPosts, setRelatedPosts] = useState<BlogPost[]>([]);
+
+  // Load post, comments, and related category blogs on mount
+  useEffect(() => {
+    try {
+      const fetchedPost = mockDb.getBlogById(postId);
+      if (fetchedPost) {
+        setPost(fetchedPost);
+        setComments(mockDb.getBlogComments(postId));
+
+        // Filter for related posts (matching tag category, excluding current post, max 2 items)
+        const allBlogs = mockDb.getBlogs();
+        const related = allBlogs
+          .filter(b => b.id !== postId && b.tag === fetchedPost.tag)
+          .slice(0, 2);
+        setRelatedPosts(related);
+      }
+    } catch (e) {
+      console.error("Failed to retrieve blog post details:", e);
+    } finally {
+      setLoading(false);
+    }
+  }, [postId]);
+
+  const handleAddComment = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!commentText.trim()) return;
+    if (commentText.length > 500) {
+      toast.error("Comment exceeds the maximum character limit (500).");
+      return;
+    }
+
+    setSubmittingComment(true);
+
+    // Simulate network telemetry latency
+    setTimeout(() => {
+      try {
+        const authorName = user ? user.name : "Guest Cadet";
+        const avatarInitials = getInitials(authorName);
+        
+        const newComment = mockDb.addBlogComment({
+          postId,
+          author: authorName,
+          avatar: avatarInitials,
+          time: "Just now",
+          text: commentText.trim(),
+        });
+
+        setComments((prev) => [...prev, newComment]);
+        setCommentText("");
+        toast.success("Comment posted to logs!");
+      } catch (err: any) {
+        toast.error(err.message || "Failed to submit comment.");
+      } finally {
+        setSubmittingComment(false);
+      }
+    }, 450);
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-[60vh] flex flex-col items-center justify-center text-center p-6 bg-[#0B0F19]">
+        <div className="animate-pulse text-pink-500 font-mono text-xs">// RETRIEVING_DATA_LINK_...</div>
+      </div>
+    );
+  }
 
   if (!post) {
     return (
@@ -85,23 +130,6 @@ export function BlogPostDetailPage() {
       </div>
     );
   }
-
-  const handleAddComment = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!commentText.trim()) return;
-
-    const newComment: Comment = {
-      id: Date.now(),
-      author: "Guest Cadet",
-      avatar: getInitials("Guest Cadet"),
-      time: "Just now",
-      text: commentText.trim(),
-    };
-
-    setComments([...comments, newComment]);
-    setCommentText("");
-    toast.success("Comment posted to logs!");
-  };
 
   return (
     <div className="stardust bg-[#0B0F19] min-h-screen text-gray-300">
@@ -147,10 +175,10 @@ export function BlogPostDetailPage() {
             <ImageWithFallback src={post.image} alt={post.title} className="w-full h-full object-cover" />
           </div>
 
-          {/* Body Content */}
+          {/* Body Content with dynamic Markdown parsing */}
           <div className="text-gray-300 text-sm leading-relaxed space-y-6 pt-4 font-sans max-w-none">
             {post.body.map((p, idx) => (
-              <p key={idx}>{p}</p>
+              <p key={idx}>{parseMarkdown(p)}</p>
             ))}
           </div>
 
@@ -161,17 +189,44 @@ export function BlogPostDetailPage() {
                 setLiked(!liked);
                 toast.success(liked ? "Transmission unliked" : "Transmission bookmarked!");
               }}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all border cursor-pointer ${
-                liked 
-                  ? "bg-pink-500/10 text-pink-500 border-pink-500/30" 
-                  : "bg-white/5 text-gray-400 border-white/5 hover:bg-white/10"
-              }`}
+              className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all border cursor-pointer bg-white/5 text-gray-400 border-white/5 hover:bg-white/10"
             >
-              <Heart size={16} fill={liked ? "currentColor" : "none"} />
+              <Heart size={16} fill={liked ? "currentColor" : "none"} className={liked ? "text-pink-500" : ""} />
               {liked ? "LIKED" : "LIKE_TRANSMISSION"}
             </button>
           </div>
         </article>
+
+        {/* Related Transmissions Section */}
+        {relatedPosts.length > 0 && (
+          <section className="mt-12 pt-10 border-t border-white/5">
+            <h3 className="font-mono text-xs text-white tracking-[0.2em] mb-6">// RELATED_TRANSMISSIONS</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+              {relatedPosts.map((related) => (
+                <Link
+                  key={related.id}
+                  to={`/blog/${related.id}`}
+                  className="group block p-5 rounded-2xl bg-white/[0.01] hover:bg-white/[0.03] border border-white/5 hover:border-pink-500/20 transition-all duration-300"
+                >
+                  <span className="font-mono text-[9px] px-2 py-0.5 rounded" style={{ background: `${related.tagColor}15`, color: related.tagColor }}>
+                    {related.tag}
+                  </span>
+                  <h4 className="text-white text-sm font-semibold tracking-wide mt-3 group-hover:text-pink-400 transition-colors line-clamp-2">
+                    {related.title}
+                  </h4>
+                  <p className="text-gray-500 text-xs mt-2 line-clamp-2 leading-relaxed">
+                    {related.excerpt}
+                  </p>
+                  <div className="flex items-center gap-2 font-mono text-[9px] text-gray-500 mt-4">
+                    <span>{related.date}</span>
+                    <span>•</span>
+                    <span>{related.readTime}</span>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </section>
+        )}
 
         {/* Comments Section */}
         <section className="mt-12 space-y-6">
@@ -181,28 +236,37 @@ export function BlogPostDetailPage() {
           </div>
 
           {/* Comment Form */}
-          <form onSubmit={handleAddComment} className="flex gap-3">
-            <input
-              type="text"
-              placeholder="Write a response log..."
-              value={commentText}
-              onChange={(e) => setCommentText(e.target.value)}
-              className="flex-1 bg-gray-950/60 border border-white/10 rounded-xl px-4 py-3 text-white text-xs outline-none focus:border-pink-500/50 transition-colors"
-            />
-            <button
-              type="submit"
-              className="p-3 rounded-xl bg-pink-500 text-white hover:bg-pink-600 transition-colors cursor-pointer"
-              aria-label="Send comment"
-            >
-              <Send size={16} />
-            </button>
+          <form onSubmit={handleAddComment} className="flex flex-col gap-2">
+            <div className="flex gap-3">
+              <input
+                type="text"
+                placeholder="Write a response log (max 500 characters)..."
+                maxLength={500}
+                disabled={submittingComment}
+                value={commentText}
+                onChange={(e) => setCommentText(e.target.value)}
+                className="flex-1 bg-gray-950/60 border border-white/10 rounded-xl px-4 py-3 text-white text-xs outline-none focus:border-pink-500/50 transition-colors disabled:opacity-50"
+              />
+              <button
+                type="submit"
+                disabled={submittingComment || !commentText.trim()}
+                className="p-3 rounded-xl bg-pink-500 hover:bg-pink-600 disabled:bg-gray-800 disabled:text-gray-600 text-white transition-colors cursor-pointer flex items-center justify-center shrink-0 min-w-11 min-h-11"
+                aria-label="Send comment"
+              >
+                {submittingComment ? <Loader2 size={16} className="animate-spin text-pink-500" /> : <Send size={16} />}
+              </button>
+            </div>
+            <div className="flex justify-between font-mono text-[9px] text-gray-500 px-1">
+              <span>INPUT_LIMIT: 500_CHARS</span>
+              <span>REMAINING: {500 - commentText.length}</span>
+            </div>
           </form>
 
           {/* Comments List */}
           <div className="space-y-4">
             {comments.map((c) => (
               <div key={c.id} className="p-4 rounded-xl bg-white/[0.02] border border-white/5 flex gap-3">
-                <div className="w-8 h-8 rounded-full bg-gray-800 flex items-center justify-center text-xs font-bold text-white shrink-0 font-mono">
+                <div className="w-8 h-8 rounded-full bg-gray-800 flex items-center justify-center text-xs font-bold text-white shrink-0 font-mono border border-pink-500/10">
                   {c.avatar}
                 </div>
                 <div className="space-y-1">

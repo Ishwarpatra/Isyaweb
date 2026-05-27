@@ -751,62 +751,123 @@ export function AdminPage() {
   );
 
   // 2. Analytics View
-  const renderAnalytics = () => (
-    <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {STATS.map((stat) => (
-          <div key={stat.label} className="p-5 rounded-2xl bg-gray-900/40 border border-white/5">
-            <p className="font-mono text-xs text-gray-500 mb-1">{stat.label}</p>
-            <h3 className="text-xl font-bold text-white">{stat.value}</h3>
-          </div>
-        ))}
-      </div>
+  const renderAnalytics = () => {
+    const { faqViews, mentorBookings } = mockDb.getAnalyticsData();
+    const faqs = mockDb.getFAQs();
+    const mentors = mockDb.getMentors();
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* User Growth Column Chart */}
-        <div className="p-6 rounded-2xl bg-gray-900/40 border border-white/5">
-          <h4 className="font-mono text-xs text-emerald-500 mb-4">// HISTORICAL_SIGNAL_ACQUISITIONS</h4>
-          <div className="h-[260px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={MEMBER_GROWTH}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#ffffff05" />
-                <XAxis dataKey="month" stroke="#94A3B8" fontSize={10} />
-                <YAxis stroke="#94A3B8" fontSize={10} />
-                <Tooltip content={<TelemetryTooltip />} />
-                <Bar dataKey="members" fill="#10B981" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
+    const faqAnalytics = faqs
+      .map(f => ({
+        id: f.id,
+        question: f.question,
+        views: faqViews[f.id] || 0
+      }))
+      .sort((a, b) => b.views - a.views)
+      .slice(0, 5);
+
+    const mentorAnalytics = mentors
+      .map(m => ({
+        id: m.id,
+        name: m.name,
+        bookings: mentorBookings[m.id] || 0
+      }))
+      .sort((a, b) => b.bookings - a.bookings)
+      .slice(0, 5);
+
+    return (
+      <div className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {STATS.map((stat) => (
+            <div key={stat.label} className="p-5 rounded-2xl bg-gray-900/40 border border-white/5">
+              <p className="font-mono text-xs text-gray-500 mb-1">{stat.label}</p>
+              <h3 className="text-xl font-bold text-white">{stat.value}</h3>
+            </div>
+          ))}
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* User Growth Column Chart */}
+          <div className="p-6 rounded-2xl bg-gray-900/40 border border-white/5">
+            <h4 className="font-mono text-xs text-emerald-500 mb-4">// HISTORICAL_SIGNAL_ACQUISITIONS</h4>
+            <div className="h-[260px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={MEMBER_GROWTH}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#ffffff05" />
+                  <XAxis dataKey="month" stroke="#94A3B8" fontSize={10} />
+                  <YAxis stroke="#94A3B8" fontSize={10} />
+                  <Tooltip content={<TelemetryTooltip />} />
+                  <Bar dataKey="members" fill="#10B981" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          {/* Real-time telemetry simulation */}
+          <div className="p-6 rounded-2xl bg-gray-900/40 border border-white/5 flex flex-col justify-between">
+            <div>
+              <h4 className="font-mono text-xs text-pink-500 mb-2">// REAL_TIME_WEBSOCKET_SIGNAL</h4>
+              <p className="text-gray-400 text-xs mb-4">Tracking signal packet reception latencies across all downlink nodes.</p>
+            </div>
+            <div className="space-y-3 font-mono text-xs">
+              <div className="flex justify-between items-center bg-black/40 p-2.5 rounded border border-white/5">
+                <span className="text-emerald-500">SYS_DOWNLINK_A:</span>
+                <span className="text-white">12.4 ms (99.8% STABLE)</span>
+              </div>
+              <div className="flex justify-between items-center bg-black/40 p-2.5 rounded border border-white/5">
+                <span className="text-emerald-500">SYS_DOWNLINK_B:</span>
+                <span className="text-white">14.1 ms (100% STABLE)</span>
+              </div>
+              <div className="flex justify-between items-center bg-black/40 p-2.5 rounded border border-white/5">
+                <span className="text-amber-500">SYS_DOWNLINK_C:</span>
+                <span className="text-white">42.9 ms (91.2% JITTER)</span>
+              </div>
+              <div className="flex justify-between items-center bg-black/40 p-2.5 rounded border border-white/5">
+                <span className="text-red-500">SYS_DOWNLINK_D:</span>
+                <span className="text-white">OFFLINE (NO_CLEARANCE_BEACON)</span>
+              </div>
+            </div>
           </div>
         </div>
 
-        {/* Real-time telemetry simulation */}
-        <div className="p-6 rounded-2xl bg-gray-900/40 border border-white/5 flex flex-col justify-between">
-          <div>
-            <h4 className="font-mono text-xs text-pink-500 mb-2">// REAL_TIME_WEBSOCKET_SIGNAL</h4>
-            <p className="text-gray-400 text-xs mb-4">Tracking signal packet reception latencies across all downlink nodes.</p>
+        {/* Dynamic Analytics Data Tables */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* FAQ views analytics table */}
+          <div className="p-6 rounded-2xl bg-gray-900/40 border border-white/5">
+            <h4 className="font-mono text-xs text-pink-500 mb-4">// CENTRAL_FAQ_VIEWS_TELEMETRY</h4>
+            <div className="space-y-3">
+              {faqAnalytics.map((faq, index) => (
+                <div key={faq.id} className="flex justify-between items-center bg-black/20 p-3 rounded-xl border border-white/5 text-xs">
+                  <span className="text-gray-300 truncate max-w-[280px]" title={faq.question}>
+                    {index + 1}. {faq.question}
+                  </span>
+                  <span className="font-mono text-pink-500 shrink-0 bg-pink-500/10 px-2.5 py-0.5 rounded-md border border-pink-500/20">
+                    {faq.views} VIEWS
+                  </span>
+                </div>
+              ))}
+            </div>
           </div>
-          <div className="space-y-3 font-mono text-xs">
-            <div className="flex justify-between items-center bg-black/40 p-2.5 rounded border border-white/5">
-              <span className="text-emerald-500">SYS_DOWNLINK_A:</span>
-              <span className="text-white">12.4 ms (99.8% STABLE)</span>
-            </div>
-            <div className="flex justify-between items-center bg-black/40 p-2.5 rounded border border-white/5">
-              <span className="text-emerald-500">SYS_DOWNLINK_B:</span>
-              <span className="text-white">14.1 ms (100% STABLE)</span>
-            </div>
-            <div className="flex justify-between items-center bg-black/40 p-2.5 rounded border border-white/5">
-              <span className="text-amber-500">SYS_DOWNLINK_C:</span>
-              <span className="text-white">42.9 ms (91.2% JITTER)</span>
-            </div>
-            <div className="flex justify-between items-center bg-black/40 p-2.5 rounded border border-white/5">
-              <span className="text-red-500">SYS_DOWNLINK_D:</span>
-              <span className="text-white">OFFLINE (NO_CLEARANCE_BEACON)</span>
+
+          {/* Mentor bookings analytics table */}
+          <div className="p-6 rounded-2xl bg-gray-900/40 border border-white/5">
+            <h4 className="font-mono text-xs text-blue-500 mb-4">// MENTOR_MATCHING_TELEMETRY</h4>
+            <div className="space-y-3">
+              {mentorAnalytics.map((mentor, index) => (
+                <div key={mentor.id} className="flex justify-between items-center bg-black/20 p-3 rounded-xl border border-white/5 text-xs">
+                  <span className="text-gray-300">
+                    {index + 1}. {mentor.name}
+                  </span>
+                  <span className="font-mono text-blue-500 shrink-0 bg-blue-500/10 px-2.5 py-0.5 rounded-md border border-blue-500/20">
+                    {mentor.bookings} BOOKINGS
+                  </span>
+                </div>
+              ))}
             </div>
           </div>
         </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   // 3. User Dossiers View
   const renderUsers = () => {

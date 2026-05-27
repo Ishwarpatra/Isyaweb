@@ -25,12 +25,27 @@ export interface Post {
   status: "DRAFT" | "PUBLISHED" | "FLAGGED";
 }
 
-export interface Comment {
-  id: string;
+export interface BlogPost {
+  id: number;
+  tag: string;
+  tagColor: string;
+  title: string;
+  excerpt: string;
+  date: string;
+  author: string;
+  readTime: string;
+  image: string;
+  featured: boolean;
+  body: string[];
+}
+
+export interface BlogComment {
+  id: number;
   postId: number;
-  authorId: string;
-  authorName: string;
-  content: string;
+  author: string;
+  avatar: string;
+  time: string;
+  text: string;
   createdAt: number;
 }
 
@@ -357,6 +372,65 @@ const INITIAL_ANNOUNCEMENTS: Announcement[] = [
   },
 ];
 
+const INITIAL_BLOGS: BlogPost[] = [
+  {
+    id: 1,
+    tag: "MISSION_UPDATE",
+    tagColor: "#F97316",
+    title: "ISYA Members Join ESA's Young Graduate Traineeship Program",
+    excerpt: "Fifteen ISYA cadets have been selected for ESA's prestigious traineeship, gaining hands-on experience at facilities across Europe.",
+    date: "2026-05-14",
+    author: "CADET_CHEN_S",
+    readTime: "4 MIN",
+    image: "https://images.unsplash.com/photo-1727034394040-0377258a5791?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080",
+    featured: true,
+    body: [
+      "Fifteen cadets from the International Space Youth Association (ISYA) have officially been selected to join the European Space Agency's (ESA) Young Graduate Traineeship (YGT) program. This prestigious initiative offers high-caliber university graduates a unique, hands-on experience in space science and engineering.",
+      "The trainees will be stationed across key European Space Research and Technology Centre (ESTEC) facilities in the Netherlands, Darmstadt, and Frascati. Their research will span a diverse collection of projects, including CubeSat communications networks, orbital decay simulation models, and next-generation spectral imaging technologies.",
+      "This announcement represents a significant milestone in ISYA's mission to bridge the gap between academic space enthusiast clubs and professional space operations agencies. Congratulations to all selected trainees! Their hard work in near-space telemetry during our annual workshops has prepared them to make a tangible contribution to the global scientific community.",
+    ]
+  },
+  {
+    id: 2,
+    tag: "RESEARCH",
+    tagColor: "#3B82F6",
+    title: "Exoplanet Discovery Methods: A Youth Astronomer's Complete Guide",
+    excerpt: "How do we detect alien worlds orbiting stars trillions of miles away? Explore transit photometry and radial velocity methods.",
+    date: "2026-05-10",
+    author: "CADET_OSEI_D",
+    readTime: "8 MIN",
+    image: "https://images.unsplash.com/photo-1706562018605-909733434781?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080",
+    featured: false,
+    body: [
+      "How do we detect alien worlds orbiting stars trillions of miles away? While exoplanets are too distant to be resolved directly by standard telescopes, astronomers use several indirect observation techniques to discover thousands of planetary bodies.",
+      "The most successful detection method to date is Transit Photometry. By measuring the dimming of a star as a planet crosses in front of its disk, telescopes like Kepler and TESS can estimate a planet's size, orbital period, and distance from its host star.",
+      "Another fundamental method is Radial Velocity, which measures small wobbles in a star's spectral signatures caused by the gravitational pull of an orbiting exoplanet. By combining transit and radial velocity datasets, astrophysicists can calculate both the mass and radius of the planet, revealing its density and chemical composition.",
+    ]
+  },
+  {
+    id: 3,
+    tag: "EVENT",
+    tagColor: "#EC4899",
+    title: "Annual Space Symposium 2026 — Registration Now Open",
+    excerpt: "Join 500+ young scientists in Nairobi for the ISYA Annual Symposium. Apply before June 30 for priority access.",
+    date: "2026-05-06",
+    author: "ISYA_COMMAND",
+    readTime: "3 MIN",
+    image: "https://images.unsplash.com/photo-1502134249126-9f3755a50d78?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080",
+    featured: false,
+    body: [
+      "We are thrilled to announce that registration is officially open for the Annual ISYA Space Symposium 2026, set to take place in Nairobi, Kenya, from August 12th to August 16th. The event will bring together over 500 young space advocates, researchers, and professional astronauts.",
+      "This year's theme, 'Decentralizing the Cosmos,' focuses on empowering global South space starts and student-led CubeSat operations. Keynote speakers include flight directors from major international agencies, astrobiology researchers, and CubeSat mission managers.",
+      "Priority registration closes on June 30th. Funding grants are available to cover travel expenses for cadets presenting research papers. Submit your abstracts via our mission portal as soon as possible!",
+    ]
+  }
+];
+
+const INITIAL_COMMENTS: BlogComment[] = [
+  { id: 1, postId: 1, author: "Sarah Chen", avatar: "SC", time: "3 days ago", text: "This is a huge opportunity! Congrats to everyone selected for YGT. See you all in ESTEC!", createdAt: Date.now() - 3 * 24 * 3600000 },
+  { id: 2, postId: 1, author: "Yuki Tanaka", avatar: "YT", time: "2 days ago", text: "Excellent write-up! I've been testing the budget radio receivers for solar cycle updates, very relevant.", createdAt: Date.now() - 2 * 24 * 3600000 },
+];
+
 const INITIAL_MODERATION_QUEUE: ModerationItem[] = [
   {
     id: "mod-1",
@@ -370,135 +444,276 @@ const INITIAL_MODERATION_QUEUE: ModerationItem[] = [
   }
 ];
 
+// Memory caching for offline/inaccessible localStorage fallbacks
+const memoryDb: Record<string, any> = {};
+
+function safeGetItem(key: string, fallback: string): string {
+  try {
+    const val = localStorage.getItem(key);
+    return val !== null ? val : fallback;
+  } catch (e) {
+    console.warn(`localStorage read failed for ${key}, using memory fallback:`, e);
+    return memoryDb[key] !== undefined ? memoryDb[key] : fallback;
+  }
+}
+
+function safeSetItem(key: string, value: string): void {
+  try {
+    localStorage.setItem(key, value);
+  } catch (e) {
+    console.warn(`localStorage write failed for ${key}, using memory fallback:`, e);
+    memoryDb[key] = value;
+  }
+}
+
+let isDbInitialized = false;
+
 // DB Helper functions
 export const mockDb = {
   initialize() {
-    if (!localStorage.getItem("isya_webinars")) {
-      localStorage.setItem("isya_webinars", JSON.stringify(INITIAL_WEBINARS));
-    }
-    if (!localStorage.getItem("isya_faqs")) {
-      localStorage.setItem("isya_faqs", JSON.stringify(INITIAL_FAQS));
-    }
-    if (!localStorage.getItem("isya_mentors")) {
-      localStorage.setItem("isya_mentors", JSON.stringify(INITIAL_MENTORS));
-    }
-    if (!localStorage.getItem("isya_podcasts")) {
-      localStorage.setItem("isya_podcasts", JSON.stringify(INITIAL_PODCASTS));
-    }
-    if (!localStorage.getItem("isya_announcements")) {
-      localStorage.setItem("isya_announcements", JSON.stringify(INITIAL_ANNOUNCEMENTS));
-    }
-    if (!localStorage.getItem("isya_moderation_queue")) {
-      localStorage.setItem("isya_moderation_queue", JSON.stringify(INITIAL_MODERATION_QUEUE));
+    if (isDbInitialized) return;
+    try {
+      if (!safeGetItem("isya_webinars", "")) {
+        safeSetItem("isya_webinars", JSON.stringify(INITIAL_WEBINARS));
+      }
+      if (!safeGetItem("isya_faqs", "")) {
+        safeSetItem("isya_faqs", JSON.stringify(INITIAL_FAQS));
+      }
+      if (!safeGetItem("isya_mentors", "")) {
+        safeSetItem("isya_mentors", JSON.stringify(INITIAL_MENTORS));
+      }
+      if (!safeGetItem("isya_podcasts", "")) {
+        safeSetItem("isya_podcasts", JSON.stringify(INITIAL_PODCASTS));
+      }
+      if (!safeGetItem("isya_announcements", "")) {
+        safeSetItem("isya_announcements", JSON.stringify(INITIAL_ANNOUNCEMENTS));
+      }
+      if (!safeGetItem("isya_blogs", "")) {
+        safeSetItem("isya_blogs", JSON.stringify(INITIAL_BLOGS));
+      }
+      if (!safeGetItem("isya_blog_comments", "")) {
+        safeSetItem("isya_blog_comments", JSON.stringify(INITIAL_COMMENTS));
+      }
+      if (!safeGetItem("isya_moderation_queue", "")) {
+        safeSetItem("isya_moderation_queue", JSON.stringify(INITIAL_MODERATION_QUEUE));
+      }
+      isDbInitialized = true;
+    } catch (e) {
+      console.error("Database initialization failed:", e);
     }
   },
 
   // Webinars
   getWebinars(): Webinar[] {
     this.initialize();
-    return JSON.parse(localStorage.getItem("isya_webinars") || "[]");
+    try {
+      return JSON.parse(safeGetItem("isya_webinars", "[]"));
+    } catch (e) {
+      return INITIAL_WEBINARS;
+    }
   },
   addWebinar(webinar: Omit<Webinar, "id">) {
-    const webinars = this.getWebinars();
-    const newWebinar = { ...webinar, id: webinars.length > 0 ? Math.max(...webinars.map(w => w.id)) + 1 : 1 };
-    webinars.push(newWebinar);
-    localStorage.setItem("isya_webinars", JSON.stringify(webinars));
-    return newWebinar;
+    try {
+      const webinars = this.getWebinars();
+      const newWebinar = { ...webinar, id: webinars.length > 0 ? Math.max(...webinars.map(w => w.id)) + 1 : 1 };
+      webinars.push(newWebinar);
+      safeSetItem("isya_webinars", JSON.stringify(webinars));
+      return newWebinar;
+    } catch (e) {
+      console.error("addWebinar failed:", e);
+      throw new Error("Unable to write webinar entry to persistent terminal storage.");
+    }
   },
 
   // FAQs
   getFAQs(): FAQ[] {
     this.initialize();
-    return JSON.parse(localStorage.getItem("isya_faqs") || "[]");
+    try {
+      return JSON.parse(safeGetItem("isya_faqs", "[]"));
+    } catch (e) {
+      return INITIAL_FAQS;
+    }
   },
   addFAQ(faq: Omit<FAQ, "id">) {
-    const faqs = this.getFAQs();
-    const newFAQ = { ...faq, id: faqs.length > 0 ? Math.max(...faqs.map(f => f.id)) + 1 : 1 };
-    faqs.push(newFAQ);
-    localStorage.setItem("isya_faqs", JSON.stringify(faqs));
-    return newFAQ;
-  },
-  deleteFAQ(id: number) {
-    const faqs = this.getFAQs().filter(f => f.id !== id);
-    localStorage.setItem("isya_faqs", JSON.stringify(faqs));
+    try {
+      const faqs = this.getFAQs();
+      const newFAQ = { ...faq, id: faqs.length > 0 ? Math.max(...faqs.map(f => f.id)) + 1 : 1 };
+      faqs.push(newFAQ);
+      safeSetItem("isya_faqs", JSON.stringify(faqs));
+      return newFAQ;
+    } catch (e) {
+      console.error("addFAQ failed:", e);
+      throw new Error("Unable to write FAQ entry to persistent terminal storage.");
+    }
   },
 
   // Mentors
   getMentors(): Mentor[] {
     this.initialize();
-    return JSON.parse(localStorage.getItem("isya_mentors") || "[]");
+    try {
+      return JSON.parse(safeGetItem("isya_mentors", "[]"));
+    } catch (e) {
+      return INITIAL_MENTORS;
+    }
   },
   addMentor(mentor: Omit<Mentor, "id">) {
-    const mentors = this.getMentors();
-    const newMentor = { ...mentor, id: mentors.length > 0 ? Math.max(...mentors.map(m => m.id)) + 1 : 1 };
-    mentors.push(newMentor);
-    localStorage.setItem("isya_mentors", JSON.stringify(mentors));
-    return newMentor;
+    try {
+      const mentors = this.getMentors();
+      const newMentor = { ...mentor, id: mentors.length > 0 ? Math.max(...mentors.map(m => m.id)) + 1 : 1 };
+      mentors.push(newMentor);
+      safeSetItem("isya_mentors", JSON.stringify(mentors));
+      return newMentor;
+    } catch (e) {
+      console.error("addMentor failed:", e);
+      throw new Error("Unable to register mentor dossier. Storage sync failed.");
+    }
   },
   updateMentor(id: number, updates: Partial<Mentor>) {
-    const mentors = this.getMentors().map(m => m.id === id ? { ...m, ...updates } : m);
-    localStorage.setItem("isya_mentors", JSON.stringify(mentors));
+    try {
+      const mentors = this.getMentors().map(m => m.id === id ? { ...m, ...updates } : m);
+      safeSetItem("isya_mentors", JSON.stringify(mentors));
+    } catch (e) {
+      console.error("updateMentor failed:", e);
+    }
   },
 
   // Podcasts
   getPodcasts(): Podcast[] {
     this.initialize();
-    return JSON.parse(localStorage.getItem("isya_podcasts") || "[]");
+    try {
+      return JSON.parse(safeGetItem("isya_podcasts", "[]"));
+    } catch (e) {
+      return INITIAL_PODCASTS;
+    }
   },
   addPodcast(podcast: Omit<Podcast, "id">) {
-    const podcasts = this.getPodcasts();
-    const newPodcast = { ...podcast, id: podcasts.length > 0 ? Math.max(...podcasts.map(p => p.id)) + 1 : 1 };
-    podcasts.push(newPodcast);
-    localStorage.setItem("isya_podcasts", JSON.stringify(podcasts));
-    return newPodcast;
+    try {
+      const podcasts = this.getPodcasts();
+      const newPodcast = { ...podcast, id: podcasts.length > 0 ? Math.max(...podcasts.map(p => p.id)) + 1 : 1 };
+      podcasts.push(newPodcast);
+      safeSetItem("isya_podcasts", JSON.stringify(podcasts));
+      return newPodcast;
+    } catch (e) {
+      console.error("addPodcast failed:", e);
+      throw new Error("Unable to store podcast episode.");
+    }
   },
 
   // Announcements
   getAnnouncements(): Announcement[] {
     this.initialize();
-    return JSON.parse(localStorage.getItem("isya_announcements") || "[]");
+    try {
+      return JSON.parse(safeGetItem("isya_announcements", "[]"));
+    } catch (e) {
+      return INITIAL_ANNOUNCEMENTS;
+    }
   },
   addAnnouncement(announcement: Omit<Announcement, "id">) {
-    const announcements = this.getAnnouncements();
-    const newAnn = { ...announcement, id: announcements.length > 0 ? Math.max(...announcements.map(a => a.id)) + 1 : 1 };
-    announcements.push(newAnn);
-    localStorage.setItem("isya_announcements", JSON.stringify(announcements));
-    return newAnn;
+    try {
+      const announcements = this.getAnnouncements();
+      const newAnn = { ...announcement, id: announcements.length > 0 ? Math.max(...announcements.map(a => a.id)) + 1 : 1 };
+      announcements.push(newAnn);
+      safeSetItem("isya_announcements", JSON.stringify(announcements));
+      return newAnn;
+    } catch (e) {
+      console.error("addAnnouncement failed:", e);
+      throw new Error("Unable to publish announcement.");
+    }
+  },
+
+  // Blogs
+  getBlogs(): BlogPost[] {
+    this.initialize();
+    try {
+      return JSON.parse(safeGetItem("isya_blogs", "[]"));
+    } catch (e) {
+      return INITIAL_BLOGS;
+    }
+  },
+  getBlogById(id: number): BlogPost | undefined {
+    return this.getBlogs().find(b => b.id === id);
+  },
+  addBlogPost(blog: Omit<BlogPost, "id">) {
+    try {
+      const blogs = this.getBlogs();
+      const newBlog = { ...blog, id: blogs.length > 0 ? Math.max(...blogs.map(b => b.id)) + 1 : 1 };
+      blogs.push(newBlog);
+      safeSetItem("isya_blogs", JSON.stringify(blogs));
+      return newBlog;
+    } catch (e) {
+      console.error("addBlogPost failed:", e);
+      throw new Error("Unable to save blog post.");
+    }
+  },
+
+  // Blog Comments
+  getBlogComments(postId: number): BlogComment[] {
+    this.initialize();
+    try {
+      const allComments = JSON.parse(safeGetItem("isya_blog_comments", "[]")) as BlogComment[];
+      return allComments.filter(c => c.postId === postId);
+    } catch (e) {
+      return INITIAL_COMMENTS.filter(c => c.postId === postId);
+    }
+  },
+  addBlogComment(comment: Omit<BlogComment, "id" | "createdAt">) {
+    try {
+      const allComments = JSON.parse(safeGetItem("isya_blog_comments", "[]")) as BlogComment[];
+      const newComment: BlogComment = {
+        ...comment,
+        id: Date.now(),
+        createdAt: Date.now()
+      };
+      allComments.push(newComment);
+      safeSetItem("isya_blog_comments", JSON.stringify(allComments));
+      return newComment;
+    } catch (e) {
+      console.error("addBlogComment failed:", e);
+      throw new Error("Unable to submit comment. Cache storage sync failed.");
+    }
   },
 
   // Moderation Queue
   getModerationQueue(): ModerationItem[] {
     this.initialize();
-    return JSON.parse(localStorage.getItem("isya_moderation_queue") || "[]");
+    try {
+      return JSON.parse(safeGetItem("isya_moderation_queue", "[]"));
+    } catch (e) {
+      return INITIAL_MODERATION_QUEUE;
+    }
   },
   addToModerationQueue(item: Omit<ModerationItem, "id" | "status" | "createdAt">) {
-    const queue = this.getModerationQueue();
-    const newItem: ModerationItem = {
-      ...item,
-      id: `mod-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-      status: "PENDING",
-      createdAt: Date.now(),
-    };
-    queue.push(newItem);
-    localStorage.setItem("isya_moderation_queue", JSON.stringify(queue));
-    toast.success("Content has been flagged and submitted to the moderation queue.");
-    return newItem;
+    try {
+      const queue = this.getModerationQueue();
+      const newItem: ModerationItem = {
+        ...item,
+        id: `mod-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        status: "PENDING",
+        createdAt: Date.now(),
+      };
+      queue.push(newItem);
+      safeSetItem("isya_moderation_queue", JSON.stringify(queue));
+      toast.success("Content has been flagged and submitted to the moderation queue.");
+      return newItem;
+    } catch (e) {
+      console.error("addToModerationQueue failed:", e);
+      throw new Error("Reporting failure. Moderation stack is offline.");
+    }
   },
   updateModerationStatus(id: string, status: "APPROVED" | "REMOVED") {
-    const queue = this.getModerationQueue().map(item => {
-      if (item.id === id) {
-        return { ...item, status };
-      }
-      return item;
-    });
-    localStorage.setItem("isya_moderation_queue", JSON.stringify(queue));
+    try {
+      const queue = this.getModerationQueue().map(item => {
+        if (item.id === id) {
+          return { ...item, status };
+        }
+        return item;
+      });
+      safeSetItem("isya_moderation_queue", JSON.stringify(queue));
 
-    // If removed or approved, reflect it in the target database if applicable
-    const item = queue.find(q => q.id === id);
-    if (item && item.contentType === "post") {
-      const postsStr = localStorage.getItem("isya_community_posts");
-      if (postsStr) {
-        try {
+      const item = queue.find(q => q.id === id);
+      if (item && item.contentType === "post") {
+        const postsStr = safeGetItem("isya_community_posts", "");
+        if (postsStr) {
           const posts = JSON.parse(postsStr) as Post[];
           const updatedPosts = posts.map(p => {
             if (p.id === Number(item.contentId)) {
@@ -506,9 +721,40 @@ export const mockDb = {
             }
             return p;
           });
-          localStorage.setItem("isya_community_posts", JSON.stringify(updatedPosts));
-        } catch (e) {}
+          safeSetItem("isya_community_posts", JSON.stringify(updatedPosts));
+        }
       }
+    } catch (e) {
+      console.error("updateModerationStatus failed:", e);
+    }
+  },
+
+  // Analytics Logs
+  logFAQView(id: number) {
+    try {
+      const views = JSON.parse(safeGetItem("isya_analytics_faq_views", "{}"));
+      views[id] = (views[id] || 0) + 1;
+      safeSetItem("isya_analytics_faq_views", JSON.stringify(views));
+    } catch (e) {
+      console.error("logFAQView failed:", e);
+    }
+  },
+  logMentorBooking(id: number) {
+    try {
+      const bookings = JSON.parse(safeGetItem("isya_analytics_mentor_bookings", "{}"));
+      bookings[id] = (bookings[id] || 0) + 1;
+      safeSetItem("isya_analytics_mentor_bookings", JSON.stringify(bookings));
+    } catch (e) {
+      console.error("logMentorBooking failed:", e);
+    }
+  },
+  getAnalyticsData() {
+    try {
+      const faqViews = JSON.parse(safeGetItem("isya_analytics_faq_views", "{}"));
+      const mentorBookings = JSON.parse(safeGetItem("isya_analytics_mentor_bookings", "{}"));
+      return { faqViews, mentorBookings };
+    } catch (e) {
+      return { faqViews: {}, mentorBookings: {} };
     }
   }
 };

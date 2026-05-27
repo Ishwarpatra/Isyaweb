@@ -1,9 +1,10 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router";
 import { ChevronLeft, ChevronRight, Search } from "lucide-react";
 import { ImageWithFallback } from "../components/figma/ImageWithFallback";
 import { useScrollReveal } from "../hooks/useScrollReveal";
 import { format, parseISO } from "date-fns";
+import { mockDb } from "../utils/mockDb";
 
 
 const OBS1 = "https://images.unsplash.com/photo-1727034394040-0377258a5791?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHx0ZWxlc2NvcGUlMjBvYnNlcnZhdG9yeSUyMG5pZ2h0JTIwc2t5JTIwc3RhcnN8ZW58MXx8fHwxNzc5MTIxMTY2fDA&ixlib=rb-4.1.0&q=80&w=1080";
@@ -16,15 +17,7 @@ const TELESCOPE = "https://images.unsplash.com/photo-1725034898440-709aa7291bf6?
 
 const CATEGORIES = ["ALL", "MISSION_UPDATE", "RESEARCH", "EVENT", "EDUCATION", "COMMUNITY"];
 
-const ALL_POSTS = [
-  { id: 1, tag: "MISSION_UPDATE", tagColor: "#F97316", title: "ISYA Members Join ESA's Young Graduate Traineeship Program", excerpt: "Fifteen ISYA cadets have been selected for ESA's prestigious traineeship, gaining hands-on experience at facilities across Europe.", date: "2026-05-14", author: "CADET_CHEN_S", readTime: "4 MIN", image: OBS1, featured: true },
-  { id: 2, tag: "RESEARCH",       tagColor: "#3B82F6", title: "Exoplanet Discovery Methods: A Youth Astronomer's Complete Guide", excerpt: "From transit photometry to radial velocity — a comprehensive breakdown of techniques used to find worlds beyond our solar system.", date: "2026-05-10", author: "CADET_OSEI_D", readTime: "8 MIN", image: NEBULA, featured: false },
-  { id: 3, tag: "EVENT",          tagColor: "#EC4899", title: "Annual Space Symposium 2026 — Registration Now Open", excerpt: "Join 500+ young scientists in Nairobi for the ISYA Annual Symposium. Apply before June 30 for priority access.", date: "2026-05-06", author: "ISYA_COMMAND", readTime: "3 MIN", image: GALAXY, featured: false },
-  { id: 4, tag: "EDUCATION",      tagColor: "#10B981", title: "Getting Started with Radio Astronomy on a Budget", excerpt: "Build a functioning radio telescope receiver for under $200. Step-by-step guide from hardware assembly to first signal capture.", date: "2026-05-03", author: "CADET_TANAKA_Y", readTime: "10 MIN", image: TELESCOPE, featured: false },
-  { id: 5, tag: "COMMUNITY",      tagColor: "#9CA3AF", title: "Meet the ISYA Cohort: Stories from Six Continents", excerpt: "From Chile to China, meet the diverse cadets driving ISYA's newest wave of space initiatives in 2026.", date: "2026-04-28", author: "CADET_DIALLO_A", readTime: "6 MIN", image: MILKY, featured: false },
-  { id: 6, tag: "MISSION_UPDATE", tagColor: "#F97316", title: "ISYA CubeSat Project Receives IAF Funding Grant", excerpt: "Our student-led CubeSat team has secured IAF funding to continue ionosphere research — a major milestone.", date: "2026-04-22", author: "ENG_TEAM_ALPHA", readTime: "5 MIN", image: ROCKET, featured: false },
-  { id: 7, tag: "RESEARCH",       tagColor: "#3B82F6", title: "Understanding Solar Cycles and Space Weather", excerpt: "A deep dive into how solar activity affects satellite communications, aurora visibility, and near-Earth orbital mechanics.", date: "2026-04-15", author: "CADET_REYES_L", readTime: "7 MIN", image: OBS2, featured: false },
-];
+// Posts loaded dynamically from mockDb
 
 const POSTS_PER_PAGE = 6;
 
@@ -33,8 +26,13 @@ export function BlogPage() {
   const [activeCategory, setActiveCategory] = useState("ALL");
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const [allPosts, setAllPosts] = useState<any[]>([]);
 
-  const filtered = ALL_POSTS.filter((p) => {
+  useEffect(() => {
+    setAllPosts(mockDb.getBlogs());
+  }, []);
+
+  const filtered = allPosts.filter((p) => {
     const matchCat = activeCategory === "ALL" || p.tag === activeCategory;
     const matchSearch =
       searchQuery === "" ||
