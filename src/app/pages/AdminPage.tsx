@@ -661,7 +661,7 @@ export function AdminPage() {
         }`}
       >
         <div className="flex items-center gap-3 px-4 h-16 border-b border-pink-500/10">
-          <img src={logoImg} alt="ISYA" width="36" height="36" className="w-9 h-9 object-contain drop-shadow-[0_0_8px_rgba(249,115,22,0.35)]" />
+          <img src={logoImg} alt="ISYA" width="36" height="36" className="w-9 h-9 object-contain drop-shadow-[0_0_8px_rgba(249,115,22,0.35)] mix-blend-multiply" />
           <div className="font-mono">
             <p className="text-xs text-pink-500 tracking-wider">ISYA_ADMIN</p>
             <p className="text-[10px] text-gray-500 tracking-widest">CLEARANCE_LVL_5</p>

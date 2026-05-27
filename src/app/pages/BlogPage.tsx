@@ -3,6 +3,8 @@ import { Link } from "react-router";
 import { ChevronLeft, ChevronRight, Search } from "lucide-react";
 import { ImageWithFallback } from "../components/figma/ImageWithFallback";
 import { useScrollReveal } from "../hooks/useScrollReveal";
+import { format, parseISO } from "date-fns";
+
 
 const OBS1 = "https://images.unsplash.com/photo-1727034394040-0377258a5791?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHx0ZWxlc2NvcGUlMjBvYnNlcnZhdG9yeSUyMG5pZ2h0JTIwc2t5JTIwc3RhcnN8ZW58MXx8fHwxNzc5MTIxMTY2fDA&ixlib=rb-4.1.0&q=80&w=1080";
 const OBS2 = "https://images.unsplash.com/photo-1727034393564-dc7b0275686d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwyfHx0ZWxlc2NvcGUlMjBvYnNlcnZhdG9yeSUyMG5pZ2h0JTIwc2t5JTIwc3RhcnN8ZW58MXx8fHwxNzc5MTIxMTY2fDA&ixlib=rb-4.1.0&q=80&w=1080";
@@ -87,10 +89,10 @@ export function BlogPage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14">
         {/* Header */}
         <div className="mb-10 reveal">
-          <p className="font-mono text-pink-500 text-xs tracking-[0.16em] mb-2">
+          <p className="font-mono text-pink-500 text-xs tracking-telemetry-wide mb-2">
             // DATA_ARCHIVES :: SECTOR_7G :: {filtered.length}_RECORDS_FOUND
           </p>
-          <h1 className="text-white text-[clamp(2rem,5vw,3rem)] font-bold leading-tight">
+          <h1 className="text-white text-4xl text-[clamp(2rem,5vw,3rem)] font-bold leading-tight">
             The Data Archives
           </h1>
         </div>
@@ -130,9 +132,14 @@ export function BlogPage() {
                   {featured.excerpt}
                 </p>
                 <div className="flex items-center gap-3 font-mono text-gray-500 text-xs tracking-wider">
-                  <span>{featured.date}</span>
+                  <span>{format(parseISO(featured.date), 'LLL dd, yyyy').toUpperCase()}</span>
                   <span className="w-1 h-1 rounded-full bg-gray-700" />
-                  <span>{featured.author}</span>
+                  <span className="flex items-center gap-0.5">
+                    <span className="sr-only">By {featured.author.replace(/_/g, " ")}</span>
+                    <span aria-hidden="true" className="before:content-['BY_'] before:text-gray-500">
+                      {featured.author.replace(/_/g, " ")}
+                    </span>
+                  </span>
                   <span className="w-1 h-1 rounded-full bg-gray-700" />
                   <span>{featured.readTime} READ</span>
                 </div>
@@ -142,54 +149,60 @@ export function BlogPage() {
         )}
 
         {/* Article grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
+        <ul role="list" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
           {paginated.length > 0 ? (
             paginated.map((post, idx) => (
-              <Link
-                key={post.id}
-                to={`/blog/${post.id}`}
-                className={`flex flex-col rounded-xl overflow-hidden group glass-card hud-corners border border-white/5 reveal reveal-delay-${Math.min(idx + 1, 6)}`}
-              >
-                <div className="relative aspect-[16/10] overflow-hidden">
-                  <ImageWithFallback
-                    src={post.image}
-                    alt={post.title}
-                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                  />
-                  <div className="absolute top-3 left-3">
-                    <span className="font-mono px-2 py-0.5 rounded text-xs tracking-wider backdrop-blur-md" style={{ background: `${post.tagColor}25`, color: post.tagColor, border: `1px solid ${post.tagColor}40` }}>
-                      {post.tag}
-                    </span>
+              <li key={post.id}>
+                <Link
+                  to={`/blog/${post.id}`}
+                  className={`flex flex-col rounded-xl overflow-hidden group glass-card hud-corners border border-white/5 reveal reveal-delay-${Math.min(idx + 1, 6)} h-full`}
+                >
+                  <div className="relative aspect-[16/10] overflow-hidden">
+                    <ImageWithFallback
+                      src={post.image}
+                      alt={post.title}
+                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                    />
+                    <div className="absolute top-3 left-3">
+                      <span className="font-mono px-2 py-0.5 rounded text-xs tracking-wider backdrop-blur-md" style={{ background: `${post.tagColor}25`, color: post.tagColor, border: `1px solid ${post.tagColor}40` }}>
+                        {post.tag}
+                      </span>
+                    </div>
+                    <div className="absolute bottom-0 left-0 right-0 px-3 py-1.5 translate-y-full group-hover:translate-y-0 transition-transform duration-300 bg-[#05080F]/90 backdrop-blur-md">
+                      <p className="font-mono text-pink-500 text-[0.56rem] tracking-wider">
+                        // READ_TIME: {post.readTime} | AUTH_LEVEL: PUBLIC
+                      </p>
+                    </div>
                   </div>
-                  <div className="absolute bottom-0 left-0 right-0 px-3 py-1.5 translate-y-full group-hover:translate-y-0 transition-transform duration-300 bg-[#05080F]/90 backdrop-blur-md">
-                    <p className="font-mono text-pink-500 text-[0.56rem] tracking-wider">
-                      // READ_TIME: {post.readTime} | AUTH_LEVEL: PUBLIC
+                  <div className="p-5 flex flex-col flex-1">
+                    <h3 className="text-white text-[0.925rem] font-semibold leading-relaxed mb-3 group-hover:text-pink-500 transition-colors line-clamp-2">
+                      {post.title}
+                    </h3>
+                    <p className="text-gray-400 text-[0.8rem] leading-relaxed mb-4 line-clamp-2">
+                      {post.excerpt}
                     </p>
+                    <div className="mt-auto flex items-center gap-2 font-mono text-gray-500 text-xs tracking-wider">
+                      <span>{format(parseISO(post.date), 'LLL dd, yyyy').toUpperCase()}</span>
+                      <span className="w-1 h-1 rounded-full bg-gray-700" aria-hidden="true" />
+                      <span className="flex items-center gap-0.5">
+                        <span className="sr-only">By {post.author.replace(/_/g, " ")}</span>
+                        <span aria-hidden="true" className="before:content-['BY_'] before:text-gray-500">
+                          {post.author.replace(/_/g, " ")}
+                        </span>
+                      </span>
+                    </div>
                   </div>
-                </div>
-                <div className="p-5 flex flex-col flex-1">
-                  <h3 className="text-white text-[0.925rem] font-semibold leading-relaxed mb-3 group-hover:text-pink-500 transition-colors line-clamp-2">
-                    {post.title}
-                  </h3>
-                  <p className="text-gray-400 text-[0.8rem] leading-relaxed mb-4 line-clamp-2">
-                    {post.excerpt}
-                  </p>
-                  <div className="mt-auto flex items-center gap-2 font-mono text-gray-500 text-xs tracking-wider">
-                    <span>{post.date}</span>
-                    <span className="w-1 h-1 rounded-full bg-gray-700" />
-                    <span>{post.author}</span>
-                  </div>
-                </div>
-              </Link>
+                </Link>
+              </li>
             ))
           ) : (
-            <div className="col-span-full py-20 text-center">
+            <li className="col-span-full py-20 text-center">
               <p className="font-mono text-gray-500 text-sm tracking-widest">
                 [!] NO_RECORDS_MATCH_YOUR_QUERY_ |
               </p>
-            </div>
+            </li>
           )}
-        </div>
+        </ul>
 
         {/* Pagination */}
         {totalPages > 1 && (

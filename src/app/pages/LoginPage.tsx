@@ -149,7 +149,7 @@ export function LoginPage() {
               alt="ISYA Logo"
               width="90"
               height="90"
-              className="relative w-[90px] animate-float drop-shadow-[0_0_18px_rgba(249,115,22,0.5)]"
+              className="relative w-[90px] animate-float drop-shadow-[0_0_18px_rgba(249,115,22,0.5)] mix-blend-multiply"
             />
           </div>
           <div className="flex items-center gap-2 mb-3 font-mono text-xs text-pink-500 tracking-[0.15em]">

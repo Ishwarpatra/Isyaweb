@@ -126,6 +126,11 @@
   --color-brand-blue: var(--brand-blue);
   --color-dark: #0B0F19;
   --color-dark-secondary: #05080F;
+  --color-isya-base: #0B0F19;
+  --tracking-telemetry: 0.14em;
+  --tracking-telemetry-wide: 0.18em;
+  --blur-isya: 18px;
+  --shadow-hud-glow: 0 8px 32px rgba(236, 72, 153, 0.3);
   --shadow-glow-pink: 0 0 20px rgba(236, 72, 153, 0.3);
   --shadow-glow-blue: 0 0 20px rgba(59, 130, 246, 0.3);
   --shadow-glow-orange: 0 0 20px rgba(255, 165, 0, 0.3);

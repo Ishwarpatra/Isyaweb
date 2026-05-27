@@ -74,6 +74,32 @@
   background-size: 200% auto;
   animation: gradient-shift 3s linear infinite;
 }
+
+/* GPU-composited gradient button shift animation */
+.btn-gradient-shift {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  background: transparent !important;
+}
+.btn-gradient-shift::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  width: 200%;
+  height: 100%;
+  background: linear-gradient(90deg, var(--color-brand-pink), var(--color-brand-orange), var(--color-brand-pink));
+  z-index: -1;
+  transform: translateX(0);
+  animation: gpu-gradient-shift 3s linear infinite;
+  will-change: transform;
+  transition: opacity 300ms ease;
+}
+@keyframes gpu-gradient-shift {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
 .animate-twinkle      { animation: twinkle 2.5s ease-in-out infinite; }
 .animate-radar        { animation: radar-sweep 4s linear infinite; }
 .animate-live-pulse {
@@ -302,6 +328,11 @@
   .animate-live-pulse,
   .hud-scanline::after {
     animation: none !important;
+  }
+  .btn-gradient-shift::before {
+    animation: none !important;
+    transform: none !important;
+    width: 100% !important;
   }
   /* Keep reveal transitions but make them instant */
   .reveal {

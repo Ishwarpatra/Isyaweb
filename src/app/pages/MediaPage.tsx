@@ -125,7 +125,7 @@ export function MediaPage() {
           <p className="font-mono text-pink-500 text-[0.7rem] tracking-[0.2em] mb-3">
             // ISYA_MEDIA_NODE :: TRANSMISSION_HUB
           </p>
-          <h1 className="text-white text-[clamp(2rem,5vw,3rem)] font-bold leading-tight tracking-tight mb-4">
+          <h1 className="text-white text-4xl text-[clamp(2rem,5vw,3rem)] font-bold leading-tight tracking-tight mb-4">
             Watch, Listen, Explore
           </h1>
           <p className="text-gray-500 text-[0.9rem] leading-relaxed">

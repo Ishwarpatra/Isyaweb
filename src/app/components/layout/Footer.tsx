@@ -15,7 +15,7 @@ export function Footer() {
                 alt="ISYA Logo"
                 width="90"
                 height="90"
-                className="w-[90px] drop-shadow-[0_0_12px_rgba(249,115,22,0.3)]"
+                className="w-[90px] drop-shadow-[0_0_12px_rgba(249,115,22,0.3)] mix-blend-multiply"
               />
             </div>
             <p className="mb-6 text-[#7A8894] text-[0.9rem] leading-relaxed max-w-[320px]">

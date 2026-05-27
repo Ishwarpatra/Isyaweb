@@ -4,6 +4,8 @@ import { ArrowLeft, MessageSquare, Clock, Calendar, Send, Heart } from "lucide-r
 import { ImageWithFallback } from "../components/figma/ImageWithFallback";
 import { getInitials } from "./CommunityPage";
 import { toast } from "sonner";
+import { format, parseISO } from "date-fns";
+
 
 interface Comment {
   id: number;
@@ -127,9 +129,14 @@ export function BlogPostDetailPage() {
               {post.title}
             </h1>
             <div className="flex flex-wrap items-center gap-4 text-gray-500 text-xs font-mono pt-2">
-              <span className="flex items-center gap-1"><Calendar size={13} /> {post.date}</span>
+              <span className="flex items-center gap-1"><Calendar size={13} /> {format(parseISO(post.date), 'LLL dd, yyyy').toUpperCase()}</span>
               <span className="w-1 h-1 rounded-full bg-gray-700" />
-              <span>BY_{post.author}</span>
+              <span className="flex items-center gap-0.5">
+                <span className="sr-only">By {post.author.replace(/_/g, " ")}</span>
+                <span aria-hidden="true" className="before:content-['BY_'] before:text-gray-500">
+                  {post.author.replace(/_/g, " ")}
+                </span>
+              </span>
               <span className="w-1 h-1 rounded-full bg-gray-700" />
               <span className="flex items-center gap-1"><Clock size={13} /> {post.readTime} READ</span>
             </div>

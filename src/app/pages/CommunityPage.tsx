@@ -195,7 +195,7 @@ export function CommunityPage() {
           <p className="font-mono text-orange-500 text-xs tracking-[0.15em] mb-2 uppercase">
             // MEMBER_COMMUNITY :: STATUS_ONLINE
           </p>
-          <h1 className="text-white text-[clamp(2rem,5vw,2.8rem)] font-bold leading-tight">
+          <h1 className="text-white text-4xl text-[clamp(2rem,5vw,2.8rem)] font-bold leading-tight">
             Connect with Space Enthusiasts
           </h1>
         </div>

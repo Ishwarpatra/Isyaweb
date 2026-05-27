@@ -15,11 +15,11 @@ export function NotFoundPage() {
             alt="ISYA Logo"
             width="120"
             height="120"
-            className="w-[120px] mx-auto drop-shadow-[0_0_24px_rgba(249,115,22,0.5)]"
+            className="w-[120px] mx-auto drop-shadow-[0_0_24px_rgba(249,115,22,0.5)] mix-blend-multiply"
           />
         </div>
 
-        <h1 className="text-[clamp(4rem,12vw,8rem)] font-extrabold leading-none mb-4 bg-gradient-to-r from-orange-500 to-pink-500 bg-clip-text text-transparent">
+        <h1 className="text-7xl text-[clamp(4rem,12vw,8rem)] font-extrabold leading-none mb-4 bg-gradient-to-r from-orange-500 to-pink-500 bg-clip-text text-transparent">
           404
         </h1>
 

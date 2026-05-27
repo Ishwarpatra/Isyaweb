@@ -11,6 +11,8 @@ import { AnimatedCounter } from "../components/AnimatedCounter";
 import { lockScroll, unlockScroll } from "../hooks/useScrollLock";
 import { useAuth } from "../hooks/useAuth";
 import logoImg from "../../imports/Logo_ISYA__1_-2.jpeg";
+import { format, parseISO } from "date-fns";
+
 
 const ROCKET_IMG =
   "https://images.unsplash.com/photo-1517976487492-5750f3195933?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxyb2NrZXQlMjBsYXVuY2glMjBzcGFjZSUyMGV4cGxvcmF0aW9ufGVufDF8fHx8MTc3OTEyMTE2MHww&ixlib=rb-4.1.0&q=80&w=1080";
@@ -104,7 +106,8 @@ export function LandingPage() {
     const userSession = sessionStorage.getItem("isya_user");
     const onboardingDone = localStorage.getItem("isya_onboarding_done");
     if (userSession && !onboardingDone) {
-      setOnboardingStep(1);
+      const savedStep = sessionStorage.getItem("isya_onboarding_step");
+      setOnboardingStep(savedStep ? parseInt(savedStep, 10) : 1);
     }
   }, []);
 
@@ -152,7 +155,7 @@ export function LandingPage() {
 
         <div className="relative z-10 w-full max-w-5xl mx-auto px-4 sm:px-6 py-20 flex flex-col items-center text-center">
           <div className="mb-8 animate-float drop-shadow-[0_0_40px_rgba(236,72,153,0.5)]">
-            <img src={logoImg} alt="ISYA Logo" width="200" height="200" className="w-40 md:w-56 lg:w-60" />
+            <img src={logoImg} alt="ISYA Logo" width="200" height="200" className="w-40 md:w-56 lg:w-60 mix-blend-multiply" />
           </div>
 
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full mb-6 font-mono text-xs tracking-[0.12em] bg-emerald-500/10 border border-emerald-500/30 text-emerald-500">
@@ -182,7 +185,7 @@ export function LandingPage() {
             {user ? (
               <Link
                 to="/admin"
-                className="group flex items-center gap-3 px-8 py-4 rounded-xl font-mono text-[0.85rem] font-bold tracking-wider text-white shadow-[0_0_35px_rgba(236,72,153,0.45)] bg-gradient-to-r from-brand-pink via-brand-orange to-brand-pink bg-[length:200%_auto] animate-gradient-shift hover:shadow-[0_0_50px_rgba(236,72,153,0.7)] active:scale-95 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#EC4899]"
+                className="group flex items-center gap-3 px-8 py-4 rounded-xl font-mono text-[0.85rem] font-bold tracking-wider text-white shadow-[0_0_35px_rgba(236,72,153,0.45)] btn-gradient-shift hover:shadow-[0_0_50px_rgba(236,72,153,0.7)] active:scale-95 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#EC4899]"
               >
                 GO_TO_COMMAND_CENTER
                 <ArrowRight className="w-4 h-4" />
@@ -190,7 +193,7 @@ export function LandingPage() {
             ) : (
               <Link
                 to="/register"
-                className="group flex items-center gap-3 px-8 py-4 rounded-xl font-mono text-[0.85rem] font-bold tracking-wider text-white shadow-[0_0_35px_rgba(236,72,153,0.45)] bg-gradient-to-r from-brand-pink via-brand-orange to-brand-pink bg-[length:200%_auto] animate-gradient-shift hover:shadow-[0_0_50px_rgba(236,72,153,0.7)] active:scale-95 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#EC4899]"
+                className="group flex items-center gap-3 px-8 py-4 rounded-xl font-mono text-[0.85rem] font-bold tracking-wider text-white shadow-[0_0_35px_rgba(236,72,153,0.45)] btn-gradient-shift hover:shadow-[0_0_50px_rgba(236,72,153,0.7)] active:scale-95 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#EC4899]"
               >
                 INITIATE_LAUNCH // JOIN_COMMUNITY
                 <ArrowRight className="w-4 h-4" />
@@ -214,20 +217,27 @@ export function LandingPage() {
       {/* ── TELEMETRY COUNTERS ── */}
       <section className="bg-dark-secondary/90 border-y border-secondary/10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14">
-          <p className="text-center font-mono text-gray-400 text-sm tracking-[0.18em] mb-8">
+          <p className="text-center font-mono text-gray-400 text-sm tracking-telemetry-wide mb-8">
             // MISSION_CONTROL :: LIVE_TELEMETRY_FEED
           </p>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
             {counters.map((c) => (
-              <div key={c.label} className="text-center">
-                <AnimatedCounter
-                  target={c.raw}
-                  suffix={c.suffix}
-                  className="text-3xl md:text-5xl font-extrabold leading-none bg-gradient-to-br from-brand-orange to-brand-pink bg-clip-text text-transparent"
-                />
-                <p className="mt-2 font-mono text-gray-400 text-xs tracking-[0.14em]">
-                  [{c.label}]
-                </p>
+              <div
+                key={c.label}
+                className="text-center"
+                role="group"
+                aria-label={`${c.raw}${c.suffix} ${c.label.replace(/_/g, " ")}`}
+              >
+                <div aria-hidden="true">
+                  <AnimatedCounter
+                    target={c.raw}
+                    suffix={c.suffix}
+                    className="text-3xl md:text-5xl font-extrabold leading-none bg-gradient-to-br from-brand-orange to-brand-pink bg-clip-text text-transparent"
+                  />
+                  <p className="mt-2 font-mono text-gray-400 text-xs tracking-telemetry">
+                    [{c.label}]
+                  </p>
+                </div>
               </div>
             ))}
           </div>
@@ -237,7 +247,7 @@ export function LandingPage() {
       {/* ── THREE PILLARS ── */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
         <div className="text-center mb-16 reveal">
-          <p className="font-mono text-brand-pink text-xs tracking-[0.18em] mb-3">
+          <p className="font-mono text-brand-pink text-xs tracking-telemetry-wide mb-3">
             // MISSION_BRIEFING :: CORE_DIRECTIVES
           </p>
           <h2 className="text-white text-2xl sm:text-3xl md:text-4xl font-bold leading-tight">
@@ -245,18 +255,18 @@ export function LandingPage() {
           </h2>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <ul role="list" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {pillars.map((p, i) => {
             const IconComponent = p.icon;
             return (
-              <div
+              <li
                 key={p.title}
                 className={`p-8 rounded-2xl glass-card hud-corners reveal reveal-delay-${i + 1}`}
               >
                 <div className="mb-4 text-brand-pink">
                   <IconComponent size={32} className="drop-shadow-[0_0_8px_rgba(236,72,153,0.4)]" />
                 </div>
-                <span className="font-mono block text-brand-pink text-xs tracking-[0.14em] mb-2">
+                <span className="font-mono block text-brand-pink text-xs tracking-telemetry mb-2">
                   // {p.label}
                 </span>
                 <h3 className="text-white text-xl font-bold mb-3">
@@ -265,10 +275,10 @@ export function LandingPage() {
                 <p className="text-gray-400 text-sm leading-relaxed">
                   {p.description}
                 </p>
-              </div>
+              </li>
             );
           })}
-        </div>
+        </ul>
       </section>
 
       {/* ── FEATURE BANNER ── */}
@@ -286,7 +296,7 @@ export function LandingPage() {
           <div className="max-w-xl reveal">
             <div className="flex items-center gap-2 mb-4">
               <Globe className="w-4 h-4 text-accent" aria-hidden="true" />
-              <span className="font-mono text-accent text-xs tracking-[0.14em]">
+              <span className="font-mono text-accent text-xs tracking-telemetry">
                 // GLOBAL_NETWORK :: STATUS_ACTIVE
               </span>
             </div>
@@ -299,7 +309,7 @@ export function LandingPage() {
             </p>
             <Link
               to="/register"
-              className="inline-flex items-center gap-2 px-7 py-3.5 rounded-xl font-mono text-xs font-bold tracking-widest text-white shadow-glow-pink bg-gradient-to-r from-brand-pink via-brand-orange to-brand-pink bg-[length:200%_auto] animate-gradient-shift focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#EC4899]"
+              className="inline-flex items-center gap-2 px-7 py-3.5 rounded-xl font-mono text-xs font-bold tracking-widest text-white shadow-glow-pink btn-gradient-shift focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#EC4899]"
             >
               BEGIN_MISSION
               <ChevronRight className="w-4 h-4" />
@@ -312,7 +322,7 @@ export function LandingPage() {
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
         <div className="flex items-center justify-between mb-12 reveal">
           <div>
-            <p className="font-mono text-brand-pink text-xs tracking-[0.14em] mb-2">
+            <p className="font-mono text-brand-pink text-xs tracking-telemetry mb-2">
               // DATA_ARCHIVES :: RECENT_TRANSMISSIONS
             </p>
             <h2 className="text-white text-xl sm:text-2xl md:text-3xl font-bold">
@@ -383,50 +393,56 @@ export function LandingPage() {
               </button>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <ul role="list" className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {posts.map((post, i) => (
-                // Pseudo-block-link pattern: the card is a plain div; only the title is an <a>.
-                // A ::before pseudo-element (via .post-card-link) expands the click area over
-                // the full card without creating invalid nested <a> DOM structure.
-                <article
-                  key={post.id}
-                  className={`post-card group flex flex-col rounded-2xl overflow-hidden glass-card reveal reveal-delay-${i + 1} relative`}
-                >
-                  <div className="relative aspect-[16/10] overflow-hidden">
-                    <ImageWithFallback
-                      src={post.image}
-                      alt=""
-                      aria-hidden="true"
-                      loading="lazy"
-                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110 group-focus-within:scale-110"
-                    />
-                    <div className="absolute top-4 left-4 px-3 py-1 rounded-md font-mono text-xs font-bold tracking-wider text-white" style={{ background: post.tagColor }}>
-                      {post.tag}
+                <li key={post.id}>
+                  {/* Pseudo-block-link pattern: the card is a plain div; only the title is an <a>.
+                      A ::before pseudo-element (via .post-card-link) expands the click area over
+                      the full card without creating invalid nested <a> DOM structure. */}
+                  <article
+                    className={`post-card group flex flex-col rounded-2xl overflow-hidden glass-card reveal reveal-delay-${i + 1} relative h-full`}
+                  >
+                    <div className="relative aspect-[16/10] overflow-hidden">
+                      <ImageWithFallback
+                        src={post.image}
+                        alt=""
+                        aria-hidden="true"
+                        loading="lazy"
+                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110 group-focus-within:scale-110"
+                      />
+                      <div className="absolute top-4 left-4 px-3 py-1 rounded-md font-mono text-xs font-bold tracking-wider text-white" style={{ background: post.tagColor }}>
+                        {post.tag}
+                      </div>
                     </div>
-                  </div>
-                  <div className="p-6 flex flex-col flex-1">
-                    <div className="flex items-center gap-3 mb-3 font-mono text-xs text-gray-400 tracking-wider">
-                      <span>{post.date}</span>
-                      <span className="w-1 h-1 rounded-full bg-gray-700" aria-hidden="true" />
-                      <span aria-label={`By ${post.author.replace(/_/g, " ")}`}>BY_{post.author}</span>
+                    <div className="p-6 flex flex-col flex-1">
+                      <div className="flex items-center gap-3 mb-3 font-mono text-xs text-gray-400 tracking-wider">
+                        <span>{format(parseISO(post.date), 'LLL dd, yyyy').toUpperCase()}</span>
+                        <span className="w-1 h-1 rounded-full bg-gray-700" aria-hidden="true" />
+                        <span className="flex items-center gap-0.5">
+                          <span className="sr-only">By {post.author.replace(/_/g, " ")}</span>
+                          <span aria-hidden="true" className="before:content-['BY_'] before:text-gray-500">
+                            {post.author.replace(/_/g, " ")}
+                          </span>
+                        </span>
+                      </div>
+                      <h3 className="text-white font-bold leading-snug mb-4 line-clamp-2">
+                        {/* This <a> is the only interactive element — the ::before expands it */}
+                        <Link
+                          to={`/blog/${post.id}`}
+                          className="post-card-link group-hover:text-brand-pink group-focus-within:text-brand-pink transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#EC4899] rounded"
+                        >
+                          {post.title}
+                        </Link>
+                      </h3>
+                      <div className="mt-auto flex items-center justify-between">
+                        <span className="font-mono text-xs text-gray-400">{post.readTime}_READ</span>
+                        <span className="text-accent group-hover:translate-x-1 group-focus-within:translate-x-1 transition-transform" aria-hidden="true">→</span>
+                      </div>
                     </div>
-                    <h3 className="text-white font-bold leading-snug mb-4 line-clamp-2">
-                      {/* This <a> is the only interactive element — the ::before expands it */}
-                      <Link
-                        to={`/blog/${post.id}`}
-                        className="post-card-link group-hover:text-brand-pink group-focus-within:text-brand-pink transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#EC4899] rounded"
-                      >
-                        {post.title}
-                      </Link>
-                    </h3>
-                    <div className="mt-auto flex items-center justify-between">
-                      <span className="font-mono text-xs text-gray-400">{post.readTime}_READ</span>
-                      <span className="text-accent group-hover:translate-x-1 group-focus-within:translate-x-1 transition-transform" aria-hidden="true">→</span>
-                    </div>
-                  </div>
-                </article>
+                  </article>
+                </li>
               ))}
-            </div>
+            </ul>
           )}
         </div>
       </section>
@@ -488,6 +504,7 @@ function OnboardingModalWrapper({ onboardingStep, setOnboardingStep }: Onboardin
       if (e.key === "Escape") {
         // Skip walkthrough on Escape
         localStorage.setItem("isya_onboarding_done", "true");
+        sessionStorage.removeItem("isya_onboarding_step");
         setOnboardingStep(null);
         toast.success("Walkthrough skipped. Terminals ready.");
         return;
@@ -542,6 +559,9 @@ function OnboardingModalWrapper({ onboardingStep, setOnboardingStep }: Onboardin
         <div className="absolute bottom-0 right-0 w-6 h-6 border-b-2 border-r-2 border-brand-pink rounded-br-lg" />
 
         <div className="space-y-2">
+          <span className="sr-only">
+            Cadet Onboarding, Stage {onboardingStep} of 3
+          </span>
           <span className="font-mono text-[10px] text-brand-pink tracking-wider" aria-hidden="true">
             CADET_ONBOARDING // STAGE_0{onboardingStep}_OF_03
           </span>
@@ -562,6 +582,7 @@ function OnboardingModalWrapper({ onboardingStep, setOnboardingStep }: Onboardin
           <button 
             onClick={() => {
               localStorage.setItem("isya_onboarding_done", "true");
+              sessionStorage.removeItem("isya_onboarding_step");
               setOnboardingStep(null);
               toast.success("Walkthrough skipped. Terminals ready.");
             }}
@@ -573,7 +594,11 @@ function OnboardingModalWrapper({ onboardingStep, setOnboardingStep }: Onboardin
           <div className="flex gap-2">
             {onboardingStep > 1 && (
               <button 
-                onClick={() => setOnboardingStep(onboardingStep - 1)}
+                onClick={() => {
+                  const prevStep = onboardingStep - 1;
+                  setOnboardingStep(prevStep);
+                  sessionStorage.setItem("isya_onboarding_step", String(prevStep));
+                }}
                 className="px-3 py-1.5 rounded-lg font-mono text-[10px] text-gray-400 border border-white/10 hover:bg-white/5 cursor-pointer focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-brand-pink"
               >
                 PREV
@@ -582,9 +607,12 @@ function OnboardingModalWrapper({ onboardingStep, setOnboardingStep }: Onboardin
             <button 
               onClick={() => {
                 if (onboardingStep < 3) {
-                  setOnboardingStep(onboardingStep + 1);
+                  const nextStep = onboardingStep + 1;
+                  setOnboardingStep(nextStep);
+                  sessionStorage.setItem("isya_onboarding_step", String(nextStep));
                 } else {
                   localStorage.setItem("isya_onboarding_done", "true");
+                  sessionStorage.removeItem("isya_onboarding_step");
                   setOnboardingStep(null);
                   toast.success("Cadet onboarding synchronized! Welcome to ISYA.");
                 }

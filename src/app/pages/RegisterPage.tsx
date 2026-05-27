@@ -149,7 +149,7 @@ export function RegisterPage() {
             alt="ISYA Logo" 
             width="100"
             height="100"
-            className="w-[100px] mb-4 drop-shadow-[0_0_20px_rgba(236,72,153,0.5)] animate-float" 
+            className="w-[100px] mb-4 drop-shadow-[0_0_20px_rgba(236,72,153,0.5)] animate-float mix-blend-multiply" 
           />
           <p className="font-mono text-pink-500 text-xs tracking-[0.2em]">
             // ENLISTMENT_PORTAL :: SECURE_CHANNEL

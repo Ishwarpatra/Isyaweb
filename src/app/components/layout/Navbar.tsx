@@ -299,7 +299,7 @@ export function Navbar() {
               alt="ISYA Home"
               width="160"
               height="40"
-              className="h-10 w-auto object-contain drop-shadow-[0_0_8px_rgba(255,165,0,0.3)]"
+              className="h-10 w-auto object-contain drop-shadow-[0_0_8px_rgba(255,165,0,0.3)] mix-blend-multiply"
             />
           </Link>
 

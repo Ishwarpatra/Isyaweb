@@ -43,7 +43,7 @@ export function ResetPasswordPage() {
             alt="ISYA Logo"
             width="90"
             height="90"
-            className="w-[90px] mb-4 animate-float drop-shadow-[0_0_18px_rgba(249,115,22,0.4)]"
+            className="w-[90px] mb-4 animate-float drop-shadow-[0_0_18px_rgba(249,115,22,0.4)] mix-blend-multiply"
           />
           <p className="font-mono text-pink-500 text-xs tracking-[0.2em]">
             // SECURITY_RELAY :: KEY_RECOVERY
