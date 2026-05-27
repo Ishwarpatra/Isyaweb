@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Play, Pause, X, Music, Radio, Tv } from "lucide-react";
+import { Play, Pause, X, Radio, Tv } from "lucide-react";
 import { toast } from "sonner";
 
 export function ThemeAudioPlayer() {
@@ -8,14 +8,33 @@ export function ThemeAudioPlayer() {
   const [isMuted, setIsMuted] = useState(true);
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
   
-  // Custom video coordinates (using a futuristic synthwave space ambient loop)
-  const videoId = "Pj153V61Kk0"; // Lofi space ambient beats loop
+  const videoRef = useRef<HTMLVideoElement>(null);
   const playerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
     setPrefersReducedMotion(mq.matches);
   }, []);
+
+  // Sync play/pause state
+  useEffect(() => {
+    if (videoRef.current) {
+      if (isPlaying) {
+        videoRef.current.play().catch((err) => {
+          console.warn("Autoplay block or playback interrupted:", err);
+        });
+      } else {
+        videoRef.current.pause();
+      }
+    }
+  }, [isPlaying, isOpen]);
+
+  // Sync mute state
+  useEffect(() => {
+    if (videoRef.current) {
+      videoRef.current.muted = isMuted;
+    }
+  }, [isMuted]);
 
   const handleLaunch = () => {
     setIsOpen(true);
@@ -83,18 +102,17 @@ export function ThemeAudioPlayer() {
           </div>
 
           {/* Embedded Video Player */}
-          <div className="relative aspect-video bg-black">
-            {isPlaying ? (
-              <iframe
-                src={`https://www.youtube.com/embed/${videoId}?autoplay=1&mute=${isMuted ? "1" : "0"}&loop=1&playlist=${videoId}&controls=0`}
-                title="ISYA Theme Music Video"
-                frameBorder="0"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                className="w-full h-full"
-              />
-            ) : (
-              <div className="w-full h-full flex flex-col items-center justify-center gap-2 text-gray-600">
-                <Tv size={28} />
+          <div className="relative aspect-video bg-black flex items-center justify-center overflow-hidden">
+            <video
+              ref={videoRef}
+              src="/isya-theme.mp4"
+              loop
+              playsInline
+              className={`w-full h-full object-cover transition-opacity duration-300 ${isPlaying ? "opacity-100" : "opacity-30"}`}
+            />
+            {!isPlaying && (
+              <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-gray-400 bg-black/60 pointer-events-none">
+                <Tv size={28} className="text-pink-500" />
                 <span className="font-mono text-[10px]">STREAM_PAUSED</span>
               </div>
             )}
@@ -112,7 +130,7 @@ export function ThemeAudioPlayer() {
               </button>
               <div>
                 <h4 className="text-white text-xs font-bold leading-tight font-mono tracking-tight truncate max-w-[120px]">
-                  ISYA_AMB_THEME.MP4
+                  ISYA_THEME.MP4
                 </h4>
                 <p className="text-gray-500 text-[9px] font-mono mt-0.5">
                   VOL: {isMuted ? "MUTED" : "100%"}
