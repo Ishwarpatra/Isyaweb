@@ -122,14 +122,11 @@ export function RegisterPage() {
     }
 
     setLoading(true);
-    try {
-      await register(email, password, `${firstName} ${lastName}`);
-      setLoading(false);
-      toast.success("Enlistment successful! Welcome to the ISYA network.");
+    const success = await register(email, password, `${firstName} ${lastName}`);
+    setLoading(false);
+    
+    if (success) {
       navigate("/");
-    } catch (err: any) {
-      setLoading(false);
-      toast.error(err.message || "Registration failed. Please try again.");
     }
   };
 

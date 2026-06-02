@@ -1,9 +1,8 @@
-import React, { useState } from "react";
-import { Link, useNavigate } from "react-router";
-import { Eye, EyeOff, ShieldCheck, AlertCircle } from "lucide-react";
-import logoImg from "../../imports/Logo_ISYA__1_-2.jpeg";
-import { useAuth } from "../hooks/useAuth";
-import { toast } from "sonner";
+import React, { useState } from 'react';
+import { Link, useNavigate } from 'react-router';
+import { Eye, EyeOff, ShieldCheck, AlertCircle } from 'lucide-react';
+import logoImg from '../../imports/Logo_ISYA__1_-2.jpeg';
+import { useAuth } from '../hooks/useAuth';
 
 function GoogleIcon() {
   return (
@@ -36,48 +35,44 @@ function AppleIcon() {
 }
 
 const SSO_PROVIDERS = [
-  { id: "Google", label: "Google", Icon: GoogleIcon },
-  { id: "Microsoft", label: "Microsoft", Icon: MicrosoftIcon },
-  { id: "Apple", label: "Apple", Icon: AppleIcon },
+  { id: 'Google', label: 'Google', Icon: GoogleIcon },
+  { id: 'Microsoft', label: 'Microsoft', Icon: MicrosoftIcon },
+  { id: 'Apple', label: 'Apple', Icon: AppleIcon },
 ];
 
 export function LoginPage() {
   const navigate = useNavigate();
-  const { login, loginSSO } = useAuth();
+  const { login, loading } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [activeSSO, setActiveSSO] = useState<string | null>(null);
-
-  // Field validation states
-  const [emailError, setEmailError] = useState("");
-  const [passwordError, setPasswordError] = useState("");
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [emailError, setEmailError] = useState('');
+  const [passwordError, setPasswordError] = useState('');
 
   const validateEmail = (val: string) => {
     if (!val) {
-      setEmailError("Agent email is required");
+      setEmailError('Email is required');
       return false;
     }
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(val)) {
-      setEmailError("Please enter a valid secure email coordinates");
+      setEmailError('Please enter a valid email');
       return false;
     }
-    setEmailError("");
+    setEmailError('');
     return true;
   };
 
   const validatePassword = (val: string) => {
     if (!val) {
-      setPasswordError("Passphrase is required");
+      setPasswordError('Password is required');
       return false;
     }
     if (val.length < 8) {
-      setPasswordError("Security key must be at least 8 characters");
+      setPasswordError('Password must be at least 8 characters');
       return false;
     }
-    setPasswordError("");
+    setPasswordError('');
     return true;
   };
 
@@ -88,62 +83,23 @@ export function LoginPage() {
     const isPassValid = validatePassword(password);
 
     if (!isEmailValid || !isPassValid) {
-      toast.error("Form validation failed. Please check credentials.");
       return;
     }
 
-    setLoading(true);
-    try {
-      const success = await login(email, password);
-      if (success) {
-        toast.success("Authentication successful. Access granted!");
-        // Determine role redirect
-        const lowerEmail = email.toLowerCase().trim();
-        const isAdmin = 
-          lowerEmail === "admin@isya.space" || 
-          lowerEmail === "internationalspaceyouthassocia@gmail.com" || 
-          lowerEmail === "ishwarpatragod@gmail.com";
-        
-        if (isAdmin) {
-          navigate("/admin");
-        } else {
-          navigate("/");
-        }
-      } else {
-        toast.error("ACCESS_DENIED: Invalid agent credentials.");
-        setPasswordError("Incorrect email or security passphrase");
-      }
-    } catch (err) {
-      toast.error("System error during credential verification.");
-    } finally {
-      setLoading(false);
+    const success = await login(email, password);
+    if (success) {
+      navigate('/');
     }
   };
-
-  const handleSSOLogin = async (provider: string) => {
-    setLoading(true);
-    setActiveSSO(provider);
-    try {
-      await loginSSO(provider);
-      toast.success(`SSO access granted via ${provider}!`);
-      navigate("/");
-    } catch (err) {
-      toast.error(`SSO handshake failed with ${provider}.`);
-    } finally {
-      setLoading(false);
-      setActiveSSO(null);
-    }
-  };
-
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4 py-20 relative overflow-hidden bg-[#0B0F19] stardust">
-      {/* Background breathing glow blobs */}
+      {/* Background glow */}
       <div className="absolute top-1/3 left-1/4 w-96 h-96 rounded-full pointer-events-none animate-pulse-glow bg-pink-500/10 blur-[120px]" />
       <div className="absolute bottom-1/4 right-1/4 w-80 h-80 rounded-full pointer-events-none animate-pulse-glow bg-blue-500/10 blur-[110px] [animation-delay:3s]" />
 
       <div className="w-full max-w-sm relative z-10">
-        {/* Logo + Header */}
+        {/* Logo */}
         <div className="flex flex-col items-center mb-10">
           <div className="relative mb-4">
             <div className="absolute inset-0 rounded-full animate-pulse-glow bg-orange-500/20 blur-[24px] scale-125" />
@@ -167,10 +123,10 @@ export function LoginPage() {
           </p>
         </div>
 
-        {/* Card */}
+        {/* Form Card */}
         <div className="rounded-2xl p-8 bg-gray-900/70 backdrop-blur-2xl border border-pink-500/15 shadow-2xl relative hud-corners">
-          
           <form onSubmit={handleSubmit} className="space-y-6" noValidate>
+            {/* Email */}
             <div>
               <label htmlFor="email" className="block font-mono text-xs text-gray-400 tracking-widest mb-2">
                 AGENT_IDENTIFIER // EMAIL
@@ -180,7 +136,7 @@ export function LoginPage() {
                 type="email"
                 required
                 autoComplete="email"
-                placeholder="agent@isya.space"
+                placeholder="agent@example.com"
                 value={email}
                 onChange={(e) => {
                   setEmail(e.target.value);
@@ -188,9 +144,9 @@ export function LoginPage() {
                 }}
                 onBlur={(e) => validateEmail(e.target.value)}
                 aria-invalid={!!emailError}
-                aria-describedby={emailError ? "email-error" : undefined}
+                aria-describedby={emailError ? 'email-error' : undefined}
                 className={`w-full bg-transparent border-b py-3 text-white text-sm outline-none transition-colors ${
-                  emailError ? "border-red-500 focus:border-red-500" : "border-white/10 focus:border-pink-500"
+                  emailError ? 'border-red-500 focus:border-red-500' : 'border-white/10 focus:border-pink-500'
                 }`}
               />
               {emailError && (
@@ -201,16 +157,15 @@ export function LoginPage() {
               )}
             </div>
 
+            {/* Password */}
             <div>
-              <div className="flex items-center justify-between mb-2">
-                <label htmlFor="password" className="font-mono text-xs text-gray-400 tracking-widest">
-                  SECURITY_PASSPHRASE
-                </label>
-              </div>
+              <label htmlFor="password" className="font-mono text-xs text-gray-400 tracking-widest mb-2 block">
+                SECURITY_PASSPHRASE
+              </label>
               <div className="relative">
                 <input
                   id="password"
-                  type={showPassword ? "text" : "password"}
+                  type={showPassword ? 'text' : 'password'}
                   required
                   autoComplete="current-password"
                   placeholder="••••••••••••"
@@ -221,16 +176,16 @@ export function LoginPage() {
                   }}
                   onBlur={(e) => validatePassword(e.target.value)}
                   aria-invalid={!!passwordError}
-                  aria-describedby={passwordError ? "password-error" : undefined}
+                  aria-describedby={passwordError ? 'password-error' : undefined}
                   className={`w-full bg-transparent border-b py-3 pr-10 text-white text-sm outline-none transition-colors ${
-                    passwordError ? "border-red-500 focus:border-red-500" : "border-white/10 focus:border-pink-500"
+                    passwordError ? 'border-red-500 focus:border-red-500' : 'border-white/10 focus:border-pink-500'
                   }`}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-0 top-1/2 -translate-y-1/2 text-gray-400 hover:text-pink-500 transition-colors"
-                  aria-label={showPassword ? "Hide password" : "Show password"}
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
                 >
                   {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
@@ -241,11 +196,9 @@ export function LoginPage() {
                   {passwordError}
                 </p>
               )}
-
               <div className="flex justify-end mt-2">
                 <Link
                   to="/reset-password"
-                  title="Reset access"
                   className="font-mono text-xs text-pink-500 tracking-wider hover:text-pink-400 transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-pink-500"
                 >
                   RESET_ACCESS?
@@ -253,13 +206,14 @@ export function LoginPage() {
               </div>
             </div>
 
+            {/* Submit Button */}
             <button
               type="submit"
               disabled={loading}
               className={`w-full py-3.5 rounded-xl font-mono text-xs font-bold tracking-widest text-white shadow-lg transition-all cursor-pointer ${
-                loading 
-                  ? "bg-pink-500/30 cursor-not-allowed" 
-                  : "bg-gradient-to-r from-pink-500 to-blue-500 shadow-pink-500/20 hover:shadow-pink-500/40 hover:-translate-y-0.5 active:translate-y-0"
+                loading
+                  ? 'bg-pink-500/30 cursor-not-allowed'
+                  : 'bg-gradient-to-r from-pink-500 to-blue-500 shadow-pink-500/20 hover:shadow-pink-500/40 hover:-translate-y-0.5 active:translate-y-0'
               }`}
             >
               {loading ? (
@@ -268,7 +222,7 @@ export function LoginPage() {
                   AUTHENTICATING...
                 </span>
               ) : (
-                "INITIATE_ACCESS // SIGN_IN"
+                'INITIATE_ACCESS // SIGN_IN'
               )}
             </button>
           </form>
@@ -285,31 +239,26 @@ export function LoginPage() {
               // SSO_PROTOCOL_SELECT
             </p>
             <div className="flex gap-2">
-              {SSO_PROVIDERS.map(({ id, label, Icon }) => {
-                const isThisLoading = activeSSO === id;
-                return (
-                  <button
-                    key={id}
-                    type="button"
-                    onClick={() => handleSSOLogin(id)}
-                    disabled={loading}
-                    aria-label={`Sign in with ${label}`}
-                    className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-white/5 border border-white/10 text-gray-300 hover:bg-pink-500/10 hover:border-pink-500/30 hover:text-white transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed group"
-                  >
-                    {isThisLoading ? (
-                      <span className="w-3.5 h-3.5 border-2 border-pink-500 border-t-transparent rounded-full animate-spin shrink-0" />
-                    ) : (
-                      <Icon className="shrink-0" />
-                    )}
-                    <span className="font-mono text-xs font-medium">
-                      {isThisLoading ? "CONNECTING..." : label}
-                    </span>
-                  </button>
-                );
-              })}
+              {SSO_PROVIDERS.map(({ id, label, Icon }) => (
+                <button
+                  key={id}
+                  type="button"
+                  disabled={true}
+                  aria-label={`Sign in with ${label} (coming soon)`}
+                  title="SSO authentication coming in Phase 2"
+                  className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-white/5 border border-white/10 text-gray-500 cursor-not-allowed opacity-50"
+                >
+                  <Icon className="shrink-0" />
+                  <span className="font-mono text-xs font-medium">{label}</span>
+                </button>
+              ))}
             </div>
+            <p className="font-mono text-xs text-gray-600 mt-2 text-center">
+              // SSO_AUTHENTICATION_COMING_PHASE_2
+            </p>
           </div>
 
+          {/* Register Link */}
           <div className="mt-8 pt-6 border-t border-white/5 flex items-center justify-between">
             <p className="font-mono text-gray-500 text-xs">NO_CLEARANCE?</p>
             <Link
