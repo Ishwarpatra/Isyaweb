@@ -21,13 +21,13 @@ import { ThemeAudioPlayer } from "../components/ThemeAudioPlayer";
 
 
 const ROCKET_IMG =
-  "https://images.unsplash.com/photo-1517976487492-5750f3195933?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxyb2NrZXQlMjBsYXVuY2glMjBzcGFjZSUyMGV4cGxvcmF0aW9ufGVufDF8fHx8MTc3OTEyMTE2MHww&ixlib=rb-4.1.0&q=80&w=1080";
+  "https://images.unsplash.com/photo-1517976487492-5750f3195933?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxyb2NrZXQlMjBsYXVuY2glMjBzcGFjZSUyMGV4cGxvcmF0aW9ufGVufDF8fHx8MTc3OTEyMTE2MHww&ixlib=rb-4.1.0&q=80&w=600";
 const OBS_IMG =
-  "https://images.unsplash.com/photo-1727034394040-0377258a5791?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHx0ZWxlc2NvcGUlMjBvYnNlcnZhdG9yeSUyMG5pZ2h0JTIwc2t5JTIwc3RhcnN8ZW58MXx8fHwxNzc5MTIxMTY2fDA&ixlib=rb-4.1.0&q=80&w=1080";
+  "https://images.unsplash.com/photo-1727034394040-0377258a5791?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHx0ZWxlc2NvcGUlMjBvYnNlcnZhdG9yeSUyMG5pZ2h0JTIwc2t5JTIwc3RhcnN8ZW58MXx8fHwxNzc5MTIxMTY2fDA&ixlib=rb-4.1.0&q=80&w=600";
 const NEBULA_IMG =
-  "https://images.unsplash.com/photo-1706562018605-909733434781?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHw1fHxzcGFjZSUyMGdhbGF4eSUyMGNvc21vcyUyMGRhcmslMjBuZWJ1bGF8ZW58MXx8fHwxNzc5MTIxMTYwfDA&ixlib=rb-4.1.0&q=80&w=1080";
+  "https://images.unsplash.com/photo-1706562018605-909733434781?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHw1fHxzcGFjZSUyMGdhbGF4eSUyMGNvc21vcyUyMGRhcmslMjBuZWJ1bGF8ZW58MXx8fHwxNzc5MTIxMTYwfDA&ixlib=rb-4.1.0&q=80&w=600";
 const GALAXY_IMG =
-  "https://images.unsplash.com/photo-1502134249126-9f3755a50d78?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxzcGFjZSUyMGdhbGF4eSUyMGNvc21vcyUyMGRhcmslMjBuZWJ1bGF8ZW58MXx8fHwxNzc5MTIxMTYwfDA&ixlib=rb-4.1.0&q=80&w=1080";
+  "https://images.unsplash.com/photo-1502134249126-9f3755a50d78?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxzcGFjZSUyMGdhbGF4eSUyMGNvc21vcyUyMGRhcmslMjBuZWJ1bGF8ZW58MXx8fHwxNzc5MTIxMTYwfDA&ixlib=rb-4.1.0&q=80&w=600";
 
 const pillars = [
   {
@@ -93,15 +93,17 @@ const latestPosts = [
   },
 ];
 
-// Module-level cache: persists across route unmounts so returning to Home
-// never triggers a redundant re-fetch and never shows skeleton loaders again.
-let _postsCache: typeof latestPosts | null = null;
-
 export function LandingPage() {
   const sectionRef = useScrollReveal<HTMLDivElement>();
   const { user } = useAuth();
-  const [posts, setPosts] = useState<typeof latestPosts>(_postsCache ?? []);
-  const [loading, setLoading] = useState(_postsCache === null);
+  const [posts, setPosts] = useState<typeof latestPosts>(() => {
+    const cached = sessionStorage.getItem("isya_landing_posts_cache");
+    return cached ? JSON.parse(cached) : [];
+  });
+  const [loading, setLoading] = useState(() => {
+    const cached = sessionStorage.getItem("isya_landing_posts_cache");
+    return cached === null;
+  });
   const [error, setError] = useState<string | null>(null);
   const [onboardingStep, setOnboardingStep] = useState<number | null>(null);
   const [isRetrying, setIsRetrying] = useState(false);
@@ -112,13 +114,14 @@ export function LandingPage() {
     setWebinars(mockDb.getWebinars());
     
     // Show onboarding walkthrough to logged-in users who haven't completed it yet
-    const userSession = sessionStorage.getItem("isya_user");
-    const onboardingDone = localStorage.getItem("isya_onboarding_done");
-    if (userSession && !onboardingDone) {
-      const savedStep = sessionStorage.getItem("isya_onboarding_step");
-      setOnboardingStep(savedStep ? parseInt(savedStep, 10) : 1);
+    if (user) {
+      const onboardingDone = localStorage.getItem("isya_onboarding_done_" + user.id);
+      if (!onboardingDone) {
+        const savedStep = sessionStorage.getItem("isya_onboarding_step");
+        setOnboardingStep(savedStep ? parseInt(savedStep, 10) : 1);
+      }
     }
-  }, []);
+  }, [user]);
 
   const fetchTransmissions = () => {
     setLoading(true);
@@ -129,22 +132,29 @@ export function LandingPage() {
       clearTimeout(timeoutRef.current);
     }
 
-    // Synchronous — no artificial delay. Data is local; there is no network round-trip.
-    try {
-      _postsCache = latestPosts;
-      setPosts(latestPosts);
-      setError(null);
-    } catch (err: any) {
-      setError("ERR_DATALINK_TIMEOUT: The ground station telemetry buffer has timing desync.");
-    } finally {
-      setLoading(false);
-      setIsRetrying(false);
-    }
+    timeoutRef.current = setTimeout(() => {
+      try {
+        // 15% random failure rate to simulate network connectivity desync and allow testing the error state
+        if (Math.random() < 0.15) {
+          throw new Error("Datalink Timeout: The ground telemetry transmission buffer failed to synchronize. Please check node clearances and select RETRY_SIGNAL.");
+        }
+        sessionStorage.setItem("isya_landing_posts_cache", JSON.stringify(latestPosts));
+        setPosts(latestPosts);
+        setError(null);
+      } catch (err: any) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+        setIsRetrying(false);
+      }
+    }, 800);
   };
 
   useEffect(() => {
-    if (_postsCache !== null) return; // Already hydrated — skip the fetch entirely
-    fetchTransmissions();
+    const cached = sessionStorage.getItem("isya_landing_posts_cache");
+    if (!cached) {
+      fetchTransmissions();
+    }
     return () => {
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
@@ -490,6 +500,7 @@ interface OnboardingModalWrapperProps {
 }
 
 function OnboardingModalWrapper({ onboardingStep, setOnboardingStep }: OnboardingModalWrapperProps) {
+  const { user } = useAuth();
   const modalRef = useRef<HTMLDivElement>(null);
   const lastActiveElementOnboarding = useRef<HTMLElement | null>(null);
 
@@ -530,7 +541,7 @@ function OnboardingModalWrapper({ onboardingStep, setOnboardingStep }: Onboardin
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         // Skip walkthrough on Escape
-        localStorage.setItem("isya_onboarding_done", "true");
+        localStorage.setItem("isya_onboarding_done_" + (user?.id || "default"), "true");
         sessionStorage.removeItem("isya_onboarding_step");
         setOnboardingStep(null);
         toast.success("Walkthrough skipped. Terminals ready.");
@@ -608,7 +619,7 @@ function OnboardingModalWrapper({ onboardingStep, setOnboardingStep }: Onboardin
         <div className="flex items-center justify-between pt-4 border-t border-white/5">
           <button 
             onClick={() => {
-              localStorage.setItem("isya_onboarding_done", "true");
+              localStorage.setItem("isya_onboarding_done_" + (user?.id || "default"), "true");
               sessionStorage.removeItem("isya_onboarding_step");
               setOnboardingStep(null);
               toast.success("Walkthrough skipped. Terminals ready.");
@@ -638,7 +649,7 @@ function OnboardingModalWrapper({ onboardingStep, setOnboardingStep }: Onboardin
                   setOnboardingStep(nextStep);
                   sessionStorage.setItem("isya_onboarding_step", String(nextStep));
                 } else {
-                  localStorage.setItem("isya_onboarding_done", "true");
+                  localStorage.setItem("isya_onboarding_done_" + (user?.id || "default"), "true");
                   sessionStorage.removeItem("isya_onboarding_step");
                   setOnboardingStep(null);
                   toast.success("Cadet onboarding synchronized! Welcome to ISYA.");
