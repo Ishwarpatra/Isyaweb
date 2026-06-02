@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Link, useLocation, useNavigation } from "react-router";
-import { Menu, X, LogOut, Shield, Bell } from "lucide-react";
+import { Menu, X, LogOut, Shield, Bell, Sun, Moon } from "lucide-react";
 import logoImg from "../../../imports/Logo_ISYA__1_-2.jpeg";
 import { useAuth } from "../../hooks/useAuth";
 import { lockScroll, unlockScroll } from "../../hooks/useScrollLock";
@@ -74,6 +74,25 @@ function NotificationItem({
 
 export function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [theme, setTheme] = useState(() => {
+    return localStorage.getItem("isya_theme") || "dark";
+  });
+
+  const toggleTheme = () => {
+    const nextTheme = theme === "dark" ? "light" : "dark";
+    setTheme(nextTheme);
+    localStorage.setItem("isya_theme", nextTheme);
+    const root = document.documentElement;
+    if (nextTheme === "light") {
+      root.classList.add("light");
+      root.classList.remove("dark");
+    } else {
+      root.classList.add("dark");
+      root.classList.remove("light");
+    }
+    toast.success(`Theme updated to ${nextTheme.toUpperCase()}_MODE`);
+  };
+
   const location = useLocation();
   const navigation = useNavigation();
   const { user, logout, isAdmin, isModerator } = useAuth();
@@ -327,6 +346,15 @@ export function Navbar() {
           </nav>
 
           <div className="hidden md:flex items-center gap-3">
+            {/* Theme Toggle Button */}
+            <button
+              onClick={toggleTheme}
+              className="p-2 rounded-xl text-gray-400 hover:text-white bg-white/5 border border-white/10 hover:border-pink-500/30 transition-all cursor-pointer flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#EC4899]"
+              aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} theme`}
+            >
+              {theme === "dark" ? <Sun className="w-[18px] h-[18px] text-amber-400" /> : <Moon className="w-[18px] h-[18px] text-indigo-400" />}
+            </button>
+
             {/* Notification Bell Dropdown */}
             <div className="relative">
               <button
@@ -498,10 +526,36 @@ export function Navbar() {
                   </Link>
                 </>
               )}
+              {/* Mobile Theme Toggle */}
+              <button
+                onClick={() => {
+                  toggleTheme();
+                  closeMenu();
+                }}
+                className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-center text-[0.9rem] font-medium bg-white/5 border border-white/10 text-gray-300 hover:text-white transition-colors cursor-pointer mt-2"
+              >
+                {theme === "dark" ? (
+                  <>
+                    <Sun size={16} className="text-amber-400" />
+                    <span>Switch to Light Mode</span>
+                  </>
+                ) : (
+                  <>
+                    <Moon size={16} className="text-indigo-400" />
+                    <span>Switch to Dark Mode</span>
+                  </>
+                )}
+              </button>
             </div>
           </div>
         </div>
       )}
+      
+      {/* Simulation status banner */}
+      <div className="bg-[#1A1813] border-t border-white/5 py-1.5 px-4 text-center font-mono text-[9px] sm:text-[10px] text-amber-500/80 tracking-widest flex items-center justify-center gap-1.5 select-none relative z-50">
+        <span className="w-1.5 h-1.5 rounded-full bg-amber-500/80 animate-pulse shrink-0" />
+        SYSTEM_STATUS :: SIMULATED_DATA_LINK // LOCAL_SANDBOX_PERSISTENCE
+      </div>
     </header>
   );
 }
