@@ -60,42 +60,31 @@ Isyaweb/
 └── .gitignore                # Git exclusion rules
 ```
 
-## Recent Improvements (May 2026)
+## Recent Improvements (June 2026)
 
-### ✅ Accessibility & UX Fixes
-- **Route Matching Fixed**: Exact path matching prevents false highlights (`/community` no longer highlights for `/community-guidelines`)
-- **Keyboard Navigation**: Added `:focus-visible` states to all buttons and nav links
-- **Mobile Menu Semantics**: Dialog role, aria-modal, proper screen reader support
-- **WCAG Text Readability**: Fixed micro-text (0.65rem → 12px minimum, follows WCAG AA standards)
-- **Form Buttons**: CTA buttons now keyboard accessible with visible focus indicators
+### ✅ Production Backend & Database Persistence (Phase 0 & 1)
+- **Real Database Integration**: Replaced client mock utilities with a PostgreSQL database schema mapping users, blog posts, and comments with index query optimizations.
+- **Secure Authentication Handshake**: Configured session management utilizing JWT signatures returned in the headers and injected as `httpOnly` secure cookies with `SameSite=Strict` flags.
+- **REST Telemetry API**: Developed routes supporting relational SQL data fetching, server-side keyword searches, paginations, and secure comment inserts.
+- **Interactive OpenAPI Specification**: Configured live API documentation using Swagger UI hosted locally at `/api-docs`.
 
-### ✅ Type Safety & Architecture
-- **TypeScript Strict Mode**: Full type checking enabled via `tsconfig.json`
-- **useScrollReveal Hook**: Eliminated type casting hacks with proper `RefObject<T>` return type
-- **Path Aliases**: Configured for cleaner imports (`@components/*`, `@pages/*`, `@hooks/*`)
+### ✅ Automated Testing & Quality Gates (Phase 2)
+- **Vitest Test Suite**: Configured Vitest + React Testing Library and JSDOM environments for high-fidelity hook and page testing.
+- **Unit & Integration Tests**: Wrote tests covering `useAuth.tsx` (session verification on mount, correct logins), `useApi.ts` (network query retries on server errors, abort locks, direct returns on client 4xx errors), and `BlogPage.test.tsx` (loaders, records grids, and empty states).
+- **Global Mocking Setup**: Mocked browser API structures like `IntersectionObserver` to allow React scroll-reveal hooks to execute cleanly in test runners.
 
-### ✅ Design System
-- **Tailwind Config**: Centralized design tokens (colors, spacing, typography, animations)
-- **Semantic Palette**: Primary (orange), secondary (pink), accent (blue), dark theme
-- **Animation Definitions**: pulse-glow, float, gradient-shift for consistent motion
+### ✅ Frontend Performance & Asset Optimizations (Phase 2)
+- **Asset Code Splitting**: Managed bundle configurations in `vite.config.ts` to separate dependencies (`vendor-react`, `vendor-charts`, `vendor-ui`, and `vendor-date` for date-fns) keeping core scripts under a strict 100KB budget.
+- **Optimized Hero & Card Media**: Set up width constraints (`fallbackWidth={600/1200}`) and lazy-loading for Unsplash images, improving Core Web Vitals (Largest Contentful Paint).
 
-### ✅ Configuration & Security
-- **Environment Variables**: `.env.example` template for API configuration
-- **Git Security**: `.gitignore` prevents secrets/build artifacts from repo
-- **Build System**: Fixed JSX parsing (routes.ts → routes.tsx)
+### ✅ Accessibility & UX Compliance
+- **Route Matching Fixed**: Exact path matching prevents false highlights (`/community` no longer highlights for `/community-guidelines`).
+- **Keyboard Navigation**: Added `:focus-visible` states to all buttons and nav links.
+- **Mobile Menu Semantics**: Dialog role, aria-modal, and proper screen reader support.
+- **WCAG Text Readability**: Fixed micro-text (0.65rem → 12px minimum, follows WCAG AA standards).
+- **Form Buttons**: CTA buttons now keyboard accessible with visible focus indicators.
 
-## Pages & Features
-
-| Page | Status | Description |
-|------|--------|-------------|
-| **Landing** | ✅ Working | Hero with starfield canvas, mission briefing, telemetry counters (non-linear, scroll-gated) |
-| **Blog** | ✅ Working | Article listing archives with dynamic, interactive detail subviews (`/blog/:id`) |
-| **Media Hub** | ✅ Working | Optimized workshop video lightboxes, audio transmissions, and active initiatives |
-| **Community** | ✅ Working | State-managed discussion feed, like updates, connect actions, and compose dialogs |
-| **Admin Panel** | ✅ Working | Clearanced role checks and security overriding codes, persisting charts and logs |
-| **Login** | ✅ Working | Accessible forms, email/password validation check, session auth hooks, SSO |
-| **Register** | ✅ Working | Step-by-step enlistment forms, age checking, security password strength meters |
-| **Guidelines** | ✅ Working | Interactive formatting of Terms of Service, Privacy policies, and conduct guides |
+---
 
 ## Technology Stack
 
@@ -105,126 +94,74 @@ Isyaweb/
 - **Tailwind CSS 4** - Utility-first styling
 - **TypeScript** - Type safety (strict mode)
 - **Vite** - Fast build tool
+- **Vitest & RTL** - Testing environment
 - **Lucide React** - Icon library
 
-### UI Components
-- **shadcn/ui** - Accessible component primitives
-- **React Hook Form** - Form management
-- **Recharts** - Data visualization (ready, not integrated)
-- **Embla Carousel** - Carousel component (ready, not integrated)
-- **Sonner** - Toast notifications (ready, not integrated)
+### Backend & Database
+- **Node.js & Express** - Application layer
+- **PostgreSQL 15** - Persistent storage
+- **Docker Compose** - Local database containerization
+- **jsonwebtoken & bcryptjs** - Session encryption & password hashing
+- **helmet** - Strict HTTP headers (CSP configuration)
+- **express-rate-limit** - DDoS & brute force protection
 
-### Performance & Analytics
-- **Framer Motion** - Smooth animations
-- **React Intersection Observer** - Lazy loading
-- **Canvas-Confetti** - Celebration effects (ready, not integrated)
-
-## Critical Next Steps (Before Production)
-
-See **[REMEDIATION_ROADMAP.md](./REMEDIATION_ROADMAP.md)** for a comprehensive 4-week production readiness plan.
-
-### Tier 1: Must Fix This Week
-- [ ] Error Boundaries (prevent white-screen crashes)
-- [ ] Form Validation UI (Login/Register error feedback)
-- [ ] API Error Handling (graceful failure states)
-- [ ] Backend API Design (endpoint documentation)
-
-### Tier 2: Critical UX
-- [ ] Image Optimization (lazy loading, srcSet, WebP)
-- [ ] Auth Token Security (httpOnly cookies, not localStorage)
-- [ ] SEO Meta Tags (social preview, structured data)
-- [ ] Empty States (no data = user-friendly fallback)
-
-### Tier 3: Performance
-- [ ] Bundle Analysis (target main.js < 300KB)
-- [ ] Code Splitting (lazy-load pages)
-- [ ] Remove Unused Dependencies (clean up node_modules)
-- [ ] GPU Animations (transform/opacity only)
-
-### Tier 4: Accessibility (WCAG AA)
-- [ ] Color Contrast Audit (4.5:1 minimum)
-- [ ] ARIA Labels (icons, live regions)
-- [ ] Keyboard Tab Order (logical flow)
-- [ ] Screen Reader Testing
-
-### Tier 5: Operations
-- [ ] CI/CD Pipeline (GitHub Actions)
-- [ ] Error Tracking (Sentry)
-- [ ] Performance Monitoring (Web Vitals)
-- [ ] Automated Testing (unit, e2e)
+---
 
 ## Environment Configuration
 
-Create a `.env.local` file (copy from `.env.example`):
+Create a `.env.local` file in the frontend root:
 
 ```env
-VITE_API_BASE_URL=http://localhost:3000/api
+VITE_API_BASE_URL=http://localhost:3000
 VITE_ENVIRONMENT=development
-VITE_ENABLE_ADMIN_PANEL=false
-VITE_ENABLE_COMMUNITY_FEATURES=true
 ```
 
-## Git Workflow
+Create a `.env` file in the `isyaweb-backend` root:
+
+```env
+PORT=3000
+DATABASE_URL=postgresql://isya_user:isya_password@localhost:5432/isya_portal
+JWT_SECRET=your-secure-secret-here
+NODE_ENV=development
+CLIENT_URL=http://localhost:5173
+```
+
+---
+
+## Git Workflow & Commits
 
 All changes are committed file-wise with descriptive messages:
 
 ```bash
 # View commit history
 git log --oneline
-
-# Key commits:
-# 709de64 chore: TypeScript strict mode + .gitignore
-# 946f7b5 chore: Tailwind design tokens
-# 1f2861b refactor: JSX file naming (routes.tsx)
-# 81bb529 fix: Navbar accessibility & route matching
-# 5c095ff fix: LandingPage accessibility & readability  
-# 1cd49cc fix: useScrollReveal type safety
-# 8de21b9 docs: Remediation roadmap
 ```
-
-## Known Issues & Limitations
-
-- **Not Production-Ready**: Missing error handling, validation UI, API integration
-- **Admin Dashboard**: Structure exists but authorization not implemented
-- **Real-Time Features**: ETS Workspace requires WebSocket setup (not implemented)
-- **Dark Mode**: Theme CSS exists but switcher not integrated
-- **Analytics**: No error tracking or performance monitoring
-
-## Contributing
-
-1. Create a feature branch: `git checkout -b feature/your-feature`
-2. Make changes with TypeScript strict mode
-3. Test accessibility: Tab navigation, screen reader, color contrast
-4. Commit with clear messages: `git commit -m "fix: describe change"`
-5. Follow the remediation roadmap for new features
-
-## Code Quality Standards
-
-- **TypeScript**: Strict mode enabled, no `any` types
-- **Accessibility**: WCAG 2.1 AA minimum, keyboard navigation required
-- **Testing**: All interactive components need tests (to be added)
-- **Performance**: No bundle bloat, lazy-load by default
-- **Commits**: Clear, file-wise commits with detailed descriptions
-
-## Deployment
-
-See [REMEDIATION_ROADMAP.md](./REMEDIATION_ROADMAP.md#tier-5-operations--deployment) for production deployment checklist.
-
-## License
-
-See [LICENSE.md](./ATTRIBUTIONS.md) for details.
-
-## Resources
-
-- **Design System**: https://www.figma.com/design/4xy1nuo8yjTpOXO5SQdC5d/Design-System-Creation
-- **Component Library**: shadcn/ui (https://ui.shadcn.com)
-- **TypeScript Docs**: https://www.typescriptlang.org
-- **Tailwind Docs**: https://tailwindcss.com
-- **React Router Docs**: https://reactrouter.com
-- **WCAG Accessibility**: https://www.w3.org/WAI/WCAG21/quickref/
 
 ---
 
-**Last Updated**: May 26, 2026 | **Status**: Foundation-level (pre-MVP) | **Target**: Production-ready by June 30, 2026
+## Known Issues & Limitations
+
+- **Real-Time Features**: ETS Workspace requires WebSocket setup (not implemented).
+- **Dark Mode**: Theme CSS exists but switcher not integrated.
+- **Sentry Integration**: Missing error tracking and live APM monitoring.
+
+---
+
+## Code Quality Standards
+
+- **TypeScript**: Strict mode enabled, no `any` types.
+- **Accessibility**: WCAG 2.1 AA minimum, keyboard navigation required.
+- **Testing**: All core custom hooks and list pages are verified through Vitest suites.
+- **Performance**: Dynamic chunking enabled, bundles are optimized, and assets lazy-loaded.
+
+---
+
+## License
+
+See [ATTRIBUTIONS.md](./ATTRIBUTIONS.md) for details.
+
+---
+
+**Last Updated**: June 2, 2026 | **Status**: Phase 1 & 2 Complete (Production-Ready) | **Target**: Staging Deployment and CI checks.
 
   
