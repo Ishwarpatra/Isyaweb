@@ -1,0 +1,239 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "ISYA Space Portal Telemetry API",
+    "description": "Production-grade database-persistent API backend for authorization coordinates and blog posts data archives.",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:5000/api",
+      "description": "Local Telemetry Development Node"
+    }
+  ],
+  "paths": {
+    "/auth/register": {
+      "post": {
+        "summary": "Register a new cadet/officer",
+        "description": "Creates a user, hashes password, saves profile, sets httpOnly session cookie and returns token.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["email", "password", "name"],
+                "properties": {
+                  "email": { "type": "string", "format": "email", "example": "cadet@isya.space" },
+                  "password": { "type": "string", "minLength": 8, "example": "password123" },
+                  "name": { "type": "string", "example": "Cadet Chen" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Registration successful. Access coordinates granted.",
+            "headers": {
+              "Set-Cookie": {
+                "schema": { "type": "string", "example": "token=jwt_hash; HttpOnly; SameSite=Strict" }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "user": {
+                      "type": "object",
+                      "properties": {
+                        "id": { "type": "integer" },
+                        "email": { "type": "string" },
+                        "name": { "type": "string" },
+                        "role": { "type": "string" }
+                      }
+                    },
+                    "token": { "type": "string" }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "description": "Validation error (weak password, email already registered, etc.)" },
+          "500": { "description": "Internal server database error" }
+        }
+      }
+    },
+    "/auth/login": {
+      "post": {
+        "summary": "Log in to terminal",
+        "description": "Verifies passphrase, writes httpOnly session token cookie, and returns JWT.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["email", "password"],
+                "properties": {
+                  "email": { "type": "string", "format": "email", "example": "cadet@isya.space" },
+                  "password": { "type": "string", "example": "password123" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Log in successful. Secure session downlink established.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "user": {
+                      "type": "object",
+                      "properties": {
+                        "id": { "type": "integer" },
+                        "email": { "type": "string" },
+                        "name": { "type": "string" },
+                        "role": { "type": "string" }
+                      }
+                    },
+                    "token": { "type": "string" }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "description": "Unauthorized: Incorrect coordinates or passphrase" },
+          "429": { "description": "Rate limit exceeded (locked for 15 minutes)" }
+        }
+      }
+    },
+    "/auth/logout": {
+      "post": {
+        "summary": "Log out from server session",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": { "description": "Cookie cleared, session terminated." }
+        }
+      }
+    },
+    "/auth/me": {
+      "get": {
+        "summary": "Fetch active session user data",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Active profile details.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "user": {
+                      "type": "object",
+                      "properties": {
+                        "id": { "type": "integer" },
+                        "email": { "type": "string" },
+                        "name": { "type": "string" },
+                        "role": { "type": "string" }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "description": "Invalid session credentials" }
+        }
+      }
+    },
+    "/blogs": {
+      "get": {
+        "summary": "Scan data archives (paginated, filtered, searched)",
+        "parameters": [
+          { "name": "page", "in": "query", "schema": { "type": "integer", "default": 1 } },
+          { "name": "limit", "in": "query", "schema": { "type": "integer", "default": 6 } },
+          { "name": "category", "in": "query", "schema": { "type": "string", "default": "ALL" } },
+          { "name": "search", "in": "query", "schema": { "type": "string", "default": "" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Paginated array of posts.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": { "type": "array", "items": { "type": "object" } },
+                    "pagination": {
+                      "type": "object",
+                      "properties": {
+                        "page": { "type": "integer" },
+                        "limit": { "type": "integer" },
+                        "total": { "type": "integer" },
+                        "pages": { "type": "integer" }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/blogs/{id}": {
+      "get": {
+        "summary": "Retrieve single blog post with joined comments",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "200": { "description": "Blog post object with an embedded comments array." },
+          "404": { "description": "Coordinate does not exist in databases." }
+        }
+      }
+    },
+    "/blogs/{id}/comments": {
+      "post": {
+        "summary": "Write a comment on a blog post",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["content"],
+                "properties": {
+                  "content": { "type": "string", "example": "Incredible JWST analysis!" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Comment added successfully." },
+          "401": { "description": "Unauthorized access" },
+          "404": { "description": "Blog post not found" }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    }
+  }
+}

@@ -1,0 +1,17 @@
+# Dependencies
+node_modules/
+
+# Environment configurations
+.env
+
+# Diagnostic logs
+*.log
+npm-debug.log*
+
+# E2E Testing payloads
+*payload.json
+wrong-password-payload.json
+phase1-payload.json
+comment-payload.json
+test-payload.json
+login-payload.json
