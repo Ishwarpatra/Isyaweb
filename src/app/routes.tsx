@@ -1,6 +1,7 @@
 import { lazy } from "react";
 import { createBrowserRouter, Navigate } from "react-router";
 import { Root } from "./components/layout/Root";
+import { ErrorBoundary } from "./components/ErrorBoundary";
 
 const LandingPage = lazy(() => import("./pages/LandingPage").then(m => ({ default: m.LandingPage })));
 const BlogPage = lazy(() => import("./pages/BlogPage").then(m => ({ default: m.BlogPage })));
@@ -22,23 +23,23 @@ export const router = createBrowserRouter([
     path: "/",
     Component: Root,
     children: [
-      { index: true, Component: LandingPage },
-      { path: "blog", Component: BlogPage },
-      { path: "blog/:id", Component: BlogPostDetailPage },
-      { path: "media", Component: MediaPage },
-      { path: "login", Component: LoginPage },
-      { path: "register", Component: RegisterPage },
-      { path: "reset-password", Component: ResetPasswordPage },
-      { path: "community", Component: CommunityPage },
-      { path: "admin", Component: AdminPage },
-      { path: "mentor", Component: MentorPage },
-      { path: "faqs", Component: FAQPage },
-      { path: "moderation", Component: ModerationPage },
-      { path: "guidelines", Component: GuidelinesPage },
+      { index: true, element: <ErrorBoundary><LandingPage /></ErrorBoundary> },
+      { path: "blog", element: <ErrorBoundary><BlogPage /></ErrorBoundary> },
+      { path: "blog/:id", element: <ErrorBoundary><BlogPostDetailPage /></ErrorBoundary> },
+      { path: "media", element: <ErrorBoundary><MediaPage /></ErrorBoundary> },
+      { path: "login", element: <ErrorBoundary><LoginPage /></ErrorBoundary> },
+      { path: "register", element: <ErrorBoundary><RegisterPage /></ErrorBoundary> },
+      { path: "reset-password", element: <ErrorBoundary><ResetPasswordPage /></ErrorBoundary> },
+      { path: "community", element: <ErrorBoundary><CommunityPage /></ErrorBoundary> },
+      { path: "admin", element: <ErrorBoundary><AdminPage /></ErrorBoundary> },
+      { path: "mentor", element: <ErrorBoundary><MentorPage /></ErrorBoundary> },
+      { path: "faqs", element: <ErrorBoundary><FAQPage /></ErrorBoundary> },
+      { path: "moderation", element: <ErrorBoundary><ModerationPage /></ErrorBoundary> },
+      { path: "guidelines", element: <ErrorBoundary><GuidelinesPage /></ErrorBoundary> },
       // Redirect utility routes to new guidelines page hashes to avoid broken links
       { path: "terms", element: <Navigate to="/guidelines#terms" replace /> },
       { path: "privacy", element: <Navigate to="/guidelines#privacy" replace /> },
-      { path: "*", Component: NotFoundPage },
+      { path: "*", element: <ErrorBoundary><NotFoundPage /></ErrorBoundary> },
     ],
   },
 ]);
