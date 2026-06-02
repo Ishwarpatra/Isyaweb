@@ -83,6 +83,14 @@ export function FAQPage() {
     return categoryMatches && searchMatches;
   });
 
+  // Pre-compute counts per category for accessible labels
+  const categoryCounts = CATEGORIES.reduce<Record<string, number>>((acc, cat) => {
+    acc[cat] = cat === "ALL"
+      ? faqs.length
+      : faqs.filter(f => f.category === cat).length;
+    return acc;
+  }, {});
+
   const copyAnswer = (faq: FAQ) => {
     navigator.clipboard.writeText(faq.answer);
     toast.success(`FAQ #${faq.id} answer copied to clipboard!`);
@@ -152,6 +160,8 @@ export function FAQPage() {
                     key={cat}
                     role="tab"
                     aria-selected={activeCategory === cat}
+                    aria-controls="faq-list"
+                    aria-label={`${cat} — ${categoryCounts[cat] ?? 0} FAQ${(categoryCounts[cat] ?? 0) !== 1 ? "s" : ""}`}
                     onClick={() => {
                       setActiveCategory(cat);
                       setSearchQuery(""); // Clear search when switching categories
@@ -192,7 +202,7 @@ export function FAQPage() {
 
         {/* Accordions List */}
         {filteredFAQs.length > 0 ? (
-          <div className="space-y-4">
+          <div id="faq-list" className="space-y-4" role="tabpanel" aria-label={`${activeCategory} FAQ results`}>
             {filteredFAQs.slice(0, visibleCount).map((faq) => {
               const isExpanded = !!expandedIds[faq.id];
               return (
