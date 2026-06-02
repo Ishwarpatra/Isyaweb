@@ -179,8 +179,8 @@ export function BlogPostDetailPage() {
   if (error || !post) {
     return (
       <div className="min-h-[60vh] flex flex-col items-center justify-center text-center p-6 bg-[#0B0F19] max-w-xl mx-auto">
-        <h2 className="text-white text-xl font-bold font-mono mb-4">// POST_NOT_FOUND_IN_ARCHIVES</h2>
-        <p className="text-gray-500 mb-6">{error || 'The requested transmission logs do not exist or have expired.'}</p>
+        <h1 className="text-white text-xl font-bold font-mono mb-4">// POST_NOT_FOUND_IN_ARCHIVES</h1>
+        <p className="text-gray-400 mb-6">{error || 'The requested transmission logs do not exist or have expired.'}</p>
         <div className="flex gap-4">
           <button onClick={retry} className="px-6 py-2.5 rounded-xl font-mono text-xs font-bold text-white bg-pink-500/20 border border-pink-500/40 cursor-pointer">
             RETRY_CONNECTION
@@ -229,7 +229,7 @@ export function BlogPostDetailPage() {
               </span>
               <span className="w-1 h-1 rounded-full bg-gray-700" />
               <span className="flex items-center gap-0.5">
-                <span aria-hidden="true" className="before:content-['BY_'] before:text-gray-500">
+                <span aria-hidden="true" className="before:content-['BY_'] before:text-gray-400">
                   {(post.author_name || 'System').toUpperCase()}
                 </span>
               </span>

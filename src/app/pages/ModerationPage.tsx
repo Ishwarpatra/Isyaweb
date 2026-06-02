@@ -52,7 +52,7 @@ export function ModerationPage() {
   const filteredQueue = queue.filter((item) => item.status === filter);
 
   return (
-    <main className="min-h-screen bg-[#070B14] stardust pb-24 pt-28 relative overflow-hidden">
+    <div className="min-h-screen bg-[#070B14] stardust pb-24 pt-28 relative overflow-hidden">
       <div className="absolute top-1/4 right-0 w-96 h-96 rounded-full bg-blue-500/5 blur-[120px] pointer-events-none" />
 
       <div className="max-w-5xl mx-auto px-4 sm:px-6 relative z-10">
@@ -174,6 +174,6 @@ export function ModerationPage() {
         )}
 
       </div>
-    </main>
+    </div>
   );
 }

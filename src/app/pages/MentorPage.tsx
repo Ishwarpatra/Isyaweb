@@ -224,7 +224,7 @@ export function MentorPage() {
   const todayString = new Date().toISOString().split("T")[0];
 
   return (
-    <main className="min-h-screen bg-[#070B14] stardust pb-24 pt-28 relative overflow-hidden">
+    <div className="min-h-screen bg-[#070B14] stardust pb-24 pt-28 relative overflow-hidden">
       {/* Decorative vectors */}
       <div className="absolute top-1/4 right-0 w-96 h-96 rounded-full bg-pink-500/5 blur-[120px] pointer-events-none" />
       <div className="absolute bottom-1/4 left-0 w-[500px] h-[500px] bg-blue-500/5 blur-[150px] pointer-events-none" />
@@ -770,6 +770,6 @@ export function MentorPage() {
         </div>
       )}
 
-    </main>
+    </div>
   );
 }

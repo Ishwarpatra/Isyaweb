@@ -163,7 +163,7 @@ export function LandingPage() {
   }, []);
 
   return (
-    <main ref={sectionRef} className="stardust bg-dark">
+    <div ref={sectionRef} className="stardust bg-dark">
       {/* ── HERO ── */}
       <section className="relative overflow-hidden hud-scanline min-h-screen flex items-center">
         <StarfieldCanvas />
@@ -489,7 +489,7 @@ export function LandingPage() {
         onboardingStep={onboardingStep} 
         setOnboardingStep={setOnboardingStep} 
       />
-    </main>
+    </div>
   );
 }
 
