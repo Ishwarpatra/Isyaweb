@@ -3,7 +3,6 @@ import path from 'path'
 import tailwindcss from '@tailwindcss/vite'
 import react from '@vitejs/plugin-react'
 
-
 function figmaAssetResolver() {
   return {
     name: 'figma-asset-resolver',
@@ -48,6 +47,9 @@ export default defineConfig({
             }
             if (id.includes('lucide-react') || id.includes('@mui')) {
               return 'vendor-ui';
+            }
+            if (id.includes('date-fns')) {
+              return 'vendor-date';
             }
           }
         }
