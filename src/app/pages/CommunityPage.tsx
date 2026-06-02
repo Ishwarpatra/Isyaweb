@@ -32,6 +32,24 @@ export interface Post {
   status?: "DRAFT" | "PUBLISHED" | "FLAGGED";
 }
 
+export interface Comment {
+  id: string;
+  author: string;
+  avatar: string;
+  color: string;
+  content: string;
+  createdAt: string;
+}
+
+const INITIAL_COMMENTS: Record<number, Comment[]> = {
+  1: [
+    { id: "c1", author: "Sarah Chen", avatar: "SC", color: "#FFA500", content: "That Traineeship program is a lifetime opportunity! Good luck to everyone applying.", createdAt: new Date(Date.now() - 2 * 3600 * 1000).toISOString() }
+  ],
+  2: [
+    { id: "c2", author: "Priya Sharma", avatar: "PS", color: "#8B5CF6", content: "Great summary. The transit method is highly effective for close-in gas giants, while radial velocity helps confirm mass.", createdAt: new Date(Date.now() - 1 * 3600 * 1000).toISOString() }
+  ]
+};
+
 const MEMBERS: Member[] = [
   { id: 1, name: "Sarah Chen", role: "Astrophysicist", country: "🇺🇸 USA", color: "#FFA500", joined: "2024", posts: 34 },
   { id: 2, name: "David Osei", role: "Research Fellow", country: "🇬🇭 Ghana", color: "#EC4899", joined: "2023", posts: 61 },
@@ -150,11 +168,40 @@ export function CommunityPage() {
     const stored = localStorage.getItem("isya_community_members");
     if (stored) {
       try {
+        const parsed: Member[] = JSON.parse(stored);
+        return parsed.map((m) => {
+          if (!m.connectionStatus) {
+            m.connectionStatus = m.connected ? "pending" : "none";
+          }
+          return m;
+        });
+      } catch (e) {}
+    }
+    return MEMBERS.map((m) => ({ ...m, connectionStatus: "none" }));
+  });
+
+  // Comments State
+  const [comments, setComments] = useState<Record<number, Comment[]>>(() => {
+    const stored = localStorage.getItem("isya_community_comments");
+    if (stored) {
+      try {
         return JSON.parse(stored);
       } catch (e) {}
     }
-    return MEMBERS;
+    return INITIAL_COMMENTS;
   });
+
+  const [expandedComments, setExpandedComments] = useState<Record<number, boolean>>({});
+  const [expandedPosts, setExpandedPosts] = useState<Record<number, boolean>>({});
+  const [newCommentText, setNewCommentText] = useState<Record<number, string>>({});
+  
+  // Connection timeouts ref and unmount cleanup
+  const connectionTimeouts = React.useRef<Record<number, ReturnType<typeof setTimeout>>>({});
+  useEffect(() => {
+    return () => {
+      Object.values(connectionTimeouts.current).forEach(clearTimeout);
+    };
+  }, []);
 
   // Modal States
   const [isComposeOpen, setIsComposeOpen] = useState(false);
@@ -165,6 +212,153 @@ export function CommunityPage() {
   const [reportingPost, setReportingPost] = useState<Post | null>(null);
   const [reportReason, setReportReason] = useState("Spam");
   const [reportDetails, setReportDetails] = useState("");
+
+  // Modal Refs & Accessibility focus traps
+  const composeModalRef = React.useRef<HTMLDivElement>(null);
+  const eventsModalRef = React.useRef<HTMLDivElement>(null);
+  const reportModalRef = React.useRef<HTMLDivElement>(null);
+  
+  const lastActiveCompose = React.useRef<HTMLElement | null>(null);
+  const lastActiveEvents = React.useRef<HTMLElement | null>(null);
+  const lastActiveReport = React.useRef<HTMLElement | null>(null);
+
+  useEffect(() => {
+    if (isComposeOpen) {
+      lastActiveCompose.current = document.activeElement as HTMLElement;
+      setTimeout(() => {
+        const modal = composeModalRef.current;
+        const focusable = modal?.querySelectorAll<HTMLElement>('a[href], button:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])');
+        if (focusable && focusable.length > 0) {
+          focusable[0].focus();
+        }
+      }, 50);
+
+      const handleKeyDown = (e: KeyboardEvent) => {
+        if (e.key === "Escape") {
+          setIsComposeOpen(false);
+          return;
+        }
+        if (e.key === "Tab") {
+          const modal = composeModalRef.current;
+          const focusable = modal?.querySelectorAll<HTMLElement>('a[href], button:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])');
+          if (!focusable || focusable.length === 0) return;
+          const first = focusable[0];
+          const last = focusable[focusable.length - 1];
+          if (e.shiftKey) {
+            if (document.activeElement === first) {
+              last.focus();
+              e.preventDefault();
+            }
+          } else {
+            if (document.activeElement === last) {
+              first.focus();
+              e.preventDefault();
+            }
+          }
+        }
+      };
+
+      window.addEventListener("keydown", handleKeyDown);
+      return () => {
+        window.removeEventListener("keydown", handleKeyDown);
+        if (lastActiveCompose.current) {
+          lastActiveCompose.current.focus();
+        }
+      };
+    }
+  }, [isComposeOpen]);
+
+  useEffect(() => {
+    if (isEventsOpen) {
+      lastActiveEvents.current = document.activeElement as HTMLElement;
+      setTimeout(() => {
+        const modal = eventsModalRef.current;
+        const focusable = modal?.querySelectorAll<HTMLElement>('a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])');
+        if (focusable && focusable.length > 0) {
+          focusable[0].focus();
+        }
+      }, 50);
+
+      const handleKeyDown = (e: KeyboardEvent) => {
+        if (e.key === "Escape") {
+          setIsEventsOpen(false);
+          return;
+        }
+        if (e.key === "Tab") {
+          const modal = eventsModalRef.current;
+          const focusable = modal?.querySelectorAll<HTMLElement>('a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])');
+          if (!focusable || focusable.length === 0) return;
+          const first = focusable[0];
+          const last = focusable[focusable.length - 1];
+          if (e.shiftKey) {
+            if (document.activeElement === first) {
+              last.focus();
+              e.preventDefault();
+            }
+          } else {
+            if (document.activeElement === last) {
+              first.focus();
+              e.preventDefault();
+            }
+          }
+        }
+      };
+
+      window.addEventListener("keydown", handleKeyDown);
+      return () => {
+        window.removeEventListener("keydown", handleKeyDown);
+        if (lastActiveEvents.current) {
+          lastActiveEvents.current.focus();
+        }
+      };
+    }
+  }, [isEventsOpen]);
+
+  useEffect(() => {
+    if (reportingPost) {
+      lastActiveReport.current = document.activeElement as HTMLElement;
+      setTimeout(() => {
+        const modal = reportModalRef.current;
+        const focusable = modal?.querySelectorAll<HTMLElement>('button:not([disabled]), select:not([disabled]), textarea:not([disabled])');
+        if (focusable && focusable.length > 0) {
+          focusable[0].focus();
+        }
+      }, 50);
+
+      const handleKeyDown = (e: KeyboardEvent) => {
+        if (e.key === "Escape") {
+          setReportingPost(null);
+          return;
+        }
+        if (e.key === "Tab") {
+          const modal = reportModalRef.current;
+          const focusable = modal?.querySelectorAll<HTMLElement>('button:not([disabled]), select:not([disabled]), textarea:not([disabled])');
+          if (!focusable || focusable.length === 0) return;
+          const first = focusable[0];
+          const last = focusable[focusable.length - 1];
+          if (e.shiftKey) {
+            if (document.activeElement === first) {
+              last.focus();
+              e.preventDefault();
+            }
+          } else {
+            if (document.activeElement === last) {
+              first.focus();
+              e.preventDefault();
+            }
+          }
+        }
+      };
+
+      window.addEventListener("keydown", handleKeyDown);
+      return () => {
+        window.removeEventListener("keydown", handleKeyDown);
+        if (lastActiveReport.current) {
+          lastActiveReport.current.focus();
+        }
+      };
+    }
+  }, [reportingPost]);
 
   // clock tick state to trigger automatic relative timestamps update every 60s
   const [tick, setTick] = useState(0);
@@ -251,13 +445,42 @@ export function CommunityPage() {
     setMembers((prev) => {
       const nextMembers = prev.map((m) => {
         if (m.id === id) {
-          const nextState = !m.connected;
-          if (nextState) {
-            toast.success(`Connection request sent to ${m.name}!`);
+          const currentStatus = m.connectionStatus || "none";
+          
+          if (currentStatus === "none") {
+            // None -> Pending. Start a 3-second simulation timer.
+            if (connectionTimeouts.current[id]) {
+              clearTimeout(connectionTimeouts.current[id]);
+            }
+            connectionTimeouts.current[id] = setTimeout(() => {
+              setMembers((latestMembers) => {
+                const updated = latestMembers.map((lm) => {
+                  if (lm.id === id && lm.connectionStatus === "pending") {
+                    toast.success(`Datalink handshake complete: Connected with ${lm.name}!`);
+                    return { ...lm, connectionStatus: "connected", connected: false };
+                  }
+                  return lm;
+                });
+                localStorage.setItem("isya_community_members", JSON.stringify(updated));
+                return updated;
+              });
+            }, 3000);
+            
+            toast.info(`Datalink handshake initiated with ${m.name}...`);
+            return { ...m, connectionStatus: "pending" };
+          } else if (currentStatus === "pending") {
+            // Cancel pending request
+            if (connectionTimeouts.current[id]) {
+              clearTimeout(connectionTimeouts.current[id]);
+              delete connectionTimeouts.current[id];
+            }
+            toast.success(`Connection handshake aborted for ${m.name}.`);
+            return { ...m, connectionStatus: "none" };
           } else {
-            toast.success(`Removed connection request to ${m.name}.`);
+            // Connected -> Disconnect
+            toast.success(`Disconnected from ${m.name}.`);
+            return { ...m, connectionStatus: "none" };
           }
-          return { ...m, connected: nextState };
         }
         return m;
       });
@@ -386,42 +609,142 @@ export function CommunityPage() {
                           </p>
                         </div>
                       </div>
-                      <p className="text-gray-300 leading-relaxed text-xs mb-5 line-clamp-4 break-words overflow-hidden">
-                        {post.content}
-                      </p>
+                      <div>
+                        <p className={`text-gray-300 leading-relaxed text-xs break-words overflow-hidden ${
+                          expandedPosts[post.id] ? "mb-3" : "line-clamp-4 mb-3"
+                        }`}>
+                          {post.content}
+                        </p>
+                        {post.content.length > 200 && (
+                          <button
+                            onClick={() => setExpandedPosts((prev) => ({ ...prev, [post.id]: !prev[post.id] }))}
+                            className="text-pink-500 font-mono text-[11px] font-bold hover:text-pink-400 cursor-pointer block mb-4 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-pink-500"
+                          >
+                            {expandedPosts[post.id] ? "SHOW_LESS ▲" : "READ_MORE ▼"}
+                          </button>
+                        )}
+                      </div>
                       <div className="flex items-center gap-6 pt-4 border-t border-white/5">
                         <button
                           onClick={() => toggleLike(post.id)}
-                          className={`flex items-center gap-1.5 text-xs transition-colors cursor-pointer ${
+                          className={`flex items-center gap-1.5 text-xs transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-pink-500 ${
                             post.liked ? "text-pink-500 font-bold" : "text-gray-400 hover:text-gray-200"
                           }`}
+                          aria-label={`Like post. ${post.likes} likes.`}
                         >
                           <Heart size={16} fill={post.liked ? "currentColor" : "none"} />
                           {post.likes}
                         </button>
-                        <button className="flex items-center gap-1.5 text-gray-400 text-xs hover:text-gray-200 cursor-pointer">
+                        <button 
+                          onClick={() => setExpandedComments((prev) => ({ ...prev, [post.id]: !prev[post.id] }))}
+                          className={`flex items-center gap-1.5 text-xs transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-pink-500 ${
+                            expandedComments[post.id] ? "text-pink-500 font-bold" : "text-gray-400 hover:text-gray-200"
+                          }`}
+                          aria-label={`Toggle comments drawer. ${comments[post.id]?.length || 0} comments.`}
+                        >
                           <MessageCircle size={16} />
-                          {post.comments}
+                          {comments[post.id]?.length || 0}
                         </button>
                         <button 
                           onClick={() => {
-                            navigator.clipboard.writeText(post.content);
-                            toast.success("Signal coordinates copied to clipboard!");
+                            const deepLink = `${window.location.origin}/community?post=${post.id}`;
+                            navigator.clipboard.writeText(deepLink);
+                            toast.success("Transmission deep link copied to clipboard!");
                           }}
-                          className="flex items-center gap-1.5 text-gray-400 text-xs hover:text-gray-200 ml-auto cursor-pointer"
+                          className="flex items-center gap-1.5 text-gray-400 text-xs hover:text-gray-200 ml-auto cursor-pointer focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-pink-500"
+                          aria-label="Share community transmission link"
                         >
                           <Share2 size={16} />
                           Share
                         </button>
                         <button 
                           onClick={() => handleFlagPost(post)}
-                          className="flex items-center gap-1.5 text-gray-400 text-xs hover:text-red-400 cursor-pointer"
+                          className="flex items-center gap-1.5 text-gray-400 text-xs hover:text-red-400 cursor-pointer focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-red-500"
                           title="Report transmission to moderators"
+                          aria-label="Report this post"
                         >
                           <Flag size={14} />
                           Report
                         </button>
                       </div>
+
+                      {/* Comments Drawer */}
+                      {expandedComments[post.id] && (
+                        <div className="mt-5 pt-5 border-t border-white/5 space-y-4 animate-in fade-in duration-200">
+                          <h4 className="font-mono text-[10px] text-pink-500 tracking-wider">// SIGNAL_RESPONSES</h4>
+                          
+                          {/* Comments List */}
+                          <div className="space-y-3 pr-1 max-h-48 overflow-y-auto overscroll-contain">
+                            {comments[post.id]?.length > 0 ? (
+                              comments[post.id].map((c) => (
+                                <div key={c.id} className="flex gap-2.5 items-start text-xs bg-white/[0.02] p-2.5 rounded-lg border border-white/5">
+                                  <div className="w-6 h-6 rounded-full flex items-center justify-center shrink-0" style={{ background: c.color }}>
+                                    <span className="text-white font-bold text-[10px] font-mono">{c.avatar}</span>
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex items-center justify-between gap-2 mb-1">
+                                      <span className="font-semibold text-white text-[11px] truncate">{c.author}</span>
+                                      <span className="text-[10px] text-gray-500 font-mono">
+                                        {formatDistanceToNow(new Date(c.createdAt), { addSuffix: true }).toUpperCase()}
+                                      </span>
+                                    </div>
+                                    <p className="text-slate-300 leading-relaxed font-sans">{c.content}</p>
+                                  </div>
+                                </div>
+                              ))
+                            ) : (
+                              <p className="text-center font-mono text-[10px] text-gray-500 py-2">// NO_RESPONSES_RECORDED</p>
+                            )}
+                          </div>
+
+                          {/* Write Comment Form */}
+                          <form
+                            onSubmit={(e) => {
+                              e.preventDefault();
+                              const text = newCommentText[post.id]?.trim();
+                              if (!text) return;
+                              
+                              const newComment: Comment = {
+                                id: `c-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
+                                author: user?.name || "Anonymous Cadet",
+                                avatar: user ? getInitials(user.name) : "AC",
+                                color: "#FFA500",
+                                content: text,
+                                createdAt: new Date().toISOString()
+                              };
+
+                              setComments((prev) => {
+                                const nextComments = {
+                                  ...prev,
+                                  [post.id]: [...(prev[post.id] || []), newComment]
+                                };
+                                localStorage.setItem("isya_community_comments", JSON.stringify(nextComments));
+                                return nextComments;
+                              });
+
+                              setNewCommentText((prev) => ({ ...prev, [post.id]: "" }));
+                              toast.success("Comment response submitted successfully.");
+                            }}
+                            className="flex gap-2 items-center"
+                          >
+                            <input
+                              type="text"
+                              value={newCommentText[post.id] || ""}
+                              onChange={(e) => setNewCommentText((prev) => ({ ...prev, [post.id]: e.target.value }))}
+                              placeholder="Type response packet details..."
+                              className="flex-1 px-3 py-2 rounded-lg text-xs bg-gray-950 border border-white/10 text-white outline-none focus:border-pink-500/50"
+                              aria-label="Type your comment"
+                              required
+                            />
+                            <button
+                              type="submit"
+                              className="px-3 py-2 rounded-lg font-mono text-[10px] font-bold text-white bg-pink-500 hover:bg-pink-500/90 cursor-pointer focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-pink-500"
+                            >
+                              SUBMIT
+                            </button>
+                          </form>
+                        </div>
+                      )}
                     </article>
                   ))}
                 </div>
@@ -445,20 +768,22 @@ export function CommunityPage() {
                   {filteredMembers.map((member) => (
                     <div
                       key={member.id}
-                      className="p-5 rounded-2xl flex items-center gap-4 bg-[#0F1629] border border-white/5 hover:border-white/20 transition-all cursor-pointer group"
+                      className="p-4 rounded-2xl flex flex-col xs:flex-row xs:items-center justify-between gap-4 bg-[#0F1629] border border-white/5 hover:border-white/20 transition-all cursor-pointer group"
                     >
-                      <div
-                        className="w-12 h-12 rounded-full flex items-center justify-center shrink-0 transition-transform group-hover:scale-105"
-                        style={{ background: member.color }}
-                      >
-                        <span className="text-white font-bold font-mono">{getInitials(member.name)}</span>
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-white font-semibold text-xs truncate">{member.name}</p>
-                        <p className="text-gray-400 text-xs truncate">{member.role}</p>
-                        <div className="flex items-center gap-1.5 mt-1">
-                          <MapPin size={12} className="text-gray-500" />
-                          <span className="text-gray-500 text-xs">{member.country}</span>
+                      <div className="flex items-center gap-3 flex-1 min-w-0">
+                        <div
+                          className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 transition-transform group-hover:scale-105"
+                          style={{ background: member.color }}
+                        >
+                          <span className="text-white font-bold font-mono text-xs">{getInitials(member.name)}</span>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-white font-semibold text-xs truncate">{member.name}</p>
+                          <p className="text-gray-300 text-xs truncate">{member.role}</p>
+                          <div className="flex items-center gap-1 mt-0.5">
+                            <MapPin size={12} className="text-gray-500 shrink-0" />
+                            <span className="text-gray-500 text-xs truncate">{member.country}</span>
+                          </div>
                         </div>
                       </div>
                       <button
@@ -466,13 +791,17 @@ export function CommunityPage() {
                           e.stopPropagation();
                           handleConnect(member.id);
                         }}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors shrink-0 cursor-pointer ${
-                          member.connected 
+                        className={`xs:w-auto w-full px-3 py-1.5 rounded-lg text-xs font-bold transition-all shrink-0 cursor-pointer text-center ${
+                          member.connectionStatus === "connected"
                             ? "text-emerald-400 bg-emerald-400/10 border border-emerald-400/20 hover:bg-emerald-400/20"
+                            : member.connectionStatus === "pending"
+                            ? "text-amber-400 bg-amber-400/10 border border-amber-500/20 hover:bg-amber-500/20 animate-pulse"
                             : "text-blue-400 bg-blue-400/10 border border-blue-400/20 hover:bg-blue-400/20"
                         }`}
                       >
-                        {member.connected ? "Pending" : "Connect"}
+                        {member.connectionStatus === "connected" && "Connected"}
+                        {member.connectionStatus === "pending" && "Pending..."}
+                        {(member.connectionStatus === "none" || !member.connectionStatus) && "Connect"}
                       </button>
                     </div>
                   ))}
@@ -544,17 +873,23 @@ export function CommunityPage() {
       {/* Compose Signal Modal (Accessible custom Dialog) */}
       {isComposeOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm">
-          <div className="bg-[#0F1629] border border-white/10 rounded-2xl p-6 w-full max-w-lg shadow-2xl relative hud-corners animate-fade-up">
+          <div 
+            ref={composeModalRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="compose-title"
+            className="bg-[#0F1629] border border-white/10 rounded-2xl p-6 w-full max-w-lg shadow-2xl relative hud-corners animate-fade-up"
+          >
             <button
               onClick={() => setIsComposeOpen(false)}
-              className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors"
+              className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors cursor-pointer"
               aria-label="Close modal"
             >
               <X size={20} />
             </button>
             
             <div className="mb-4">
-              <h2 className="text-white text-lg font-bold font-mono">// COMPOSE_BROADCAST_SIGNAL</h2>
+              <h2 id="compose-title" className="text-white text-lg font-bold font-mono">// COMPOSE_BROADCAST_SIGNAL</h2>
               <p className="text-gray-400 text-xs">Transmit a new data pack to the community feed.</p>
             </div>
 
@@ -566,11 +901,12 @@ export function CommunityPage() {
                   maxLength={280}
                   placeholder="Share a project update, question, or resource..."
                   rows={5}
+                  aria-label="Write your broadcast signal content"
                   className="w-full bg-gray-950/60 border border-white/10 rounded-xl p-4 text-white text-xs outline-none focus:border-orange-500/50 transition-colors resize-none"
                 />
                 <div className="flex justify-between mt-1 text-gray-500 text-xs font-mono">
                   <span>LIMIT: 280</span>
-                  <span className={newPostContent.length >= 260 ? "text-orange-500" : ""}>
+                  <span className={newPostContent.length >= 260 ? "text-orange-500" : ""} aria-live="polite">
                     {newPostContent.length} / 280
                   </span>
                 </div>
@@ -599,7 +935,13 @@ export function CommunityPage() {
       {/* Events Archive Modal (Accessible custom Dialog) */}
       {isEventsOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm">
-          <div className="bg-[#0F1629] border border-white/10 rounded-2xl p-6 w-full max-w-xl shadow-2xl relative hud-corners animate-fade-up">
+          <div 
+            ref={eventsModalRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="events-title"
+            className="bg-[#0F1629] border border-white/10 rounded-2xl p-6 w-full max-w-xl shadow-2xl relative hud-corners animate-fade-up"
+          >
             <button
               onClick={() => setIsEventsOpen(false)}
               className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors cursor-pointer"
@@ -609,7 +951,7 @@ export function CommunityPage() {
             </button>
             
             <div className="mb-6">
-              <h2 className="text-white text-lg font-bold font-mono">// COMMUNITY_EVENTS_ARCHIVE</h2>
+              <h2 id="events-title" className="text-white text-lg font-bold font-mono">// COMMUNITY_EVENTS_ARCHIVE</h2>
               <p className="text-gray-400 text-xs">Full directory of webinars, workshops, and deadlines.</p>
             </div>
 
@@ -639,7 +981,7 @@ export function CommunityPage() {
             <div className="mt-6 flex justify-end">
               <button
                 onClick={() => setIsEventsOpen(false)}
-                className="px-5 py-2.5 rounded-xl font-mono text-xs font-bold text-gray-400 bg-white/5 hover:bg-white/10 transition-colors cursor-pointer"
+                className="px-5 py-2.5 rounded-xl font-mono text-xs font-bold text-gray-400 bg-white/5 hover:bg-white/10 transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-pink-500"
               >
                 DISMISS_ARCHIVE
               </button>
@@ -652,6 +994,10 @@ export function CommunityPage() {
       {reportingPost && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/95 backdrop-blur-sm">
           <div 
+            ref={reportModalRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="report-title"
             className="relative w-full max-w-md bg-gray-900 border border-red-500/20 rounded-2xl p-6 shadow-2xl text-left flex flex-col max-h-[85dvh] overflow-y-auto overscroll-contain hud-corners"
             onClick={(e) => e.stopPropagation()}
           >
@@ -660,14 +1006,14 @@ export function CommunityPage() {
 
             <div className="flex items-center justify-between pb-4 border-b border-white/5 mb-6">
               <div>
-                <h3 className="text-white text-lg font-bold">Report Post</h3>
-                <p className="font-mono text-[9px] text-red-500 tracking-wider">
+                <h3 id="report-title" className="text-white text-lg font-bold">Report Post</h3>
+                <p className="font-mono text-[11px] text-red-500 tracking-wider">
                   REPORT_SECTOR // ID_{reportingPost.id}
                 </p>
               </div>
               <button
                 onClick={() => setReportingPost(null)}
-                className="text-gray-500 hover:text-white p-1 cursor-pointer"
+                className="text-gray-500 hover:text-white p-1 cursor-pointer focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-red-500"
                 aria-label="Close report overlay"
               >
                 <X size={18} />
@@ -676,12 +1022,12 @@ export function CommunityPage() {
 
             <form onSubmit={handleSubmitReport} className="space-y-4">
               <div>
-                <label htmlFor="reportReason" className="block font-mono text-[10px] text-gray-400 tracking-wider mb-2">FLAG_REASON</label>
+                <label htmlFor="reportReason" className="block font-mono text-xs text-gray-300 tracking-wider mb-2">FLAG_REASON</label>
                 <select
                   id="reportReason"
                   value={reportReason}
                   onChange={(e) => setReportReason(e.target.value)}
-                  className="w-full bg-gray-950/60 border border-white/10 rounded-lg px-3 py-2.5 text-white text-xs outline-none focus:border-red-500/40 text-gray-300 cursor-pointer"
+                  className="w-full bg-gray-950 border border-white/10 rounded-lg px-3 py-2.5 text-white text-xs outline-none focus:border-red-500/40 cursor-pointer"
                 >
                   <option value="Spam">Spam & Unauthorized Ads</option>
                   <option value="Hateful content">Hateful or Off-topic Content</option>
@@ -691,7 +1037,7 @@ export function CommunityPage() {
               </div>
 
               <div>
-                <label htmlFor="reportDetails" className="block font-mono text-[10px] text-gray-400 tracking-wider mb-2">SPECIFIC_VIOLATION_DETAILS</label>
+                <label htmlFor="reportDetails" className="block font-mono text-xs text-gray-300 tracking-wider mb-2">SPECIFIC_VIOLATION_DETAILS</label>
                 <textarea
                   id="reportDetails"
                   rows={4}
@@ -707,7 +1053,7 @@ export function CommunityPage() {
                 <button
                   type="button"
                   onClick={() => setReportingPost(null)}
-                  className="flex-1 py-3 rounded-xl font-mono text-xs font-bold text-gray-400 bg-white/5 hover:bg-white/10 transition-colors cursor-pointer"
+                  className="flex-1 py-3 rounded-xl font-mono text-xs font-bold text-gray-400 bg-white/5 hover:bg-white/10 transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-pink-500"
                 >
                   CANCEL
                 </button>
