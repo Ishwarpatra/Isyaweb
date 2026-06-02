@@ -2,9 +2,10 @@
  * @param { import("knex").Knex } knex
  * @returns { Promise<void> }
  */
-exports.up = function(knex) {
-  return knex.schema
-    .createTable('users', function(table) {
+exports.up = async function(knex) {
+  const hasUsers = await knex.schema.hasTable('users');
+  if (!hasUsers) {
+    await knex.schema.createTable('users', function(table) {
       table.increments('id').primary();
       table.string('email', 255).unique().notNullable();
       table.string('password_hash', 255).notNullable();
@@ -12,8 +13,12 @@ exports.up = function(knex) {
       table.string('role', 50).defaultTo('user');
       table.timestamp('created_at').defaultTo(knex.fn.now());
       table.index('email', 'idx_users_email');
-    })
-    .createTable('blog_posts', function(table) {
+    });
+  }
+
+  const hasBlogPosts = await knex.schema.hasTable('blog_posts');
+  if (!hasBlogPosts) {
+    await knex.schema.createTable('blog_posts', function(table) {
       table.increments('id').primary();
       table.string('title', 500).notNullable();
       table.string('slug', 500).unique();
@@ -27,8 +32,12 @@ exports.up = function(knex) {
       table.timestamp('published_at').defaultTo(knex.fn.now());
       table.timestamp('created_at').defaultTo(knex.fn.now());
       table.index('author_id', 'idx_blog_posts_author');
-    })
-    .createTable('comments', function(table) {
+    });
+  }
+
+  const hasComments = await knex.schema.hasTable('comments');
+  if (!hasComments) {
+    await knex.schema.createTable('comments', function(table) {
       table.increments('id').primary();
       table.integer('post_id').unsigned().references('id').inTable('blog_posts').onDelete('CASCADE');
       table.integer('author_id').unsigned().references('id').inTable('users').onDelete('CASCADE');
@@ -36,6 +45,7 @@ exports.up = function(knex) {
       table.timestamp('created_at').defaultTo(knex.fn.now());
       table.index('post_id', 'idx_comments_post');
     });
+  }
 };
 
 /**

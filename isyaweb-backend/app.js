@@ -1,3 +1,12 @@
+const Sentry = require('@sentry/node');
+
+// Initialize Sentry error tracking
+Sentry.init({
+  dsn: process.env.SENTRY_DSN,
+  environment: process.env.NODE_ENV || 'development',
+  tracesSampleRate: 0.1,
+});
+
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
@@ -121,6 +130,9 @@ app.use((req, res, next) => {
     error: 'Target endpoint coordinate does not exist.'
   });
 });
+
+// Sentry Express error handler setup
+Sentry.setupExpressErrorHandler(app);
 
 // Global Error Handler Middleware
 app.use((err, req, res, next) => {
