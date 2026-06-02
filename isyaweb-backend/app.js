@@ -26,21 +26,9 @@ app.use(helmet({
   xssFilter: true,
 }));
 
-// 2. Cross-Origin Resource Sharing (CORS) with strict client allowance
-const allowedOrigins = [
-  process.env.CLIENT_URL || 'http://localhost:5173',
-  'http://localhost:3000',
-  'http://127.0.0.1:5173'
-];
-
+// 2. Cross-Origin Resource Sharing (CORS)
 app.use(cors({
-  origin: function (origin, callback) {
-    if (!origin || allowedOrigins.indexOf(origin) !== -1) {
-      callback(null, true);
-    } else {
-      callback(new Error('Blocked by CORS security policies.'));
-    }
-  },
+  origin: process.env.CORS_ORIGIN || 'http://localhost:5173',
   credentials: true
 }));
 
@@ -63,7 +51,7 @@ const apiLimiter = rateLimit({
 
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 10, // Limit each IP to 10 authentication requests per window
+  max: process.env.NODE_ENV === 'test' ? 100 : 5, // Limit each IP to 5 authentication requests per window
   standardHeaders: true,
   legacyHeaders: false,
   message: {
