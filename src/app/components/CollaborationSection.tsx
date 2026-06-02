@@ -58,7 +58,7 @@ export function CollaborationSection() {
                 <div className="absolute top-0 left-0 w-4 h-4 border-t border-l border-white/10 rounded-tl group-hover:border-pink-500/40 transition-colors" />
                 <div className="absolute bottom-0 right-0 w-4 h-4 border-b border-r border-white/10 rounded-br group-hover:border-pink-500/40 transition-colors" />
 
-                <span className="font-mono text-[9px] text-gray-500 tracking-wider mb-6 block">
+                <span className="font-mono text-[9px] text-gray-400 tracking-wider mb-6 block">
                   {partner.tag}
                 </span>
 

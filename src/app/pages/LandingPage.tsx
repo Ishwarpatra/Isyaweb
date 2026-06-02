@@ -12,7 +12,6 @@ import { lockScroll, unlockScroll } from "../hooks/useScrollLock";
 import { useAuth } from "../hooks/useAuth";
 import logoImg from "../../imports/Logo_ISYA__1_-2.jpeg";
 import { format, parseISO } from "date-fns";
-import { mockDb } from "../utils/mockDb";
 import { CTA_LABELS } from "../constants/copytext";
 import { WebinarCarousel } from "../components/WebinarCarousel";
 import { CollaborationSection } from "../components/CollaborationSection";
@@ -111,7 +110,8 @@ export function LandingPage() {
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    setWebinars(mockDb.getWebinars());
+    // Webinars are loaded from static data until real API endpoint is ready
+    setWebinars([]);
     
     // Show onboarding walkthrough to logged-in users who haven't completed it yet
     if (user) {

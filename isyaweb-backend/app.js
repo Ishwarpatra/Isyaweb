@@ -36,8 +36,18 @@ app.use(helmet({
 }));
 
 // 2. Cross-Origin Resource Sharing (CORS)
+const allowedOrigins = process.env.CORS_ORIGIN
+  ? [process.env.CORS_ORIGIN]
+  : ['http://localhost:5173', 'http://localhost:4173']; // 5173=dev, 4173=preview
+
 app.use(cors({
-  origin: process.env.CORS_ORIGIN || 'http://localhost:5173',
+  origin: function(origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Blocked by CORS policy'));
+    }
+  },
   credentials: true
 }));
 

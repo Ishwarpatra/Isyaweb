@@ -45,9 +45,9 @@ export function Footer() {
 
           {/* Links */}
           <div>
-            <h4 className="text-white mb-4 text-[0.875rem] font-semibold tracking-wider">
+            <p className="text-white mb-4 text-[0.875rem] font-semibold tracking-wider">
               EXPLORE
-            </h4>
+            </p>
             <ul className="flex flex-col gap-2.5">
               {[
                 { label: "Home", path: "/" },
@@ -68,9 +68,9 @@ export function Footer() {
           </div>
 
           <div>
-            <h4 className="text-white mb-4 text-[0.875rem] font-semibold tracking-wider">
+            <p className="text-white mb-4 text-[0.875rem] font-semibold tracking-wider">
               ACCOUNT
-            </h4>
+            </p>
             <ul className="flex flex-col gap-2.5">
               {[
                 { label: CTA_LABELS.JOIN, path: "/register" },
@@ -101,7 +101,7 @@ export function Footer() {
             <Link to="/guidelines#privacy" className="hover:text-white transition-colors">PRIVACY_POLICY</Link>
           </div>
           <div className="flex items-center gap-6">
-            <span className="text-gray-500 text-[0.8rem] font-mono">SECURE_NODE_v4.0</span>
+            <span className="text-gray-400 text-[0.8rem] font-mono">SECURE_NODE_v4.0</span>
           </div>
         </div>
       </div>
