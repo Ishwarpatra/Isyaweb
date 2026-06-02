@@ -636,93 +636,109 @@ export function MentorPage() {
                 {/* Cadet Name & Email (Prefilled, Editable with Validation) */}
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block font-mono text-[9px] text-gray-400 tracking-wider mb-1.5">CADET_NAME</label>
+                    <label htmlFor="booking-name" className="block font-mono text-[9px] text-gray-400 tracking-wider mb-1.5">CADET_NAME</label>
                     <input
+                      id="booking-name"
                       type="text"
                       required
+                      aria-describedby={bookingErrors.cadetName ? "booking-name-err" : undefined}
+                      aria-invalid={!!bookingErrors.cadetName}
                       value={cadetName}
                       onChange={(e) => setCadetName(e.target.value)}
                       placeholder="Your Name"
                       className="w-full bg-gray-950/60 border border-white/5 focus:border-pink-500/40 rounded-lg px-3 py-2 text-white text-xs outline-none"
                     />
                     {bookingErrors.cadetName && (
-                      <p className="mt-1 font-mono text-[8px] text-red-500">{bookingErrors.cadetName}</p>
+                      <p id="booking-name-err" role="alert" className="mt-1 font-mono text-[8px] text-red-500">{bookingErrors.cadetName}</p>
                     )}
                   </div>
                   <div>
-                    <label className="block font-mono text-[9px] text-gray-400 tracking-wider mb-1.5">CADET_EMAIL</label>
+                    <label htmlFor="booking-email" className="block font-mono text-[9px] text-gray-400 tracking-wider mb-1.5">CADET_EMAIL</label>
                     <input
+                      id="booking-email"
                       type="email"
                       required
+                      aria-describedby={bookingErrors.cadetEmail ? "booking-email-err" : undefined}
+                      aria-invalid={!!bookingErrors.cadetEmail}
                       value={cadetEmail}
                       onChange={(e) => setCadetEmail(e.target.value)}
                       placeholder="cadet@isya.space"
                       className="w-full bg-gray-950/60 border border-white/5 focus:border-pink-500/40 rounded-lg px-3 py-2 text-white text-xs outline-none"
                     />
                     {bookingErrors.cadetEmail && (
-                      <p className="mt-1 font-mono text-[8px] text-red-500">{bookingErrors.cadetEmail}</p>
+                      <p id="booking-email-err" role="alert" className="mt-1 font-mono text-[8px] text-red-500">{bookingErrors.cadetEmail}</p>
                     )}
                   </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block font-mono text-[9px] text-gray-400 tracking-wider mb-1.5">TARGET_DATE</label>
+                    <label htmlFor="booking-date" className="block font-mono text-[9px] text-gray-400 tracking-wider mb-1.5">TARGET_DATE</label>
                     <input
+                      id="booking-date"
                       type="date"
                       required
                       min={todayString}
+                      aria-describedby={bookingErrors.bookingDate ? "booking-date-err" : undefined}
+                      aria-invalid={!!bookingErrors.bookingDate}
                       value={bookingDate}
                       onChange={(e) => setBookingDate(e.target.value)}
                       className="w-full bg-gray-950/60 border border-white/5 rounded-lg px-3 py-2 text-white text-xs outline-none focus:border-pink-500/40 cursor-pointer"
                     />
                     {bookingErrors.bookingDate && (
-                      <p className="mt-1 font-mono text-[8px] text-red-500">{bookingErrors.bookingDate}</p>
+                      <p id="booking-date-err" role="alert" className="mt-1 font-mono text-[8px] text-red-500">{bookingErrors.bookingDate}</p>
                     )}
                   </div>
 
                   <div>
-                    <label className="block font-mono text-[9px] text-gray-400 tracking-wider mb-1.5">PREFERRED_UTC_TIME</label>
+                    <label htmlFor="booking-time" className="block font-mono text-[9px] text-gray-400 tracking-wider mb-1.5">
+                      UTC_TIME
+                      <span className="ml-1 text-gray-600">(UTC{new Date().getTimezoneOffset() <= 0 ? "+" : ""}{-(new Date().getTimezoneOffset() / 60)})</span>
+                    </label>
                     <input
+                      id="booking-time"
                       type="time"
                       required
+                      aria-describedby={bookingErrors.bookingTime ? "booking-time-err" : undefined}
+                      aria-invalid={!!bookingErrors.bookingTime}
                       value={bookingTime}
                       onChange={(e) => setBookingTime(e.target.value)}
                       className="w-full bg-gray-950/60 border border-white/5 rounded-lg px-3 py-2 text-white text-xs outline-none focus:border-pink-500/40 cursor-pointer"
                     />
                     {bookingErrors.bookingTime && (
-                      <p className="mt-1 font-mono text-[8px] text-red-500">{bookingErrors.bookingTime}</p>
+                      <p id="booking-time-err" role="alert" className="mt-1 font-mono text-[8px] text-red-500">{bookingErrors.bookingTime}</p>
                     )}
                   </div>
                 </div>
 
                 <div>
-                  <label className="block font-mono text-[9px] text-gray-400 tracking-wider mb-1.5">SPECIALIZATION_TOPIC</label>
+                  <label htmlFor="booking-topic" className="block font-mono text-[9px] text-gray-400 tracking-wider mb-1.5">SPECIALIZATION_TOPIC</label>
                   <input
+                    id="booking-topic"
                     type="text"
                     required
                     placeholder="e.g. Astrophysics orbit calculations"
+                    aria-describedby={bookingErrors.bookingTopic ? "booking-topic-err" : undefined}
+                    aria-invalid={!!bookingErrors.bookingTopic}
                     value={bookingTopic}
                     onChange={(e) => setBookingTopic(e.target.value)}
                     className="w-full bg-gray-950/60 border border-white/5 rounded-lg px-3 py-2 text-white text-xs outline-none focus:border-pink-500/40"
                   />
                   {bookingErrors.bookingTopic && (
-                    <p className="mt-1 font-mono text-[8px] text-red-500">{bookingErrors.bookingTopic}</p>
+                    <p id="booking-topic-err" role="alert" className="mt-1 font-mono text-[8px] text-red-500">{bookingErrors.bookingTopic}</p>
                   )}
                 </div>
 
                 <div>
-                  <label className="block font-mono text-[9px] text-gray-400 tracking-wider mb-1.5">SESSION_NOTES_OR_QUESTIONS</label>
+                  <label htmlFor="booking-notes" className="block font-mono text-[9px] text-gray-400 tracking-wider mb-1.5">SESSION_NOTES_OR_QUESTIONS</label>
                   <textarea
+                    id="booking-notes"
                     rows={3}
                     placeholder="Briefly state your rocket designs or project coordinates..."
                     value={bookingNotes}
                     onChange={(e) => setBookingNotes(e.target.value)}
                     className="w-full bg-gray-950/60 border border-white/5 rounded-lg px-3 py-2 text-white text-xs outline-none focus:border-pink-500/40 resize-none"
                   />
-                  {bookingErrors.bookingNotes && (
-                    <p className="mt-1 font-mono text-[8px] text-red-500">{bookingErrors.bookingNotes}</p>
-                  )}
                 </div>
 
                 <div className="flex items-center gap-1.5 p-3 rounded-lg bg-pink-500/5 border border-pink-500/10 text-pink-400/80 mb-2">
