@@ -1,19 +1,20 @@
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import { toast } from 'sonner';
 
 export interface User {
-  id: string;
+  id: number;
   email: string;
   name: string;
-  role: "admin" | "moderator" | "mentor" | "user";
+  role: 'user' | 'moderator' | 'admin';
+  created_at: string;
 }
 
 interface AuthContextType {
   user: User | null;
+  loading: boolean;
   login: (email: string, password: string) => Promise<boolean>;
-  loginSSO: (provider: string) => Promise<void>;
-  logout: () => void;
   register: (email: string, password: string, name: string) => Promise<boolean>;
-  isAuthenticated: boolean;
+  logout: () => Promise<void>;
   isAdmin: boolean;
   isModerator: boolean;
 }
@@ -24,150 +25,109 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
+  const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
+
+  // Check if user is already logged in (from httpOnly cookie)
   useEffect(() => {
-    const stored = sessionStorage.getItem("isya_user");
-    if (stored) {
+    const checkAuth = async () => {
       try {
-        setUser(JSON.parse(stored));
-      } catch (e) {
-        sessionStorage.removeItem("isya_user");
+        const res = await fetch(`${apiBase}/api/auth/me`, {
+          credentials: 'include',
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          setUser(data.user);
+        }
+      } catch (err) {
+        // User not authenticated, continue
+      } finally {
+        setLoading(false);
       }
-    }
-    setLoading(false);
-  }, []);
+    };
+
+    checkAuth();
+  }, [apiBase]);
 
   const login = async (email: string, password: string): Promise<boolean> => {
-    // Artificial latency for realism
-    await new Promise((resolve) => setTimeout(resolve, 150));
+    setLoading(true);
+    try {
+      const res = await fetch(`${apiBase}/api/auth/login`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
 
-    const lowerEmail = email.toLowerCase().trim();
-    const isAdminEmail = 
-      lowerEmail === "admin@isya.space" || 
-      lowerEmail === "internationalspaceyouthassocia@gmail.com" || 
-      lowerEmail === "ishwarpatragod@gmail.com";
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || 'Login failed');
+      }
 
-    if (isAdminEmail && password === "admin123") {
-      const adminUser: User = {
-        id: "usr-admin",
-        email: lowerEmail,
-        name: "Commander Admin",
-        role: "admin",
-      };
-      setUser(adminUser);
-      sessionStorage.setItem("isya_user", JSON.stringify(adminUser));
+      const data = await res.json();
+      setUser(data.user);
+      toast.success('Logged in successfully!');
       return true;
+
+    } catch (err: any) {
+      toast.error(err.message);
+      return false;
+    } finally {
+      setLoading(false);
     }
-
-    if (lowerEmail === "cadet@isya.space" && password === "password123") {
-      const normalUser: User = {
-        id: "usr-cadet",
-        email: lowerEmail,
-        name: "Cadet Chen",
-        role: "user",
-      };
-      setUser(normalUser);
-      sessionStorage.setItem("isya_user", JSON.stringify(normalUser));
-      return true;
-    }
-
-    if (lowerEmail === "moderator@isya.space" && password === "moderator123") {
-      const modUser: User = {
-        id: "usr-mod",
-        email: lowerEmail,
-        name: "Officer Mod",
-        role: "moderator",
-      };
-      setUser(modUser);
-      sessionStorage.setItem("isya_user", JSON.stringify(modUser));
-      return true;
-    }
-
-    if (lowerEmail === "mentor@isya.space" && password === "mentor123") {
-      const mentorUser: User = {
-        id: "usr-mentor",
-        email: lowerEmail,
-        name: "Instructor Mentor",
-        role: "mentor",
-      };
-      setUser(mentorUser);
-      sessionStorage.setItem("isya_user", JSON.stringify(mentorUser));
-      return true;
-    }
-
-    // For demo purposes, allow custom emails to log in as user if password is correct
-    if (lowerEmail && password.length >= 8 && !isAdminEmail) {
-      const namePart = lowerEmail.split("@")[0];
-      let assignedRole: "admin" | "moderator" | "mentor" | "user" = "user";
-      
-      // Let special user names register or login as mods/mentors for review testing
-      if (namePart.includes("mod")) assignedRole = "moderator";
-      else if (namePart.includes("mentor")) assignedRole = "mentor";
-      else if (namePart.includes("admin")) assignedRole = "admin";
-
-      const customUser: User = {
-        id: `usr-${namePart}-${Date.now().toString(36)}`,
-        email: lowerEmail,
-        name: namePart.charAt(0).toUpperCase() + namePart.slice(1),
-        role: assignedRole,
-      };
-      setUser(customUser);
-      sessionStorage.setItem("isya_user", JSON.stringify(customUser));
-      return true;
-    }
-
-    return false;
-  };
-
-  const loginSSO = async (provider: string) => {
-    await new Promise((resolve) => setTimeout(resolve, 150));
-    const ssoUser: User = {
-      id: `usr-sso-${provider.toLowerCase()}`,
-      email: `sso.${provider.toLowerCase()}@isya.space`,
-      name: `${provider} Agent`,
-      role: "user",
-    };
-    setUser(ssoUser);
-    sessionStorage.setItem("isya_user", JSON.stringify(ssoUser));
   };
 
   const register = async (email: string, password: string, name: string): Promise<boolean> => {
-    await new Promise((resolve) => setTimeout(resolve, 150));
-    const lowerEmail = email.toLowerCase().trim();
-    
-    let assignedRole: "admin" | "moderator" | "mentor" | "user" = "user";
-    const namePart = lowerEmail.split("@")[0];
-    if (namePart.includes("mod") || lowerEmail === "moderator@isya.space") assignedRole = "moderator";
-    else if (namePart.includes("mentor") || lowerEmail === "mentor@isya.space") assignedRole = "mentor";
-    else if (namePart.includes("admin") || lowerEmail === "admin@isya.space") assignedRole = "admin";
+    setLoading(true);
+    try {
+      const res = await fetch(`${apiBase}/api/auth/register`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password, name }),
+      });
 
-    const newUser: User = {
-      id: `usr-${namePart}-${Date.now().toString(36)}`,
-      email: lowerEmail,
-      name,
-      role: assignedRole,
-    };
-    setUser(newUser);
-    sessionStorage.setItem("isya_user", JSON.stringify(newUser));
-    return true;
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || 'Registration failed');
+      }
+
+      const data = await res.json();
+      setUser(data.user);
+      toast.success('Account created successfully!');
+      return true;
+
+    } catch (err: any) {
+      toast.error(err.message);
+      return false;
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const logout = () => {
-    setUser(null);
-    sessionStorage.removeItem("isya_user");
-    sessionStorage.removeItem("isya_admin_decrypted");
+  const logout = async () => {
+    try {
+      await fetch(`${apiBase}/api/auth/logout`, {
+        method: 'POST',
+        credentials: 'include',
+      });
+      setUser(null);
+      toast.success('Logged out');
+    } catch (err) {
+      toast.error('Logout failed');
+    }
   };
 
   return (
     <AuthContext.Provider
       value={{
         user,
+        loading,
         login,
-        loginSSO,
-        logout,
         register,
-        isAuthenticated: !!user,
-        isAdmin: user?.role === "admin",
-        isModerator: user?.role === "moderator" || user?.role === "admin",
+        logout,
+        isAdmin: user?.role === 'admin',
+        isModerator: user?.role === 'moderator' || user?.role === 'admin',
       }}
     >
       {!loading && children}
@@ -178,7 +138,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 export function useAuth() {
   const context = useContext(AuthContext);
   if (!context) {
-    throw new Error("useAuth must be used within an AuthProvider");
+    throw new Error('useAuth must be used within AuthProvider');
   }
   return context;
 }
