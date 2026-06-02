@@ -1,19 +1,21 @@
+import { lazy } from "react";
 import { createBrowserRouter, Navigate } from "react-router";
 import { Root } from "./components/layout/Root";
-import { LandingPage } from "./pages/LandingPage";
-import { BlogPage } from "./pages/BlogPage";
-import { BlogPostDetailPage } from "./pages/BlogPostDetailPage";
-import { MediaPage } from "./pages/MediaPage";
-import { LoginPage } from "./pages/LoginPage";
-import { RegisterPage } from "./pages/RegisterPage";
-import { ResetPasswordPage } from "./pages/ResetPasswordPage";
-import { CommunityPage } from "./pages/CommunityPage";
-import { AdminPage } from "./pages/AdminPage";
-import { GuidelinesPage } from "./pages/GuidelinesPage";
-import { NotFoundPage } from "./pages/NotFoundPage";
-import { MentorPage } from "./pages/MentorPage";
-import { FAQPage } from "./pages/FAQPage";
-import { ModerationPage } from "./pages/ModerationPage";
+
+const LandingPage = lazy(() => import("./pages/LandingPage").then(m => ({ default: m.LandingPage })));
+const BlogPage = lazy(() => import("./pages/BlogPage").then(m => ({ default: m.BlogPage })));
+const BlogPostDetailPage = lazy(() => import("./pages/BlogPostDetailPage").then(m => ({ default: m.BlogPostDetailPage })));
+const MediaPage = lazy(() => import("./pages/MediaPage").then(m => ({ default: m.MediaPage })));
+const LoginPage = lazy(() => import("./pages/LoginPage").then(m => ({ default: m.LoginPage })));
+const RegisterPage = lazy(() => import("./pages/RegisterPage").then(m => ({ default: m.RegisterPage })));
+const ResetPasswordPage = lazy(() => import("./pages/ResetPasswordPage").then(m => ({ default: m.ResetPasswordPage })));
+const CommunityPage = lazy(() => import("./pages/CommunityPage").then(m => ({ default: m.CommunityPage })));
+const AdminPage = lazy(() => import("./pages/AdminPage").then(m => ({ default: m.AdminPage })));
+const GuidelinesPage = lazy(() => import("./pages/GuidelinesPage").then(m => ({ default: m.GuidelinesPage })));
+const NotFoundPage = lazy(() => import("./pages/NotFoundPage").then(m => ({ default: m.NotFoundPage })));
+const MentorPage = lazy(() => import("./pages/MentorPage").then(m => ({ default: m.MentorPage })));
+const FAQPage = lazy(() => import("./pages/FAQPage").then(m => ({ default: m.FAQPage })));
+const ModerationPage = lazy(() => import("./pages/ModerationPage").then(m => ({ default: m.ModerationPage })));
 
 export const router = createBrowserRouter([
   {
