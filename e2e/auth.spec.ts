@@ -14,12 +14,12 @@ test.describe("Authentication & Navigation E2E Flow", () => {
 
   test("should navigate to forgot password page from login page", async ({ page }) => {
     await page.goto("/forgot-password");
-    await expect(page.locator("text=Reset Your Password")).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Reset Your Password" })).toBeVisible();
     await expect(page.locator("input[type='email']")).toBeVisible();
   });
 
   test("should navigate to password reset page with token parameter", async ({ page }) => {
     await page.goto("/reset-password/test-token-123");
-    await expect(page.locator("text=Set New Password")).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Set New Password" })).toBeVisible();
   });
 });
