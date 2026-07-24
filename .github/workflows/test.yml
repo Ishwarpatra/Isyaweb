@@ -1,4 +1,4 @@
-name: Test & Build
+name: CI Pipeline & Quality Gates
 
 on:
   push:
@@ -14,9 +14,33 @@ jobs:
       - uses: actions/setup-node@v3
         with:
           node-version: 18
-      - run: npm install
-      - run: npm run build
-      - run: npm run test
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Security Vulnerability Scan
+        run: npm audit --audit-level=high || true
+
+      - name: Run Unit Tests
+        run: npm run test
+
+      - name: Build Application
+        run: npm run build
+
+      - name: Performance Gate - Bundle Size Check (< 300KB)
+        run: |
+          MAIN_BUNDLE_SIZE=$(find dist/assets -name "index-*.js" -exec stat -c%s {} + | head -n 1)
+          MAX_SIZE=307200 # 300 KB in bytes
+          echo "Main bundle size: $MAIN_BUNDLE_SIZE bytes (limit: $MAX_SIZE bytes)"
+          if [ "$MAIN_BUNDLE_SIZE" -gt "$MAX_SIZE" ]; then
+            echo "ERROR: Main JS bundle exceeds performance limit of 300KB!"
+            exit 1
+          fi
+
+      - name: Run Playwright E2E Tests
+        run: |
+          npx playwright install --with-deps
+          npx playwright test
 
   backend:
     runs-on: ubuntu-latest
@@ -38,5 +62,12 @@ jobs:
       - uses: actions/setup-node@v3
         with:
           node-version: 18
-      - run: cd isyaweb-backend && npm install
-      - run: cd isyaweb-backend && npm test
+
+      - name: Install backend dependencies
+        run: cd isyaweb-backend && npm install
+
+      - name: Security Audit
+        run: cd isyaweb-backend && npm audit --audit-level=high || true
+
+      - name: Run Backend Tests
+        run: cd isyaweb-backend && npm test

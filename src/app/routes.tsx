@@ -9,6 +9,7 @@ const BlogPostDetailPage = lazy(() => import("./pages/BlogPostDetailPage").then(
 const MediaPage = lazy(() => import("./pages/MediaPage").then(m => ({ default: m.MediaPage })));
 const LoginPage = lazy(() => import("./pages/LoginPage").then(m => ({ default: m.LoginPage })));
 const RegisterPage = lazy(() => import("./pages/RegisterPage").then(m => ({ default: m.RegisterPage })));
+const ForgotPasswordPage = lazy(() => import("./pages/ForgotPasswordPage").then(m => ({ default: m.ForgotPasswordPage })));
 const ResetPasswordPage = lazy(() => import("./pages/ResetPasswordPage").then(m => ({ default: m.ResetPasswordPage })));
 const CommunityPage = lazy(() => import("./pages/CommunityPage").then(m => ({ default: m.CommunityPage })));
 const AdminPage = lazy(() => import("./pages/AdminPage").then(m => ({ default: m.AdminPage })));
@@ -29,14 +30,15 @@ export const router = createBrowserRouter([
       { path: "media", element: <ErrorBoundary><MediaPage /></ErrorBoundary> },
       { path: "login", element: <ErrorBoundary><LoginPage /></ErrorBoundary> },
       { path: "register", element: <ErrorBoundary><RegisterPage /></ErrorBoundary> },
+      { path: "forgot-password", element: <ErrorBoundary><ForgotPasswordPage /></ErrorBoundary> },
       { path: "reset-password", element: <ErrorBoundary><ResetPasswordPage /></ErrorBoundary> },
+      { path: "reset-password/:token", element: <ErrorBoundary><ResetPasswordPage /></ErrorBoundary> },
       { path: "community", element: <ErrorBoundary><CommunityPage /></ErrorBoundary> },
       { path: "admin", element: <ErrorBoundary><AdminPage /></ErrorBoundary> },
       { path: "mentor", element: <ErrorBoundary><MentorPage /></ErrorBoundary> },
       { path: "faqs", element: <ErrorBoundary><FAQPage /></ErrorBoundary> },
       { path: "moderation", element: <ErrorBoundary><ModerationPage /></ErrorBoundary> },
       { path: "guidelines", element: <ErrorBoundary><GuidelinesPage /></ErrorBoundary> },
-      // Redirect utility routes to new guidelines page hashes to avoid broken links
       { path: "terms", element: <Navigate to="/guidelines#terms" replace /> },
       { path: "privacy", element: <Navigate to="/guidelines#privacy" replace /> },
       { path: "*", element: <ErrorBoundary><NotFoundPage /></ErrorBoundary> },

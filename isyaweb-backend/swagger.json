@@ -151,6 +151,55 @@
         }
       }
     },
+    "/auth/forgot-password": {
+      "post": {
+        "summary": "Request password reset link",
+        "description": "Generates a password reset token and sends an email via SMTP/Resend.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["email"],
+                "properties": {
+                  "email": { "type": "string", "format": "email", "example": "user@isya.space" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Reset token generated and email dispatched." },
+          "400": { "description": "Invalid email parameter." }
+        }
+      }
+    },
+    "/auth/reset-password": {
+      "post": {
+        "summary": "Reset user password with valid token",
+        "description": "Validates reset token and updates password.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["token", "password"],
+                "properties": {
+                  "token": { "type": "string" },
+                  "password": { "type": "string", "minLength": 8 }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Password updated successfully." },
+          "400": { "description": "Invalid or expired token." }
+        }
+      }
+    },
     "/blogs": {
       "get": {
         "summary": "Scan data archives (paginated, filtered, searched)",

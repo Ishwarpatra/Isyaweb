@@ -1,34 +1,70 @@
 import React, { useState } from "react";
-import { Link, useNavigate } from "react-router";
-import { ShieldCheck, AlertCircle, ArrowLeft } from "lucide-react";
+import { Link, useNavigate, useParams } from "react-router";
+import { AlertCircle, ArrowLeft, Eye, EyeOff } from "lucide-react";
 import logoImg from "../../imports/Logo_ISYA__1_-2.jpeg";
 import { toast } from "sonner";
+import { API_BASE_URL, API_ENDPOINTS, REGEX } from "../constants";
+import { getCsrfHeaders } from "../utils/csrf";
 
 export function ResetPasswordPage() {
+  const { token } = useParams<{ token?: string }>();
   const navigate = useNavigate();
-  const [email, setEmail] = useState("");
+
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email) {
-      setError("Please enter your registered email address");
+
+    if (!token) {
+      setError("Missing or invalid security token parameter in URL.");
       return;
     }
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      setError("Please enter valid email coordinates");
+
+    if (!password) {
+      setError("Please enter a new security key");
+      return;
+    }
+
+    if (!REGEX.PASSWORD.test(password)) {
+      setError("Password must be at least 8 characters long and contain uppercase, lowercase, number, and special character.");
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setError("Security keys do not match");
       return;
     }
 
     setError("");
     setLoading(true);
-    setTimeout(() => {
+
+    try {
+      const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.AUTH.RESET_PASSWORD}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...getCsrfHeaders(),
+        },
+        body: JSON.stringify({ token, password }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        toast.success("Security access token updated successfully!");
+        navigate("/login");
+      } else {
+        setError(data.message || "Failed to update password token.");
+      }
+    } catch {
+      setError("Relay network error. Please try again later.");
+    } finally {
       setLoading(false);
-      toast.success("Security reset token sent to your email coordinates!");
-      navigate("/login");
-    }, 200);
+    }
   };
 
   return (
@@ -46,39 +82,62 @@ export function ResetPasswordPage() {
             className="w-[90px] mb-4 animate-float drop-shadow-[0_0_18px_rgba(249,115,22,0.4)] mix-blend-multiply"
           />
           <p className="font-mono text-pink-500 text-xs tracking-[0.2em]">
-            // SECURITY_RELAY :: KEY_RECOVERY
+            // SECURITY_RELAY :: UPDATE_KEY
           </p>
         </div>
 
         {/* Card */}
         <div className="rounded-2xl p-8 bg-gray-900/70 backdrop-blur-2xl border border-pink-500/15 shadow-2xl relative hud-corners">
-          <h2 className="text-white text-xl font-bold tracking-tight mb-2">Reset Access</h2>
+          <h2 className="text-white text-xl font-bold tracking-tight mb-2">Set New Password</h2>
           <p className="text-gray-400 text-xs font-mono leading-relaxed mb-6">
-            Enter your coordinates to generate a security reset token.
+            Provide your new security key credentials below.
           </p>
 
           <form onSubmit={handleSubmit} className="space-y-6" noValidate>
+            {error && (
+              <p className="p-3 bg-red-950/60 border border-red-500/40 rounded-lg flex items-center gap-1.5 font-mono text-[11px] text-red-400">
+                <AlertCircle size={14} className="shrink-0" />
+                {error}
+              </p>
+            )}
+
             <div>
-              <label htmlFor="email" className="block font-mono text-xs text-gray-500 tracking-widest mb-2">
-                REGISTERED_EMAIL
+              <label htmlFor="new-password" className="block font-mono text-xs text-gray-500 tracking-widest mb-2">
+                NEW_SECURITY_KEY
+              </label>
+              <div className="relative">
+                <input
+                  id="new-password"
+                  type={showPassword ? "text" : "password"}
+                  required
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full bg-transparent border-b border-white/10 py-3 pr-10 text-white text-sm outline-none focus:border-pink-500 transition-colors"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-2 top-3 text-gray-400 hover:text-white"
+                >
+                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
+            </div>
+
+            <div>
+              <label htmlFor="confirm-password" className="block font-mono text-xs text-gray-500 tracking-widest mb-2">
+                CONFIRM_SECURITY_KEY
               </label>
               <input
-                id="email"
-                type="email"
+                id="confirm-password"
+                type={showPassword ? "text" : "password"}
                 required
-                placeholder="agent@isya.space"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className={`w-full bg-transparent border-b py-3 text-white text-sm outline-none transition-colors ${
-                  error ? "border-red-500" : "border-white/10 focus:border-pink-500"
-                }`}
+                placeholder="••••••••"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                className="w-full bg-transparent border-b border-white/10 py-3 text-white text-sm outline-none focus:border-pink-500 transition-colors"
               />
-              {error && (
-                <p className="mt-1.5 flex items-center gap-1 font-mono text-[11px] text-red-400">
-                  <AlertCircle size={12} />
-                  {error}
-                </p>
-              )}
             </div>
 
             <button
@@ -90,7 +149,7 @@ export function ResetPasswordPage() {
                   : "bg-gradient-to-r from-pink-500 to-blue-500 shadow-pink-500/20 hover:shadow-pink-500/40 hover:-translate-y-0.5"
               }`}
             >
-              {loading ? "TRANSMITTING..." : "GENERATE_RESET_KEY"}
+              {loading ? "SAVING..." : "COMMIT_NEW_KEY"}
             </button>
           </form>
 
